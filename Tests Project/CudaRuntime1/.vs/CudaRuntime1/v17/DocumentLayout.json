@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Tests Project\\CudaRuntime1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CDA0CC88-8F28-47C1-8C3B-67D4BD295CE1}|CudaRuntime1.vcxproj|C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Tests Project\\CudaRuntime1\\kernel.cu||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{CDA0CC88-8F28-47C1-8C3B-67D4BD295CE1}|CudaRuntime1.vcxproj|solutionrelative:kernel.cu||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "kernel.cu",
+              "DocumentMoniker": "C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Tests Project\\CudaRuntime1\\kernel.cu",
+              "RelativeDocumentMoniker": "kernel.cu",
+              "ToolTip": "C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Tests Project\\CudaRuntime1\\kernel.cu*",
+              "RelativeToolTip": "kernel.cu*",
+              "ViewState": "AQIAAG8AAAAAAAAAAAAmwHYAAAAbAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-12-21T17:02:45.654Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
