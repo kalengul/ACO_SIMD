@@ -79,6 +79,20 @@
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BlockEvent.h" />
+    <ClInclude Include="ContinuousRandom.h" />
+    <ClInclude Include="DiscreteRandom.h" />
+    <ClInclude Include="Event.h" />
+    <ClInclude Include="EventManager.h" />
+    <ClInclude Include="ExponentialRandom.h" />
+    <ClInclude Include="LinearCongruentialGenerator.h" />
+    <ClInclude Include="NormalRandom.h" />
+    <ClInclude Include="UnlockEvent.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="EventManager.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.5.targets" />

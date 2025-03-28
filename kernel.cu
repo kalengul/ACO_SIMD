@@ -16,6 +16,7 @@
 #include "matrix_loader.h"
 //#include "non_cuda.h"
 #include "parametrs.h" 
+#include "LinearCongruentialGenerator.h"
 
 // Глобальная переменная для лог-файла
 std::ofstream logFile;
@@ -221,7 +222,7 @@ __global__ void go_mass_probability_only(double* pheromon, double* kol_enter, do
 
 
 __device__ void go_ant_path(int tx, int bx, curandState state, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node) {
-    double randomValue = curand_uniform(&state) * 1; // Генерация случайного числа в диапазоне [0, 1]
+    double randomValue = curand_uniform(&state); // Генерация случайного числа в диапазоне [0, 1]
     //Определение номера значения
     int k = 0;
     while (k < PARAMETR_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
@@ -243,7 +244,7 @@ __global__ void go_all_agent_only(int* gpuTime, double* parametr, double* norm_m
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx < ANT_SIZE) {
         //int tx = threadIdx.x;  
-        int seed = 123 + bx * ANT_SIZE + gpuTime[0];
+        int seed = 123 + bx * ANT_SIZE + gpuTime[0]+ clock64();
 
         // Генерация случайного числа с использованием curand
         curandState state;
@@ -316,7 +317,7 @@ __global__ void go_all_agent_only(int* gpuTime, double* parametr, double* norm_m
 __global__ void go_all_agent(int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev , int* kol_hash_fail) {
     int bx = blockIdx.x;  // индекс  (столбца)
     int tx = threadIdx.x; // индекс  (агента) 
-    int seed = 123 +bx * ANT_SIZE + tx * PARAMETR_SIZE + gpuTime[0];
+    int seed = 123 +bx * ANT_SIZE + tx * PARAMETR_SIZE + gpuTime[0] + clock64();
 
     // Генерация случайного числа с использованием curand
     curandState state;
@@ -431,7 +432,7 @@ __global__ void go_all_agent(int* gpuTime, double* parametr, double* norm_matrix
 __global__ void go_all_agent_non_hash(int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x;  // индекс  (столбца)
     int tx = threadIdx.x; // индекс  (агента) 
-    int seed = 123 + bx * ANT_SIZE + tx * PARAMETR_SIZE + gpuTime[0];
+    int seed = 123 + bx * ANT_SIZE + tx * PARAMETR_SIZE + gpuTime[0] + clock64();
 
     // Генерация случайного числа с использованием curand
     curandState state;
@@ -473,7 +474,9 @@ __device__ void add_pheromon_iteration(int tx, double* pheromon, double* kol_ent
         //        pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q * OF[i]; //MAX
                 //if (OF[i] == 0) { OF[i] = 0.0000001; }
                 //pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q / OF[i]; //MIN
-        pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]); // MIN
+        if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
+            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]); // MIN
+        }
     }
     //        for (int i = 0; i < PARAMETR_SIZE; ++i) {
     //           kol_enter[MAX_VALUE_SIZE * i + int(agent_node[tx * PARAMETR_SIZE + i])]++;
@@ -514,7 +517,7 @@ __global__ void go_mass_probability_and_add_pheromon_iteration_only(double* pher
 __global__ void go_all_agent_opt(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x; // индекс блока (агента)
     int tx = threadIdx.x; // индекс потока (столбца)
-    int seed = 1230 +bx * ANT_SIZE + tx * PARAMETR_SIZE;
+    int seed = 1230 +bx * ANT_SIZE + tx * PARAMETR_SIZE + clock64();
 
     // Генерация случайного числа с использованием curand
     curandState state;
@@ -592,7 +595,7 @@ __global__ void go_all_agent_opt(double* pheromon, double* kol_enter, int* gpuTi
 __global__ void go_all_agent_opt_non_hash(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x; // индекс блока (агента)
     int tx = threadIdx.x; // индекс потока (столбца)
-    int seed = 1230 + bx * ANT_SIZE + tx * PARAMETR_SIZE;
+    int seed = 1230 + bx * ANT_SIZE + tx * PARAMETR_SIZE + clock64();
 
     // Генерация случайного числа с использованием curand
     curandState state;
@@ -624,7 +627,7 @@ __global__ void go_all_agent_opt_only(double* pheromon, double* kol_enter, int* 
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx<ANT_SIZE){
     //int tx = threadIdx.x; // индекс потока (столбца)
-    int seed = 1230 + bx * ANT_SIZE + threadIdx.x * PARAMETR_SIZE;
+    int seed = 1230 + bx * ANT_SIZE + threadIdx.x * PARAMETR_SIZE + clock64();
 
     // Генерация случайного числа с использованием curand
     curandState state;
@@ -772,6 +775,7 @@ static int start_CUDA() {
     float SumgpuTime1 = 0.0f;
     float SumgpuTime2 = 0.0f;
     float SumgpuTime3 = 0.0f;
+    float SumgpuTime4 = 0.0f;
     int i_gpuTime = 0;
     cudaEventCreate(&start);
     cudaEventCreate(&startAll);
@@ -1203,7 +1207,6 @@ static int start_CUDA_non_hash() {
     logFile << "Time CUDA non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
     return 0;
 }
-
 
 static int start_CUDA_ant() {
     // Создание обработчиков событий CUDA
@@ -3180,7 +3183,7 @@ void go_mass_probability_non_cuda(double* pheromon, double* kol_enter, double* n
 //}
 
 // Функция для вычисления пути агентов на CPU
-void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, float& totalHashTime) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 +gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -3202,6 +3205,7 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
         // Проверка наличия решения в Хэш-таблице
         double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
         int nom_iteration = 0;
+        auto start = std::chrono::high_resolution_clock::now();
         if (cachedResult == -1.0) {
             // Если значение не найденов ХЭШ, то заносим новое значение
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
@@ -3248,6 +3252,8 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
 
 
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        totalHashTime += std::chrono::duration<double>(end - start).count();
     }
 }
 
@@ -3290,7 +3296,9 @@ void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, double
             kol_enter[MAX_VALUE_SIZE * tx + k]++;
 //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * OF[i]; // MAX
 //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q / OF[i]; // MIN
+            if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]>0){
             pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q *(MAX_PARAMETR_VALUE_TO_MIN_OPT-OF[i]); // MIN
+            }
         }
     }
 }
@@ -3331,7 +3339,8 @@ bool load_matrix_non_cuda(const std::string& filename, double* parametr_value, d
 
 int start_NON_CUDA() {
     auto start = std::chrono::high_resolution_clock::now();
-    float SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f;
+    float SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumgpuTime4 = 0.0f;
+    float duration = 0.0f, duration_iteration = 0.0f;
     int kol_hash_fail = 0;
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
@@ -3376,7 +3385,7 @@ int start_NON_CUDA() {
         auto start2 = std::chrono::high_resolution_clock::now();
         auto end_temp = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> current_time = end_temp - start;
-        go_all_agent_non_cuda(current_time.count()*100000, parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, hashTable, kol_hash_fail);
+        go_all_agent_non_cuda(current_time.count()*100000, parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, hashTable, kol_hash_fail, SumgpuTime4);
         
         if (PRINT_INFORMATION) {
             std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
@@ -3422,7 +3431,7 @@ int start_NON_CUDA() {
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration_iteration = end - start_iteration;
+    duration_iteration += std::chrono::duration<double>(end - start_iteration).count();
 
     // Освобождение выделенной памяти
     delete[] parametr_value;
@@ -3433,9 +3442,9 @@ int start_NON_CUDA() {
     delete[] ant_parametr;
     delete[] antOF;
     auto end_all = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end_all - start;
-    std::cout << "Time non CUDA;" << duration.count() << "; " << duration_iteration.count() << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
-    logFile << "Time non CUDA:;" << duration.count() << "; " << duration_iteration.count() << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    duration += std::chrono::duration<double>(end_all - start).count();
+    std::cout << "Time non CUDA;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << SumgpuTime4 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time non CUDA:;" << duration << "; " << duration_iteration << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
 
     return 0;
 }
@@ -3443,6 +3452,7 @@ int start_NON_CUDA() {
 int start_NON_CUDA_non_hash() {
     auto start = std::chrono::high_resolution_clock::now();
     float SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f;
+    float duration = 0.0f, duration_iteration = 0.0f;
     int kol_hash_fail = 0;
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
@@ -3529,7 +3539,7 @@ int start_NON_CUDA_non_hash() {
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration_iteration = end - start_iteration;
+    duration_iteration += std::chrono::duration<double> (end - start_iteration).count();
 
     // Освобождение выделенной памяти
     delete[] parametr_value;
@@ -3540,9 +3550,9 @@ int start_NON_CUDA_non_hash() {
     delete[] ant_parametr;
     delete[] antOF;
     auto end_all = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end_all - start;
-    std::cout << "Time non CUDA non hash;" << duration.count() << "; " << duration_iteration.count() << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
-    logFile << "Time non CUDA non hash:;" << duration.count() << "; " << duration_iteration.count() << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    duration += std::chrono::duration<double> (end_all - start).count();
+    std::cout << "Time non CUDA non hash;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time non CUDA non hash:;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
 
     return 0;
 }
@@ -3904,7 +3914,11 @@ void start_ant_classic() {
     double global_maxOf = -std::numeric_limits<double>::max();
     double global_minOf = std::numeric_limits<double>::max();
     float SumTime1 = 0.0f;
+    float SumTime2 = 0.0f;
+    float SumTime3 = 0.0f;
+    float SumTime4 = 0.0f;
     float duration_iteration = 0.0f;
+    float duration = 0.0f;
     int kol_hash_fail = 0;
     //std::cout << " Go: ";
     // Выделение памяти для хэш-таблицы на CPU
@@ -3936,6 +3950,7 @@ void start_ant_classic() {
                 }
             }
 
+            auto start2 = std::chrono::high_resolution_clock::now();
             Ant ants[ANT_SIZE]; // Массив муравьев
             for (int nom_ant = 0; nom_ant < ANT_SIZE; nom_ant++) { // Проходим по всем агентам
                 //std::cout << " nom_ant:" << nom_ant;
@@ -3947,6 +3962,7 @@ void start_ant_classic() {
                 double cachedResult = getCachedResultOptimized_classic_ant(hashTable, path);
                 //std::cout << " cachedResult:" << cachedResult;
                 int nom_iteration = 0;
+                auto start4 = std::chrono::high_resolution_clock::now();
                 if (cachedResult == -1.0) {
                     // Если значение не найденов ХЭШ, то заносим новое значение
                     objValue = ants[nom_ant].evaluateObjectiveFunction(); // Оценка целевой функции
@@ -3978,6 +3994,8 @@ void start_ant_classic() {
                         break;
                     }
                 }
+                auto end4 = std::chrono::high_resolution_clock::now();
+                SumTime4 += std::chrono::duration<float, std::milli>(end4 - start4).count();
                 ants[nom_ant].set_objectiveValue(objValue);
                 if (objValue > maxOf) {
                     maxOf = objValue;
@@ -3990,6 +4008,7 @@ void start_ant_classic() {
                 }  
             }
             //std::cout << std::endl;
+            auto start3 = std::chrono::high_resolution_clock::now();
             //Обновление феромона
             pg.DecreasePheromon(PARAMETR_RO);
             for (int nom_ant = 0; nom_ant < ANT_SIZE; nom_ant++) {
@@ -4003,9 +4022,11 @@ void start_ant_classic() {
             }
             auto end1 = std::chrono::high_resolution_clock::now();
             SumTime1 += std::chrono::duration<float, std::milli>(end1 - start1).count();
+            SumTime2 += std::chrono::duration<float, std::milli>(end1 - start2).count();
+            SumTime3 += std::chrono::duration<float, std::milli>(end1 - start3).count();
         }
         auto end_iteration = std::chrono::high_resolution_clock::now();
-        duration_iteration = std::chrono::duration<float, std::milli> (end_iteration - start_iteration).count();
+        duration_iteration += std::chrono::duration<float, std::milli> (end_iteration - start_iteration).count();
         
     }
     else {
@@ -4013,9 +4034,9 @@ void start_ant_classic() {
     }
     delete[] hashTable; // Освобождаем память
     auto end_all = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end_all - start;
-    std::cout << "Time classical ACO;" << duration.count() << "; " << duration_iteration << "; " << SumTime1 << "; " << "0" << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
-    logFile << "Time classical ACO;" << duration.count() << "; " << duration_iteration << "; " << SumTime1 << "; " << "0" << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    duration += std::chrono::duration<double>  (end_all - start).count();
+    std::cout << "Time classical ACO;" << duration << "; " << duration_iteration <<  "; " << SumTime1 << "; " << SumTime2  << "; " << SumTime3 << "; " << SumTime4 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time classical ACO;" << duration << "; " << duration_iteration <<  "; " << SumTime1 << "; " << SumTime2  << "; " << SumTime3 << "; " << SumTime4 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
 
 }
 
@@ -4024,7 +4045,10 @@ void start_ant_classic_non_hash() {
     double global_maxOf = -std::numeric_limits<double>::max();
     double global_minOf = std::numeric_limits<double>::max();
     float SumTime1 = 0.0f;
+    float SumTime2 = 0.0f;
+    float SumTime3 = 0.0f;
     float duration_iteration = 0.0f;
+    float duration = 0.0f;
     int kol_hash_fail = 0;
     //std::cout << " Go: ";
 
@@ -4050,7 +4074,7 @@ void start_ant_classic_non_hash() {
                     std::cout << std::endl;
                 }
             }
-
+            auto start2 = std::chrono::high_resolution_clock::now();
             Ant ants[ANT_SIZE]; // Массив муравьев
             for (int nom_ant = 0; nom_ant < ANT_SIZE; nom_ant++) { // Проходим по всем агентам
                 //std::cout << " nom_ant:" << nom_ant;
@@ -4070,6 +4094,7 @@ void start_ant_classic_non_hash() {
                     ants[nom_ant].printInfo(); // Вывод информации о муравье
                 }
             }
+            auto start3 = std::chrono::high_resolution_clock::now();
             //std::cout << std::endl;
             //Обновление феромона
             pg.DecreasePheromon(PARAMETR_RO);
@@ -4084,18 +4109,20 @@ void start_ant_classic_non_hash() {
             }
             auto end1 = std::chrono::high_resolution_clock::now();
             SumTime1 += std::chrono::duration<float, std::milli>(end1 - start1).count();
+            SumTime2 += std::chrono::duration<float, std::milli>(end1 - start2).count();
+            SumTime3 += std::chrono::duration<float, std::milli>(end1 - start3).count();
         }
         auto end_iteration = std::chrono::high_resolution_clock::now();
-        duration_iteration = std::chrono::duration<float, std::milli>(end_iteration - start_iteration).count();
+        duration_iteration += std::chrono::duration<float, std::milli>(end_iteration - start_iteration).count();
 
     }
     else {
         std::cerr << "Graph Load Error" << std::endl;
     }
     auto end_all = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end_all - start;
-    std::cout << "Time classical ACO non hash;" << duration.count() << "; " << duration_iteration << "; " << SumTime1 << "; " << "0" << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
-    logFile << "Time classical ACO non hash;" << duration.count() << "; " << duration_iteration << "; " << SumTime1 << "; " << "0" << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    duration += std::chrono::duration<double>(end_all - start).count();
+    std::cout << "Time classical ACO non hash;" << duration << "; " << duration_iteration << "; " << SumTime1 << "; " << SumTime2 << "; " << SumTime3 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time classical ACO non hash;" << duration << "; " << duration_iteration << "; " << SumTime1 << "; " << SumTime2 << "; " << SumTime3 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
 
 }
 
