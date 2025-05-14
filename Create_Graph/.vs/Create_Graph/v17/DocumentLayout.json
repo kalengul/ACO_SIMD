@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Create_Graph\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{9A9AFABA-58F2-46CC-A771-156B529F1D34}|Create_Graph.vcxproj|C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Create_Graph\\Create_Graph.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{9A9AFABA-58F2-46CC-A771-156B529F1D34}|Create_Graph.vcxproj|solutionrelative:Create_Graph.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Create_Graph.cpp",
+              "DocumentMoniker": "C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Create_Graph\\Create_Graph.cpp",
+              "RelativeDocumentMoniker": "Create_Graph.cpp",
+              "ToolTip": "C:\\Programs\\ACO_Cluster\\CUDA_test_c\u002B\u002B\\Create_Graph\\Create_Graph.cpp",
+              "RelativeToolTip": "Create_Graph.cpp",
+              "ViewState": "AQIAAAwAAAAAAAAAAAAAAA4AAAAbAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-05-13T08:54:47.044Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
