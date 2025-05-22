@@ -194,11 +194,11 @@ __device__ unsigned long long betterHashFunction(unsigned long long key) {
 }
 
 // ----------------- Key Generation Function -----------------
-__device__ unsigned long long generateKey(const double* agent_node, int bx) {
+__device__ unsigned long long generateKey(const int* agent_node, int bx) {
     unsigned long long key = 0;
     unsigned long long factor = 1;
     for (int i = 0; i < PARAMETR_SIZE; i++) {
-        int val = static_cast<int>(agent_node[bx * PARAMETR_SIZE + i]);
+        int val = agent_node[bx * PARAMETR_SIZE + i];
         key += val * factor;
         factor *= MAX_VALUE_SIZE;
     }
@@ -206,7 +206,7 @@ __device__ unsigned long long generateKey(const double* agent_node, int bx) {
 }
 
 // ----------------- Hash Table Search with Quadratic Probing -----------------
-__device__ double getCachedResultOptimized(HashEntry* hashTable, const double* agent_node, int bx) {
+__device__ double getCachedResultOptimized(HashEntry* hashTable, const int* agent_node, int bx) {
     unsigned long long key = generateKey(agent_node, bx);
     unsigned long long idx = betterHashFunction(key);
     int i = 1;
@@ -217,14 +217,14 @@ __device__ double getCachedResultOptimized(HashEntry* hashTable, const double* a
         if (hashTable[idx].key == ZERO_HASH_RESULT) {
             return -1.0; // Not found and slot is empty
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i);
+        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
         i++;
     }
     return -1.0; // Not found after maximum probes
 }
 
 // ----------------- Hash Table Insertion with Quadratic Probing -----------------
-__device__ void saveToCacheOptimized(HashEntry* hashTable, const double* agent_node, int bx, double value) {
+__device__ void saveToCacheOptimized(HashEntry* hashTable, const int* agent_node, int bx, double value) {
     unsigned long long key = generateKey(agent_node, bx);
     unsigned long long idx = betterHashFunction(key);
     int i = 1;
@@ -238,7 +238,7 @@ __device__ void saveToCacheOptimized(HashEntry* hashTable, const double* agent_n
             hashTable[idx].value = value;
             return;
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i);
+        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
         i++;
     }
     // If the table is full, handle the error or ignore
@@ -355,7 +355,7 @@ __global__ void go_mass_probability_only(double* pheromon, double* kol_enter, do
     }
 }
 
-__device__ void go_ant_path(int tx, int bx, curandState* state, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node) {
+__device__ void go_ant_path(int tx, int bx, curandState* state, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node) {
 
     double randomValue = curand_uniform(state);
     //Определение номера значения
@@ -366,12 +366,12 @@ __device__ void go_ant_path(int tx, int bx, curandState* state, double* parametr
     __syncthreads();
     // Запись подматрицы блока в глобальную память
     // каждый поток записывает один элемент
-    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+    agent_node[bx * PARAMETR_SIZE + tx] = k;
     agent[tx] = parametr[tx * MAX_VALUE_SIZE + k];
     //agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
 }
 
-__device__ void go_ant_path_random_values(int tx, int bx, double* random_values, int nom_iteration, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node) {
+__device__ void go_ant_path_random_values(int tx, int bx, double* random_values, int nom_iteration, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node) {
     int k = 0;
     while (k < MAX_VALUE_SIZE && random_values[(bx * PARAMETR_SIZE + tx) * (nom_iteration + 1)] > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) { //
         k++;
@@ -379,11 +379,11 @@ __device__ void go_ant_path_random_values(int tx, int bx, double* random_values,
     __syncthreads();
     // Запись подматрицы блока в глобальную память
     // каждый поток записывает один элемент
-    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+    agent_node[bx * PARAMETR_SIZE + tx] = k;
     agent[tx] = parametr[tx * MAX_VALUE_SIZE + k];
 }
 
-__global__ void go_all_agent_only(double* parametr, double* norm_matrix_probability, double* random_values,double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_only(double* parametr, double* norm_matrix_probability, double* random_values,int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if  (bx < ANT_SIZE) {
         //int tx = threadIdx.x;  
@@ -455,7 +455,7 @@ __global__ void go_all_agent_only(double* parametr, double* norm_matrix_probabil
     }
 }
 
-__global__ void go_all_agent_only_non_hash(double* parametr, double* norm_matrix_probability, double* random_values, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_only_non_hash(double* parametr, double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx < ANT_SIZE) {
         //int tx = threadIdx.x;  
@@ -479,7 +479,7 @@ __global__ void go_all_agent_only_non_hash(double* parametr, double* norm_matrix
     }
 }
 
-__global__ void go_all_agent(double* parametr, double* norm_matrix_probability, double* random_values, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev , int* kol_hash_fail) {
+__global__ void go_all_agent(double* parametr, double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev , int* kol_hash_fail) {
     int bx = blockIdx.x;  // Параллелизм по муравьям
     int tx = threadIdx.x; // Параллелизм по параметрам
     double agent[PARAMETR_SIZE];
@@ -547,7 +547,7 @@ __global__ void go_all_agent(double* parametr, double* norm_matrix_probability, 
     }
 }
 
-__global__ void go_all_agent_only_block(double* parametr, double* norm_matrix_probability, double* random_values, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_only_block(double* parametr, double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x;  // Параллелизм по муравьям
     //int tx = threadIdx.x; // Параллелизм по параметрам 
     double agent[PARAMETR_SIZE];
@@ -618,7 +618,7 @@ __global__ void go_all_agent_only_block(double* parametr, double* norm_matrix_pr
     
 }
 
-__global__ void go_all_agent_non_hash(double* parametr, double* norm_matrix_probability, double* random_values, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_non_hash(double* parametr, double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x;  // индекс  (столбца)
     int tx = threadIdx.x; // индекс  (агента) 
     double agent[PARAMETR_SIZE];
@@ -639,7 +639,7 @@ __global__ void go_all_agent_non_hash(double* parametr, double* norm_matrix_prob
     atomicMin(minOf_dev, OF[bx]);
 }
 
-__device__ void add_pheromon_iteration(int tx, double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+__device__ void add_pheromon_iteration(int tx, double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     //Испарение весов-феромона
     for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
         pheromon[MAX_VALUE_SIZE * tx + i] = pheromon[MAX_VALUE_SIZE * tx + i] * PARAMETR_RO;
@@ -647,7 +647,7 @@ __device__ void add_pheromon_iteration(int tx, double* pheromon, double* kol_ent
     //Добавление весов-феромона
     for (int i = 0; i < ANT_SIZE; ++i) {
         if (OF[i]!=ZERO_HASH_RESULT) {
-        int k = int(agent_node[i * PARAMETR_SIZE + tx]);
+        int k = agent_node[i * PARAMETR_SIZE + tx];
         kol_enter[MAX_VALUE_SIZE * tx + k]++;
         //        pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q * OF[i]; //MAX
                 //if (OF[i] == 0) { OF[i] = 0.0000001; }
@@ -658,29 +658,29 @@ __device__ void add_pheromon_iteration(int tx, double* pheromon, double* kol_ent
         }
     }
     //        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-    //           kol_enter[MAX_VALUE_SIZE * i + int(agent_node[tx * PARAMETR_SIZE + i])]++;
+    //           kol_enter[MAX_VALUE_SIZE * i + agent_node[tx * PARAMETR_SIZE + i]]++;
 }
 
-__global__ void add_pheromon_iteration_thread(double* pheromon, double* kol_enter, double* agent_node, double* OF){
+__global__ void add_pheromon_iteration_thread(double* pheromon, double* kol_enter, int* agent_node, double* OF){
 //    int bx = blockIdx.x; // индекс блока (не требуется)
     int tx = threadIdx.x; // индекс потока (параметра)
     add_pheromon_iteration(tx, pheromon, kol_enter, agent_node, OF);
 }
 
-__global__ void add_pheromon_iteration_block(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+__global__ void add_pheromon_iteration_block(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     int tx = blockIdx.x; // индекс блока (не требуется)
     //int tx = threadIdx.x; // индекс потока (параметра)
     add_pheromon_iteration(tx, pheromon, kol_enter, agent_node, OF);
 }
 
-__global__ void add_pheromon_iteration_only(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+__global__ void add_pheromon_iteration_only(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     int tx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (параметра) 
     if (tx < PARAMETR_SIZE) {
         add_pheromon_iteration(tx, pheromon, kol_enter, agent_node, OF);
     }
 }
 
-__global__ void go_mass_probability_and_add_pheromon_iteration(double* pheromon, double* kol_enter, double* norm_matrix_probability, double* agent_node, double* OF) {
+__global__ void go_mass_probability_and_add_pheromon_iteration(double* pheromon, double* kol_enter, double* norm_matrix_probability, int* agent_node, double* OF) {
     //    int bx = blockIdx.x; // индекс блока (не требуется)
     int tx = threadIdx.x; // индекс потока (столбца)
     //Испарение весов-феромона
@@ -689,7 +689,7 @@ __global__ void go_mass_probability_and_add_pheromon_iteration(double* pheromon,
     go_mass_probability(tx, pheromon, kol_enter, norm_matrix_probability);
 }
 
-__global__ void go_mass_probability_and_add_pheromon_iteration_block(double* pheromon, double* kol_enter, double* norm_matrix_probability, double* agent_node, double* OF) {
+__global__ void go_mass_probability_and_add_pheromon_iteration_block(double* pheromon, double* kol_enter, double* norm_matrix_probability, int* agent_node, double* OF) {
     int tx = blockIdx.x; // индекс блока (не требуется)
     //int tx = threadIdx.x; // индекс потока (столбца)
     //Испарение весов-феромона
@@ -698,7 +698,7 @@ __global__ void go_mass_probability_and_add_pheromon_iteration_block(double* phe
     go_mass_probability(tx, pheromon, kol_enter, norm_matrix_probability);
 }
 
-__global__ void go_mass_probability_and_add_pheromon_iteration_only(double* pheromon, double* kol_enter, double* norm_matrix_probability, double* agent_node, double* OF) {
+__global__ void go_mass_probability_and_add_pheromon_iteration_only(double* pheromon, double* kol_enter, double* norm_matrix_probability, int* agent_node, double* OF) {
     int tx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (параметра) 
     if (tx < PARAMETR_SIZE) {
         //Испарение весов-феромона
@@ -708,7 +708,7 @@ __global__ void go_mass_probability_and_add_pheromon_iteration_only(double* pher
     }
 }
 
-__global__ void go_all_agent_opt(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_opt(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x; // индекс блока (агента)
     int tx = threadIdx.x; // индекс потока (столбца)
     unsigned long long  seed = bx * ANT_SIZE + tx * PARAMETR_SIZE + clock64();
@@ -766,7 +766,7 @@ __global__ void go_all_agent_opt(double* pheromon, double* kol_enter, int* gpuTi
     }
 }
 
-__global__ void go_all_agent_opt_non_hash(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_opt_non_hash(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = blockIdx.x; // индекс блока (агента)
     int tx = threadIdx.x; // индекс потока (столбца)
     unsigned long long seed = 1230 + bx * ANT_SIZE + tx * PARAMETR_SIZE + clock64();
@@ -784,7 +784,7 @@ __global__ void go_all_agent_opt_non_hash(double* pheromon, double* kol_enter, i
     }
 }
 
-__global__ void go_all_agent_opt_only(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_opt_only(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx<ANT_SIZE){
     //int tx = threadIdx.x; // индекс потока (столбца)
@@ -867,7 +867,7 @@ __global__ void go_all_agent_opt_only(double* pheromon, double* kol_enter, int* 
 }
 }
 
-__global__ void go_all_agent_opt_only_non_hash(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_opt_only_non_hash(double* pheromon, double* kol_enter, int* gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx < ANT_SIZE) {
         //int tx = threadIdx.x; // индекс потока (столбца)
@@ -894,28 +894,28 @@ __global__ void go_all_agent_opt_only_non_hash(double* pheromon, double* kol_ent
     }
 }
 
-__device__ void go_ant_path_transp(int tx, int bx, curandState* state, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node) {
+__device__ void go_ant_path_transp(int tx, int bx, curandState* state, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node) {
     double randomValue = curand_uniform(state);
     int k = 0;
     while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[tx + k * PARAMETR_SIZE]) {
         k++;
     }
     __syncthreads();
-    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+    agent_node[bx * PARAMETR_SIZE + tx] = k;
     agent[tx] = parametr[tx + k * PARAMETR_SIZE];
 }
 
-__device__ void go_ant_path_transp_random_values(int tx, int bx, double* random_values, int nom_iteration, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node) {
+__device__ void go_ant_path_transp_random_values(int tx, int bx, double* random_values, int nom_iteration, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node) {
     int k = 0;
     while (k < MAX_VALUE_SIZE && random_values[(bx * PARAMETR_SIZE + tx) * (nom_iteration + 1)] > norm_matrix_probability[tx + k * PARAMETR_SIZE]) { //
         k++;
     }
     __syncthreads();
-    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+    agent_node[bx * PARAMETR_SIZE + tx] = k;
     agent[tx] = parametr[tx + k * PARAMETR_SIZE];
 }
 
-__global__ void go_all_agent_only_transp(double* parametr, double* norm_matrix_probability, double* random_values, double* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_only_transp(double* parametr, double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx < ANT_SIZE) {
         //int tx = threadIdx.x;  
@@ -986,7 +986,7 @@ __global__ void go_all_agent_only_transp(double* parametr, double* norm_matrix_p
         }
     }
 }
-__global__ void go_all_agent_only_transp_non_hash(double* parametr, double* norm_matrix_probability, double* random_values, double* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
+__global__ void go_all_agent_only_transp_non_hash(double* parametr, double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx < ANT_SIZE) { 
         double agent[PARAMETR_SIZE];
@@ -1082,7 +1082,7 @@ static int start_CUDA() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
 
     int numBytes_ant = ANT_SIZE * sizeof(double);
@@ -1096,7 +1096,7 @@ static int start_CUDA() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -1138,7 +1138,7 @@ static int start_CUDA() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -1151,7 +1151,7 @@ static int start_CUDA() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -1281,7 +1281,7 @@ static int start_CUDA_Time() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -1293,7 +1293,7 @@ static int start_CUDA_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -1335,7 +1335,7 @@ static int start_CUDA_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -1348,7 +1348,7 @@ static int start_CUDA_Time() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -1406,7 +1406,7 @@ static int start_CUDA_Time() {
         go_all_agent << <kol_ant, kol_parametr >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -1552,7 +1552,7 @@ static int start_CUDA_only_block_Time() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -1564,7 +1564,7 @@ static int start_CUDA_only_block_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -1605,7 +1605,7 @@ static int start_CUDA_only_block_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -1618,7 +1618,7 @@ static int start_CUDA_only_block_Time() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -1676,7 +1676,7 @@ static int start_CUDA_only_block_Time() {
         go_all_agent_only_block << <kol_ant, 1 >> > ( parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -1822,7 +1822,7 @@ static int start_CUDA_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -1834,7 +1834,7 @@ static int start_CUDA_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -1870,7 +1870,7 @@ static int start_CUDA_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -1884,7 +1884,7 @@ static int start_CUDA_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     //CUDA_CHECK(cudaMalloc((void**)&cache_dev, TABLE_SIZE * sizeof(HashEntry)));
 
     // Установка конфигурации запуска ядра
@@ -1921,7 +1921,7 @@ static int start_CUDA_non_hash() {
         go_all_agent_non_hash << <kol_ant, kol_parametr >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev,  ant_parametr_dev, antOFdev,maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -2068,7 +2068,7 @@ static int start_CUDA_ant() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2081,7 +2081,7 @@ static int start_CUDA_ant() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -2122,7 +2122,7 @@ static int start_CUDA_ant() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -2137,7 +2137,7 @@ static int start_CUDA_ant() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -2202,7 +2202,7 @@ static int start_CUDA_ant() {
         go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -2321,7 +2321,7 @@ static int start_CUDA_ant() {
 
 //объявление функций CPU
 void go_mass_probability_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability);
-void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF);
+void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF);
 
 static int start_CUDA_ant_add_CPU_Time() {
     auto start_temp = std::chrono::high_resolution_clock::now();
@@ -2353,7 +2353,7 @@ static int start_CUDA_ant_add_CPU_Time() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2365,7 +2365,7 @@ static int start_CUDA_ant_add_CPU_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* global_maxOf_in_device = new double;
@@ -2405,7 +2405,7 @@ static int start_CUDA_ant_add_CPU_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -2421,7 +2421,7 @@ static int start_CUDA_ant_add_CPU_Time() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -2439,7 +2439,7 @@ static int start_CUDA_ant_add_CPU_Time() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start, 0));
@@ -2498,7 +2498,7 @@ static int start_CUDA_ant_add_CPU_Time() {
         CUDA_CHECK(cudaEventSynchronize(stop));
         cudaEventElapsedTime(&gpuTime5, start5, stop);
         SumgpuTime5 = SumgpuTime5 + gpuTime5;
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
@@ -2642,7 +2642,8 @@ static int start_CUDA_ant_add_CPU() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    //int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); 
+    int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2655,7 +2656,7 @@ static int start_CUDA_ant_add_CPU() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* global_maxOf_in_device = new double;
@@ -2694,7 +2695,7 @@ static int start_CUDA_ant_add_CPU() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -2711,7 +2712,7 @@ static int start_CUDA_ant_add_CPU() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -2729,7 +2730,7 @@ static int start_CUDA_ant_add_CPU() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
  
     CUDA_CHECK(cudaEventRecord(start, 0));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -2746,7 +2747,7 @@ static int start_CUDA_ant_add_CPU() {
 
         go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
        
         // Обновление весов-феромонов
@@ -2836,7 +2837,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2848,7 +2849,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -2889,7 +2890,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -2912,9 +2913,9 @@ static int start_CUDA_ant_add_CPU_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start, 0));
@@ -2970,10 +2971,10 @@ static int start_CUDA_ant_add_CPU_non_hash() {
         CUDA_CHECK(cudaEventSynchronize(stop));
         cudaEventElapsedTime(&gpuTime5, start5, stop);
         SumgpuTime5 = SumgpuTime5 + gpuTime5;
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -3068,7 +3069,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
 }
 
 //объявление функций CPU
-void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail);
+void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail);
 void initializeHashTable_non_cuda(HashEntry* hashTable, int size);
 
 static int start_CUDA_ant_add_CPU2_Time() {
@@ -3102,7 +3103,8 @@ static int start_CUDA_ant_add_CPU2_Time() {
     int kol_hash_fail = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    //int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); 
+    int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3114,7 +3116,7 @@ static int start_CUDA_ant_add_CPU2_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -3140,7 +3142,7 @@ static int start_CUDA_ant_add_CPU2_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     
     int numBlocksParametr = 0;
     int numThreadsParametr = 0;
@@ -3150,7 +3152,7 @@ static int start_CUDA_ant_add_CPU2_Time() {
     CUDA_CHECK(cudaMalloc((void**)&norm_matrix_probability_dev, numBytes_matrix_graph));
 
     CUDA_CHECK(cudaMalloc((void**)&antOFdev, numBytes_ant));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     const int threadsPerBlock = MAX_THREAD_CUDA;
     if (threadsPerBlock < MAX_VALUE_SIZE) {
@@ -3194,12 +3196,12 @@ static int start_CUDA_ant_add_CPU2_Time() {
         auto end_CPU_4 = std::chrono::high_resolution_clock::now();
         SumgpuTime4 += std::chrono::duration<float, std::milli>(end_CPU_4 - start_CPU_2).count();
         //go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
-        CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
         CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
 
 
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
@@ -3321,7 +3323,7 @@ __constant__ double pheromon_value_dev_const[MAX_VALUE_SIZE * PARAMETR_SIZE];
 __constant__ double kol_enter_value_dev_const[MAX_VALUE_SIZE * PARAMETR_SIZE];
 __constant__ double norm_matrix_probability_dev_const[MAX_VALUE_SIZE * PARAMETR_SIZE];
 
-__device__ void go_ant_path_optMem(int tx, int bx, curandState* state, double* agent, double* agent_node) {
+__device__ void go_ant_path_optMem(int tx, int bx, curandState* state, double* agent, int* agent_node) {
 
     double randomValue = curand_uniform(state);
     //Определение номера значения
@@ -3332,11 +3334,11 @@ __device__ void go_ant_path_optMem(int tx, int bx, curandState* state, double* a
     __syncthreads();
     // Запись подматрицы блока в глобальную память
     // каждый поток записывает один элемент
-    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+    agent_node[bx * PARAMETR_SIZE + tx] = k;
     agent[bx * PARAMETR_SIZE + tx] = parametr_value_dev_const[tx * MAX_VALUE_SIZE + k];
 }
 
-__global__ void go_all_agent_only_optMem(double* agent_node, double* OF, HashEntry* hashTable, int* kol_hash_fail) {
+__global__ void go_all_agent_only_optMem(int* agent_node, double* OF, HashEntry* hashTable, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
     if (bx < ANT_SIZE) {
         double agent[PARAMETR_SIZE * ANT_SIZE];
@@ -3421,7 +3423,7 @@ static int start_CUDA_ant_add_CPU_optMem() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3433,7 +3435,7 @@ static int start_CUDA_ant_add_CPU_optMem() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -3453,7 +3455,7 @@ static int start_CUDA_ant_add_CPU_optMem() {
     // Выделение памяти на устройстве
 
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -3464,7 +3466,7 @@ static int start_CUDA_ant_add_CPU_optMem() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -3506,7 +3508,7 @@ static int start_CUDA_ant_add_CPU_optMem() {
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         auto start3 = std::chrono::high_resolution_clock::now();
         // Обновление весов-феромонов
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         add_pheromon_iteration_non_cuda(pheromon_value, kol_enter_value, ant_parametr, antOF);
         
@@ -3618,7 +3620,7 @@ static int start_CUDA_ant_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3631,7 +3633,7 @@ static int start_CUDA_ant_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -3672,7 +3674,7 @@ static int start_CUDA_ant_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -3696,7 +3698,7 @@ static int start_CUDA_ant_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Установка конфигурации запуска ядра
     dim3 kol_parametr(PARAMETR_SIZE);
@@ -3748,7 +3750,7 @@ static int start_CUDA_ant_non_hash() {
         go_all_agent_only_non_hash << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -3895,7 +3897,7 @@ static int start_CUDA_ant_par() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3907,7 +3909,7 @@ static int start_CUDA_ant_par() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -3948,7 +3950,7 @@ static int start_CUDA_ant_par() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -3967,7 +3969,7 @@ static int start_CUDA_ant_par() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -4042,7 +4044,7 @@ static int start_CUDA_ant_par() {
         go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -4184,7 +4186,7 @@ static int start_CUDA_opt() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -4197,7 +4199,7 @@ static int start_CUDA_opt() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -4239,7 +4241,7 @@ static int start_CUDA_opt() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -4252,7 +4254,7 @@ static int start_CUDA_opt() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -4274,7 +4276,7 @@ static int start_CUDA_opt() {
 
     }
 
-    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(minOf_dev, &global_minOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -4392,7 +4394,7 @@ static int start_CUDA_opt_Time() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -4405,7 +4407,7 @@ static int start_CUDA_opt_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -4447,7 +4449,7 @@ static int start_CUDA_opt_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -4460,7 +4462,7 @@ static int start_CUDA_opt_Time() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -4483,7 +4485,7 @@ static int start_CUDA_opt_Time() {
     }
 
     CUDA_CHECK(cudaEventRecord(start, 0));
-    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(minOf_dev, &global_minOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -4530,7 +4532,7 @@ static int start_CUDA_opt_Time() {
         go_all_agent << <kol_ant, kol_parametr >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -4652,7 +4654,7 @@ static int start_CUDA_opt_non_hash() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -4665,7 +4667,7 @@ static int start_CUDA_opt_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -4701,7 +4703,7 @@ static int start_CUDA_opt_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -4715,7 +4717,7 @@ static int start_CUDA_opt_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Установка конфигурации запуска ядра
     dim3 kol_parametr(PARAMETR_SIZE);
@@ -4731,7 +4733,7 @@ static int start_CUDA_opt_non_hash() {
     }
 
     CUDA_CHECK(cudaEventRecord(start, 0));
-    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(minOf_dev, &global_minOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -4778,7 +4780,7 @@ static int start_CUDA_opt_non_hash() {
         go_all_agent_non_hash << <kol_ant, kol_parametr >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -4899,7 +4901,7 @@ static int start_CUDA_opt_ant() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -4911,7 +4913,7 @@ static int start_CUDA_opt_ant() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -4952,7 +4954,7 @@ static int start_CUDA_opt_ant() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -4969,7 +4971,7 @@ static int start_CUDA_opt_ant() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -5000,7 +5002,7 @@ static int start_CUDA_opt_ant() {
     }
 
     CUDA_CHECK(cudaEventRecord(start, 0));
-    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(minOf_dev, &global_minOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -5046,7 +5048,7 @@ static int start_CUDA_opt_ant() {
         go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -5168,7 +5170,7 @@ static int start_CUDA_opt_ant_non_hash() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5180,7 +5182,7 @@ static int start_CUDA_opt_ant_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -5221,7 +5223,7 @@ static int start_CUDA_opt_ant_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -5245,7 +5247,7 @@ static int start_CUDA_opt_ant_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Установка конфигурации запуска ядра
     dim3 kol_parametr(PARAMETR_SIZE);
@@ -5261,7 +5263,7 @@ static int start_CUDA_opt_ant_non_hash() {
     }
 
     CUDA_CHECK(cudaEventRecord(start, 0));
-    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(minOf_dev, &global_minOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -5308,7 +5310,7 @@ static int start_CUDA_opt_ant_non_hash() {
         go_all_agent_only_non_hash << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -5429,7 +5431,7 @@ static int start_CUDA_opt_ant_par() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5442,7 +5444,7 @@ static int start_CUDA_opt_ant_par() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -5483,7 +5485,7 @@ static int start_CUDA_opt_ant_par() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -5502,7 +5504,7 @@ static int start_CUDA_opt_ant_par() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -5528,7 +5530,7 @@ static int start_CUDA_opt_ant_par() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     //Заполнение начальными значениями ant_parametr_dev, antOFdev
@@ -5541,7 +5543,7 @@ static int start_CUDA_opt_ant_par() {
     }
 
     CUDA_CHECK(cudaEventRecord(start, 0));
-    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytes_matrix_ant, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(ant_parametr_dev, ant_parametr, numBytesInt_matrix_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(antOFdev, antOF, numBytes_ant, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(minOf_dev, &global_minOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -5588,7 +5590,7 @@ static int start_CUDA_opt_ant_par() {
         go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -5698,7 +5700,7 @@ static int start_CUDA_opt_one_GPU() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5711,7 +5713,7 @@ static int start_CUDA_opt_one_GPU() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -5735,7 +5737,7 @@ static int start_CUDA_opt_one_GPU() {
     double* antdev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -5751,7 +5753,7 @@ static int start_CUDA_opt_one_GPU() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     CUDA_CHECK(cudaMalloc((void**)&gpuTime_dev, sizeof(int)));
 
     // Allocate memory for the hash table on the device
@@ -5836,7 +5838,7 @@ static int start_CUDA_opt_one_GPU_non_hash() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5849,7 +5851,7 @@ static int start_CUDA_opt_one_GPU_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -5873,7 +5875,7 @@ static int start_CUDA_opt_one_GPU_non_hash() {
     double* antdev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -5889,7 +5891,7 @@ static int start_CUDA_opt_one_GPU_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     CUDA_CHECK(cudaMalloc((void**)&gpuTime_dev, sizeof(int)));
 
     // Установка конфигурации запуска ядра
@@ -5968,7 +5970,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5981,7 +5983,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -6007,7 +6009,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     double* antdev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -6023,7 +6025,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     CUDA_CHECK(cudaMalloc((void**)&gpuTime_dev, sizeof(int)));
 
     // Allocate memory for the hash table on the device
@@ -6042,7 +6044,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start));
@@ -6120,7 +6122,7 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -6133,7 +6135,7 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -6166,7 +6168,7 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     double* antdev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -6182,11 +6184,11 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     CUDA_CHECK(cudaMalloc((void**)&gpuTime_dev, sizeof(int)));
 
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start, 0));
@@ -6288,11 +6290,11 @@ unsigned long long betterHashFunction_non_cuda(unsigned long long key) {
 }
 
 // ----------------- Key Generation Function -----------------
-unsigned long long generateKey_non_cuda(const double* agent_node, int bx) {
+unsigned long long generateKey_non_cuda(const int* agent_node, int bx) {
     unsigned long long key = 0;
     unsigned long long factor = 1;
     for (int i = 0; i < PARAMETR_SIZE; i++) {
-        int val = static_cast<int>(agent_node[bx * PARAMETR_SIZE + i]);
+        int val = agent_node[bx * PARAMETR_SIZE + i];
 //        std::cout << val << " ";
         key += val * factor;
         factor *= MAX_VALUE_SIZE;
@@ -6303,21 +6305,21 @@ unsigned long long generateKey_non_cuda(const double* agent_node, int bx) {
 }
 
 // ---------------- - Hash Table Search with Quadratic Probing---------------- -
-double getCachedResultOptimized_omp(HashEntry * hashTable, const double* agent_node, int bx) {
+double getCachedResultOptimized_omp(HashEntry * hashTable, const int* agent_node, int bx) {
     unsigned long long key = generateKey_non_cuda(agent_node, bx);
     unsigned long long idx = betterHashFunction_non_cuda(key);
 
 #pragma omp parallel for
     for (int i = 1; i <= MAX_PROBES; i++) {
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}
-        unsigned long long probe_idx = new_idx;
+        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx;
+
         // Используем критическую секцию для безопасного доступа к хэш-таблице
 #pragma omp critical
         {
-            if (hashTable[probe_idx].key == key) {
-                return hashTable[probe_idx].value; // Found
+            if (hashTable[idx].key == key) {
+                return hashTable[idx].value; // Found
             }
-            if (hashTable[probe_idx].key == ZERO_HASH_RESULT) {
+            if (hashTable[idx].key == ZERO_HASH_RESULT) {
                 return -1.0; // Not found and slot is empty
             }
         }
@@ -6326,7 +6328,7 @@ double getCachedResultOptimized_omp(HashEntry * hashTable, const double* agent_n
 }
 
 // ----------------- Hash Table Search with Quadratic Probing -----------------
-double getCachedResultOptimized_non_cuda(HashEntry* hashTable, const double* agent_node, int bx) {
+double getCachedResultOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, int bx) {
     unsigned long long key = generateKey_non_cuda(agent_node, bx);
     unsigned long long idx = betterHashFunction_non_cuda(key);
     int i = 1;
@@ -6345,31 +6347,30 @@ double getCachedResultOptimized_non_cuda(HashEntry* hashTable, const double* age
 }
 
 // ----------------- Hash Table Insertion with Quadratic Probing -----------------
-void saveToCacheOptimized_omp(HashEntry* hashTable, const double* agent_node, int bx, double value) {
+void saveToCacheOptimized_omp(HashEntry* hashTable, const int* agent_node, int bx, double value) {
     unsigned long long key = generateKey_non_cuda(agent_node, bx);
     unsigned long long idx = betterHashFunction_non_cuda(key);
 
 #pragma omp parallel for
     for (int i = 1; i <= MAX_PROBES; i++) {
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}
-        unsigned long long probe_idx = new_idx;
+        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx;
         unsigned long long expected = ZERO_HASH_RESULT;
         unsigned long long old_key;
 
         // Используем критическую секцию для безопасного доступа к хэш-таблице
 #pragma omp critical
         {
-            old_key = hashTable[probe_idx].key;
+            old_key = hashTable[idx].key;
 
             if (old_key == expected) {
                 // Successfully inserted
-                hashTable[probe_idx].key = key;
-                hashTable[probe_idx].value = value;
+                hashTable[idx].key = key;
+                hashTable[idx].value = value;
                 return;
             }
             else if (old_key == key) {
                 // Key already exists
-                hashTable[probe_idx].value = value; // Update value
+                hashTable[idx].value = value; // Update value
                 return;
             }
         }
@@ -6378,7 +6379,7 @@ void saveToCacheOptimized_omp(HashEntry* hashTable, const double* agent_node, in
 }
 
 // ----------------- Hash Table Insertion with Quadratic Probing -----------------
-void saveToCacheOptimized_non_cuda(HashEntry* hashTable, const double* agent_node, int bx, double value) {
+void saveToCacheOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, int bx, double value) {
     unsigned long long key = generateKey_non_cuda(agent_node, bx);
     unsigned long long idx = betterHashFunction_non_cuda(key);
     int i = 1;
@@ -6560,7 +6561,7 @@ void go_mass_probability_non_cuda(double* pheromon, double* kol_enter, double* n
 }
 
 // Функция для вычисления пути агентов на CPU с использованием OpenMP
-void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
+void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
     // Генератор случайных чисел
 
     {
@@ -6578,7 +6579,7 @@ void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probabi
                 }
 
                 // Запись подматрицы блока в глобальную память
-                agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                agent_node[bx * PARAMETR_SIZE + tx] = k;
                 agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
             }
             auto start = std::chrono::high_resolution_clock::now();
@@ -6618,7 +6619,7 @@ void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probabi
                             }
 
                             // Запись подматрицы блока в глобальную память
-                            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                            agent_node[bx * PARAMETR_SIZE + tx] = k;
                             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                         }
 
@@ -6643,7 +6644,7 @@ void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probabi
     }
 }
 
-void go_all_agent_omp_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
+void go_all_agent_omp_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
     // Генератор случайных чисел
 
     {
@@ -6661,7 +6662,7 @@ void go_all_agent_omp_non_hash(int gpuTime, double* parametr, double* norm_matri
                 }
 
                 // Запись подматрицы блока в глобальную память
-                agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                agent_node[bx * PARAMETR_SIZE + tx] = k;
                 agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
             }
                 auto start_OF = std::chrono::high_resolution_clock::now();
@@ -6673,7 +6674,7 @@ void go_all_agent_omp_non_hash(int gpuTime, double* parametr, double* norm_matri
 }
 
 // Функция для вычисления пути агентов на CPU
-void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 +gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -6689,7 +6690,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                 k++;
             }
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
         }
             auto end_ant = std::chrono::high_resolution_clock::now();
@@ -6744,7 +6745,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                         }
 
                         // Запись подматрицы блока в глобальную память
-                        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                        agent_node[bx * PARAMETR_SIZE + tx] = k;
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                     }
                         end_OF_2 = std::chrono::high_resolution_clock::now();
@@ -6782,7 +6783,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
 }
 
 // Функция для вычисления пути агентов на CPU
-void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -6797,7 +6798,7 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
             }
 
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
         }
         // Проверка наличия решения в Хэш-таблице
@@ -6833,7 +6834,7 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
                         }
 
                         // Запись подматрицы блока в глобальную память
-                        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                        agent_node[bx * PARAMETR_SIZE + tx] = k;
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                     }
                     // Проверка наличия решения в Хэш-таблице
@@ -6857,7 +6858,7 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
     }
 }
 
-void process_agent(int bx, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void process_agent(int bx, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
     std::default_random_engine generator(rand()); // Генератор случайных чисел
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
@@ -6870,7 +6871,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
         }
 
         // Запись подматрицы блока в глобальную память
-        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+        agent_node[bx * PARAMETR_SIZE + tx] = k;
         agent[bx * PARAMETR_SIZE + k] = parametr[tx * MAX_VALUE_SIZE + k];
     }
 
@@ -6910,7 +6911,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
                     }
 
                     // Запись подматрицы блока в глобальную память
-                    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                    agent_node[bx * PARAMETR_SIZE + tx] = k;
                     agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                 }
                 // Проверка наличия решения в Хэш-таблице
@@ -6934,7 +6935,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
     }
 }
 
-void go_all_agent_non_cuda_thread(double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, int num_threads) {
+void go_all_agent_non_cuda_thread(double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, int num_threads) {
     std::vector<std::thread> threads;
 
     for (int bx = 0; bx < ANT_SIZE; bx++) {
@@ -6958,7 +6959,7 @@ struct TaskParams {
     double* parametr;
     double* norm_matrix_probability;
     double* agent;
-    double* agent_node;
+    int* agent_node;
     double* OF;
     HashEntry* hashTable;
     int bx;
@@ -6972,7 +6973,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
     double* agent = params->agent;
-    double* agent_node = params->agent_node;
+    int* agent_node = params->agent_node;
     double* OF = params->OF;
     HashEntry* hashTable = params->hashTable;
     int bx = params->bx;
@@ -6986,7 +6987,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
             k++;
         }
 
-        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+        agent_node[bx * PARAMETR_SIZE + tx] = k;
         agent[bx * PARAMETR_SIZE + tx] = params->parametr[tx * MAX_VALUE_SIZE + k];
     }
 
@@ -7017,7 +7018,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
                         k++;
                     }
 
-                    agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                    agent_node[bx * PARAMETR_SIZE + tx] = k;
                     agent[bx * PARAMETR_SIZE + tx] = params->parametr[tx * MAX_VALUE_SIZE + k];
                 }
                 cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
@@ -7038,7 +7039,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParam) {
     return 0;
 }
 
-void go_all_agent_non_cuda(double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void go_all_agent_non_cuda(double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
     HANDLE threads[ANT_SIZE];
     TaskParams taskParams[ANT_SIZE];
 
@@ -7061,7 +7062,7 @@ void go_all_agent_non_cuda(double* parametr, double* norm_matrix_probability, do
     std::cout << "All tasks are completed." << std::endl;
 }
 
-void go_all_agent_MPI(int rank_MSI, int size_MSI, int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
+void go_all_agent_MPI(int rank_MSI, int size_MSI, int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -7076,7 +7077,7 @@ void go_all_agent_MPI(int rank_MSI, int size_MSI, int gpuTime, double* parametr,
             }
 
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
         }
 
@@ -7119,7 +7120,7 @@ void go_all_agent_MPI(int rank_MSI, int size_MSI, int gpuTime, double* parametr,
                         }
 
                         // Запись подматрицы блока в глобальную память
-                        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                        agent_node[bx * PARAMETR_SIZE + tx] = k;
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                     }
 
@@ -7149,7 +7150,7 @@ void go_all_agent_MPI(int rank_MSI, int size_MSI, int gpuTime, double* parametr,
     }
 }
 */
-void go_all_agent_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, int& kol_hash_fail, double& totalOFTime) {
+void go_all_agent_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, int& kol_hash_fail, double& totalOFTime) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -7164,7 +7165,7 @@ void go_all_agent_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_
             }
 
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
         }
         auto start_OF = std::chrono::high_resolution_clock::now();
@@ -7174,7 +7175,7 @@ void go_all_agent_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_
     }
 }
 
-void add_pheromon_iteration_omp(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_omp(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
 #pragma omp parallel for
     for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
@@ -7187,7 +7188,7 @@ void add_pheromon_iteration_omp(double* pheromon, double* kol_enter, double* age
     for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
         // Добавление весов-феромона
         for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = int(agent_node[i * PARAMETR_SIZE + tx]);
+            int k = agent_node[i * PARAMETR_SIZE + tx];
 #pragma omp atomic
             kol_enter[MAX_VALUE_SIZE * tx + k]++;
 
@@ -7200,7 +7201,7 @@ void add_pheromon_iteration_omp(double* pheromon, double* kol_enter, double* age
 }
 
 // Обновление слоев графа
-void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
     for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
         for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
@@ -7210,7 +7211,7 @@ void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, double
     for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
         // Добавление весов-феромона
         for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = int(agent_node[i * PARAMETR_SIZE + tx]);
+            int k = agent_node[i * PARAMETR_SIZE + tx];
             kol_enter[MAX_VALUE_SIZE * tx + k]++;
 //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * OF[i]; // MAX
 //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q / OF[i]; // MIN
@@ -7339,7 +7340,7 @@ void go_mass_probability_transp_non_cuda(double* pheromon, double* kol_enter, do
     delete[] svertka;
 }
 // Функция для вычисления пути агентов на CPU
-void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -7355,7 +7356,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
                 k++;
             }
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
         }
         auto end_ant = std::chrono::high_resolution_clock::now();
@@ -7410,7 +7411,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
                         }
 
                         // Запись подматрицы блока в глобальную память
-                        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                        agent_node[bx * PARAMETR_SIZE + tx] = k;
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
                     }
                     end_OF_2 = std::chrono::high_resolution_clock::now();
@@ -7446,7 +7447,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
         totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
     }
 }
-void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -7459,7 +7460,7 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
                 k++;
             }
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
         }
         // Проверка наличия решения в Хэш-таблице
@@ -7493,7 +7494,7 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
                             k++;
                         }
                         // Запись подматрицы блока в глобальную память
-                        agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+                        agent_node[bx * PARAMETR_SIZE + tx] = k;
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
                     }
                     // Проверка наличия решения в Хэш-таблице
@@ -7513,7 +7514,7 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
         //std::cout << bx << "bx " << kol_hash_fail << " " << OF[bx] << " ";
     }
 }
-void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, double* agent_node, double* OF, int& kol_hash_fail, double& totalOFTime) {
+void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, int& kol_hash_fail, double& totalOFTime) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -7527,7 +7528,7 @@ void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* parametr, double
             }
 
             // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = double(k);
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
         }
         auto start_OF = std::chrono::high_resolution_clock::now();
@@ -7537,7 +7538,7 @@ void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* parametr, double
     }
 }
 // Обновление слоев графа
-void add_pheromon_iteration_transp_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_transp_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
     for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
         for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
@@ -7546,7 +7547,7 @@ void add_pheromon_iteration_transp_non_cuda(double* pheromon, double* kol_enter,
     }
     for (int i = 0; i < ANT_SIZE; ++i) {
         for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            int k = int(agent_node[tx + i * PARAMETR_SIZE]);
+            int k = agent_node[tx + i * PARAMETR_SIZE];
             kol_enter[tx + k * PARAMETR_SIZE]++;
             //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * OF[i]; // MAX
             //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q / OF[i]; // MIN
@@ -7580,7 +7581,7 @@ int start_omp() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -7700,7 +7701,7 @@ int start_omp_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -7823,7 +7824,7 @@ int start_NON_CUDA_time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -7945,7 +7946,7 @@ int start_NON_CUDA_thread() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -8051,7 +8052,7 @@ int start_NON_CUDA() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -8126,7 +8127,7 @@ int start_NON_CUDA_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -8247,7 +8248,7 @@ int start_NON_CUDA_transp_time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -8368,7 +8369,7 @@ int start_NON_CUDA_transp() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -8444,7 +8445,7 @@ int start_NON_CUDA_transp_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -8853,7 +8854,7 @@ double getCachedResultOptimized_classic_ant(HashEntry_classic* hashTable, const 
         if (hashTable[idx].key.empty()) {
             return -1.0; // Не найдено и слот пуст
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx; // Квадратичное пробирование
+        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
         i++;
     }
     return -1.0; // Не найдено после максимального количества проб
@@ -8876,8 +8877,7 @@ void saveToCacheOptimized_classic_ant(HashEntry_classic* hashTable, const std::v
             hashTable[idx].value = value; // Обновление значения
             return;
         }
-
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx; // Квадратичное пробирование
+        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
         i++;
     }
     // Если таблица полна, обработайте ошибку или проигнорируйте
@@ -9344,7 +9344,7 @@ void go_mass_probability_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, d
 
 
 // Обновление слоев графа
-void add_pheromon_iteration_AVX_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_AVX_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
     __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
 
@@ -9365,7 +9365,7 @@ void add_pheromon_iteration_AVX_non_cuda(double* pheromon, double* kol_enter, do
     for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
         // Добавление весов-феромона
         for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = int(agent_node[i * PARAMETR_SIZE + tx]);
+            int k = agent_node[i * PARAMETR_SIZE + tx];
             if (k >= 0 && k < MAX_VALUE_SIZE) { // Проверка на выход за пределы массива kol_enter
                 kol_enter[MAX_VALUE_SIZE * tx + k]++;
                 // Проверяем условие и обновляем pheromon
@@ -9377,7 +9377,7 @@ void add_pheromon_iteration_AVX_non_cuda(double* pheromon, double* kol_enter, do
     }
 }
 
-void add_pheromon_iteration_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
     __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
 
@@ -9400,7 +9400,7 @@ void add_pheromon_iteration_AVX_OMP_non_cuda(double* pheromon, double* kol_enter
     for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
         // Добавление весов-феромона
         for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = int(agent_node[i * PARAMETR_SIZE + tx]);
+            int k = agent_node[i * PARAMETR_SIZE + tx];
             if (k >= 0 && k < MAX_VALUE_SIZE) { // Проверка на выход за пределы массива kol_enter
                 // Используем атомарное обновление для kol_enter
 #pragma omp atomic
@@ -9439,7 +9439,7 @@ int start_NON_CUDA_AVX_time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -9559,7 +9559,7 @@ int start_NON_CUDA_AVX() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -9634,7 +9634,7 @@ int start_NON_CUDA_AVX_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -9754,7 +9754,7 @@ int start_NON_CUDA_AVX_OMP_time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -9873,7 +9873,7 @@ int start_NON_CUDA_AVX_OMP() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -9948,7 +9948,7 @@ int start_NON_CUDA_AVX_OMP_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -10077,7 +10077,7 @@ static int start_CUDA_ant_add_CPU_AVX_Time() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -10090,7 +10090,7 @@ static int start_CUDA_ant_add_CPU_AVX_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -10131,7 +10131,7 @@ static int start_CUDA_ant_add_CPU_AVX_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -10148,7 +10148,7 @@ static int start_CUDA_ant_add_CPU_AVX_Time() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -10225,7 +10225,7 @@ static int start_CUDA_ant_add_CPU_AVX_Time() {
         CUDA_CHECK(cudaEventSynchronize(stop));
         cudaEventElapsedTime(&gpuTime5, start5, stop);
         SumgpuTime5 = SumgpuTime5 + gpuTime5;
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
@@ -10372,7 +10372,8 @@ static int start_CUDA_ant_add_CPU_AVX() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    //int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); 
+    int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -10385,7 +10386,7 @@ static int start_CUDA_ant_add_CPU_AVX() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -10426,7 +10427,7 @@ static int start_CUDA_ant_add_CPU_AVX() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -10443,7 +10444,7 @@ static int start_CUDA_ant_add_CPU_AVX() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -10478,7 +10479,7 @@ static int start_CUDA_ant_add_CPU_AVX() {
 
         go_all_agent_only << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
 
         // Обновление весов-феромонов
@@ -10570,7 +10571,7 @@ static int start_CUDA_ant_add_CPU_AVX_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -10583,7 +10584,7 @@ static int start_CUDA_ant_add_CPU_AVX_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -10624,7 +10625,7 @@ static int start_CUDA_ant_add_CPU_AVX_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -10648,7 +10649,7 @@ static int start_CUDA_ant_add_CPU_AVX_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Установка конфигурации запуска ядра
     dim3 kol_parametr(PARAMETR_SIZE);
@@ -10707,10 +10708,10 @@ static int start_CUDA_ant_add_CPU_AVX_non_hash() {
         CUDA_CHECK(cudaEventSynchronize(stop));
         cudaEventElapsedTime(&gpuTime5, start5, stop);
         SumgpuTime5 = SumgpuTime5 + gpuTime5;
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -11001,7 +11002,7 @@ void go_mass_probability_transp_AVX_OMP_non_cuda(double* pheromon, double* kol_e
     delete[] svertka;
 }
 // Обновление слоев графа
-void add_pheromon_iteration_transp_AVX_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_transp_AVX_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
     __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
     for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
@@ -11017,7 +11018,7 @@ void add_pheromon_iteration_transp_AVX_non_cuda(double* pheromon, double* kol_en
     }
     for (int i = 0; i < ANT_SIZE; ++i) {
         for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            int k = int(agent_node[tx + i * PARAMETR_SIZE]);
+            int k = agent_node[tx + i * PARAMETR_SIZE];
             kol_enter[tx + k * PARAMETR_SIZE]++;
             //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * OF[i]; // MAX
             //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q / OF[i]; // MIN
@@ -11027,7 +11028,7 @@ void add_pheromon_iteration_transp_AVX_non_cuda(double* pheromon, double* kol_en
         }
     }
 }
-void add_pheromon_iteration_transp_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, double* agent_node, double* OF) {
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     // Испарение весов-феромона
     __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
 #pragma omp parallel for
@@ -11044,7 +11045,7 @@ void add_pheromon_iteration_transp_AVX_OMP_non_cuda(double* pheromon, double* ko
 #pragma omp parallel for
     for (int i = 0; i < ANT_SIZE; ++i) {
         for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            int k = int(agent_node[tx + i * PARAMETR_SIZE]);
+            int k = agent_node[tx + i * PARAMETR_SIZE];
             // Обновление kol_enter, используя атомарное обновление
 #pragma omp atomic
             kol_enter[tx + k * PARAMETR_SIZE]++;
@@ -11079,7 +11080,7 @@ int start_NON_CUDA_transp_AVX_time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -11198,7 +11199,7 @@ int start_NON_CUDA_transp_AVX() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -11272,7 +11273,7 @@ int start_NON_CUDA_transp_AVX_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -11391,7 +11392,7 @@ int start_NON_CUDA_transp_AVX_OMP_time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -11510,7 +11511,7 @@ int start_NON_CUDA_transp_AVX_OMP() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -11584,7 +11585,7 @@ int start_NON_CUDA_transp_AVX_OMP_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
@@ -11712,7 +11713,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_Time() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -11725,7 +11726,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_Time() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -11766,7 +11767,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_Time() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -11783,7 +11784,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_Time() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -11860,7 +11861,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_Time() {
         CUDA_CHECK(cudaEventSynchronize(stop));
         cudaEventElapsedTime(&gpuTime5, start5, stop);
         SumgpuTime5 = SumgpuTime5 + gpuTime5;
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
@@ -12003,7 +12004,8 @@ static int start_CUDA_ant_add_CPU_AVX_transp() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    //int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); 
+    int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -12015,7 +12017,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -12056,7 +12058,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -12072,7 +12074,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Allocate memory for the hash table on the device
     HashEntry* hashTable_dev = nullptr;
@@ -12107,7 +12109,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp() {
 
         go_all_agent_only_transp << <numBlocks, numThreads >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, hashTable_dev, maxOf_dev, minOf_dev, kol_hash_fail);
         CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
 
         // Обновление весов-феромонов
@@ -12196,7 +12198,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double);
+    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -12209,7 +12211,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* antSumOF = new double[ANT_SIZE];
     double* ant_hash_add = new double[ANT_SIZE];
@@ -12250,7 +12252,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_non_hash() {
     double* kol_enter_value_dev = nullptr;
     double* norm_matrix_probability_dev = nullptr;
     double* antOFdev = nullptr;
-    double* ant_parametr_dev = nullptr;
+    int* ant_parametr_dev = nullptr;
     double* maxOf_dev = nullptr;
     double* minOf_dev = nullptr;
     int* kol_hash_fail = nullptr;
@@ -12267,7 +12269,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&maxOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&minOf_dev, sizeof(double)));
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
-    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytes_matrix_ant));
+    CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
 
     // Установка конфигурации запуска ядра
     dim3 kol_parametr(PARAMETR_SIZE);
@@ -12326,10 +12328,10 @@ static int start_CUDA_ant_add_CPU_AVX_transp_non_hash() {
         CUDA_CHECK(cudaEventSynchronize(stop));
         cudaEventElapsedTime(&gpuTime5, start5, stop);
         SumgpuTime5 = SumgpuTime5 + gpuTime5;
-        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         if (PRINT_INFORMATION) {
-            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
@@ -12462,7 +12464,7 @@ void matrix_ACO2_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* agent = new double[PARAMETR_SIZE];
     std::default_random_engine generator(123);
@@ -14433,7 +14435,7 @@ void matrix_ACO() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* agent = new double[PARAMETR_SIZE];
     std::default_random_engine generator(123);
@@ -14558,7 +14560,7 @@ void matrix_ACO_non_hash() {
     double* kol_enter_value = new double[kolBytes_matrix_graph];
     double* norm_matrix_probability = new double[kolBytes_matrix_graph];
     double* ant = new double[kolBytes_matrix_ant];
-    double* ant_parametr = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
     double* antOF = new double[ANT_SIZE];
     double* agent = new double[PARAMETR_SIZE];
     std::default_random_engine generator(123);

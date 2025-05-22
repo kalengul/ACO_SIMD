@@ -4,21 +4,41 @@
 #define PARAMETERS_H
 
 // Определение параметров
+// 10000 - 6 12 24 48 96 198
+/*
+#define PARAMETR_SIZE 6   // Количество параметров 21*x (6*х)
+#define PARAMETR_SIZE_ONE_X 3    // Количество параметров на оди x 21 (6)
+#define MAX_VALUE_SIZE 100000    // Максимальное количество значений у параметров 5 (100)
+#define NAME_FILE_GRAPH "Parametr_Graph/test42_100000.txt"
+ */
+// 10000 - 8 16 32 64 128 256
+/*
+#define PARAMETR_SIZE 8   // Количество параметров 21*x (6*х)
+#define PARAMETR_SIZE_ONE_X 4    // Количество параметров на оди x 21 (6)
+#define MAX_VALUE_SIZE 10000    // Максимальное количество значений у параметров 5 (100)
+#define NAME_FILE_GRAPH "Parametr_Graph/test42_10000.txt"
+*/
+// 1000 - 10 20 40 80 160 320
+/*
+#define PARAMETR_SIZE 10   // Количество параметров 21*x (6*х)
+#define PARAMETR_SIZE_ONE_X 5    // Количество параметров на оди x 21 (6)
+#define MAX_VALUE_SIZE 1000    // Максимальное количество значений у параметров 5 (100)
+#define NAME_FILE_GRAPH "Parametr_Graph/test42_1000.txt"
+*/
 // 100 - 12 24 48 96 192 384
-
-#define PARAMETR_SIZE 96   // Количество параметров 21*x (6*х)
+/*
+#define PARAMETR_SIZE 192   // Количество параметров 21*x (6*х)
 #define PARAMETR_SIZE_ONE_X 6    // Количество параметров на оди x 21 (6)
 #define MAX_VALUE_SIZE 100    // Максимальное количество значений у параметров 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test336_100.txt"
-
-// 6 (3), 18 (9), 
-/*
+#define NAME_FILE_GRAPH "Parametr_Graph/test672_100.txt"
+*/
 // 42, 84, 168, 336, 672, 1344, 2688
-#define PARAMETR_SIZE 2688   // Количество параметров 21*x (6*х)
+
+#define PARAMETR_SIZE 42   // Количество параметров 21*x (6*х)
 #define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
 #define MAX_VALUE_SIZE 5    // Максимальное количество значений у параметров 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test2688.txt"
-*/
+#define NAME_FILE_GRAPH "Parametr_Graph/test42.txt"
+
 #define ANT_SIZE 500      // Максимальное количество агентов 500
 #define KOL_ITERATION 500   // Количество итераций ММК 500
 #define KOL_STAT_LEVEL 20    // Количество этапов сбора статистики 20
@@ -40,12 +60,12 @@
 #define CONST_RANDOM 100000
 
 // Для тестов функций
-#define GO_CUDA 1  //до 672
-#define GO_CUDA_TIME 1 //до 672
-#define GO_CUDA_NON_HASH 1 //до 672
+#define GO_CUDA 0  //до 672
+#define GO_CUDA_TIME 0 //до 672
+#define GO_CUDA_NON_HASH 0 //до 672
 #define GO_CUDA_BLOCK_TIME 0 //PROGREV 0 Time CUDA Time only block:;1.56838e+07; 1.56838e+07; 1.56837e+07; 1.56836e+07; 485.034;0;0;0.0832818; 0.901077;23530;
-#define GO_CUDA_ANT 1
-#define GO_CUDA_ANT_NON_HASH 1
+#define GO_CUDA_ANT 0
+#define GO_CUDA_ANT_NON_HASH 0
 #define GO_CUDA_ANT_PAR 1
 #define GO_CUDA_ANT_ADD_CPU 1
 #define GO_CUDA_ANT_ADD_CPU_TIME 1
