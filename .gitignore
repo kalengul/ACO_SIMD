@@ -1,2 +1,7 @@
 x64/
 CUDA_test_c++/
+Create_Graph/
+.vs/
+.git/
+log_supercomput/
+Create_Graph_New/
