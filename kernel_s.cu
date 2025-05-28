@@ -2439,7 +2439,7 @@ static int start_CUDA_ant_add_CPU_Time() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start, 0));
@@ -2642,7 +2642,8 @@ static int start_CUDA_ant_add_CPU() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    //int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); 
+    int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2729,7 +2730,7 @@ static int start_CUDA_ant_add_CPU() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
  
     CUDA_CHECK(cudaEventRecord(start, 0));
     CUDA_CHECK(cudaMemcpy(maxOf_dev, &global_maxOf, sizeof(double), cudaMemcpyHostToDevice));
@@ -2914,7 +2915,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&kol_hash_fail, sizeof(int)));
     CUDA_CHECK(cudaMalloc((void**)&ant_parametr_dev, numBytesInt_matrix_ant));
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start, 0));
@@ -3102,7 +3103,8 @@ static int start_CUDA_ant_add_CPU2_Time() {
     int kol_hash_fail = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    //int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); 
+    int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5528,7 +5530,7 @@ static int start_CUDA_opt_ant_par() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     //Заполнение начальными значениями ant_parametr_dev, antOFdev
@@ -6042,7 +6044,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     initializeHashTable << <blocks_init_hash, threadsPerBlock >> > (hashTable_dev, HASH_TABLE_SIZE);
     CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start));
@@ -6186,7 +6188,7 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     CUDA_CHECK(cudaMalloc((void**)&gpuTime_dev, sizeof(int)));
 
     // Установка конфигурации запуска ядра
-    dim3 kol_parametr(PARAMETR_SIZE);
+    //dim3 kol_parametr(PARAMETR_SIZE);
     //dim3 kol_ant(ANT_SIZE);
 
     CUDA_CHECK(cudaEventRecord(start, 0));
