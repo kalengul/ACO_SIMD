@@ -78,6 +78,459 @@ __constant__ double parametr_value_dev_const[10 * 10]; // на 2688 выдает
 #endif
 __constant__ int gpuTime_const; // Объявление константной памяти для gpuTime
 
+// Функция для цвычисления параметра х при  параметрическом графе
+__device__ double go_x(double* parametr, int start_index, int kol_parametr) {
+    double sum = 0.0;
+    for (int i = 1; i < kol_parametr; ++i) {
+        sum += parametr[start_index + i];
+    }
+    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
+}
+
+#if (SHAFFERA) 
+// Функция для целевой функции Шаффера
+__device__ double BenchShafferaFunction(double* parametr) {
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_squared += x * x; // Сумма квадратов
+    }
+    double r = sqrt(r_squared);
+    double sin_r = sin(r);
+    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
+}
+#endif
+#if (CARROM_TABLE) 
+// CarromTableFunction
+__device__ double BenchShafferaFunction(double* parametr) {
+    double r_cos = 1.0;
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_cos *= cos(x);
+        r_squared += x * x;
+    }
+    double a = 1.0 - sqrt(r_squared) / 3.1415926;
+    double OF = r_cos * exp(fabs(a)); // Используем fabs для абсолютного значения
+    return OF * OF; // Возвращаем OF в квадрате
+}
+#endif
+#if (RASTRIGIN)
+// Растригин-функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
+    }
+    return sum;
+}
+#endif
+#if (ACKLEY)
+// Акли-функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double first_sum = 0.0;
+    double second_sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        first_sum += x * x;
+        second_sum += cos(2 * M_PI * x);
+    }
+    double exp_term_1 = exp(-0.2 * sqrt(first_sum / num_variables));
+    double exp_term_2 = exp(second_sum / num_variables);
+    return -20 * exp_term_1 - exp_term_2 + M_E + 20;
+}
+#endif
+#if (SPHERE)
+// Сферическая функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+    }
+    return sum;
+}
+#endif
+#if (GRIEWANK)
+// Гриванк-функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double sum = 0.0;
+    double prod = 1.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+        prod *= cos(x / sqrt(i + 1));
+    }
+    return sum / 4000 - prod + 1;
+}
+#endif
+#if (ZAKHAROV)
+// Захаров-функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double sum1 = 0.0;
+    double sum2 = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum1 += pow(x, 2);
+        sum2 += 0.5 * i * x;
+    }
+    return sum1 + pow(sum2, 2) + pow(sum2, 4);
+}
+#endif
+#if (SCHWEFEL)
+// Швейфель-функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= x * sin(sqrt(abs(x)));
+    }
+    return sum;
+}
+#endif
+#if (LEVY)
+// Леви-функция
+__device__ double BenchShafferaFunction(double* parametr) {
+    double w_first = 1 + (go_x(parametr, 0, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_last = 1 + (go_x(parametr, PARAMETR_SIZE - PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 1; i <= num_variables - 1; ++i) {
+        double wi = 1 + (go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+        sum += pow(wi - 1, 2) * (1 + 10 * pow(sin(M_PI * wi), 2)) +
+            pow(wi - wi * w_i_prev, 2) * (1 + pow(sin(2 * M_PI * wi), 2));
+    }
+    return pow(sin(M_PI * w_first), 2) + sum + pow(w_last - 1, 2) * (1 + pow(sin(2 * M_PI * w_last), 2));
+}
+#endif
+#if (MICHAELWICZYNSKI)
+// Михаэлевич-Викинский
+__device__ double BenchShafferaFunction(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= sin(x) * pow(sin((i + 1) * x * x / M_PI), 20);
+    }
+    return sum;
+}
+#endif
+
+// Функция для вычисления параметра x при параметрическом графе
+double go_x_non_cuda_omp(double* parametr, int start_index, int kol_parametr) {
+    double sum = 0.0;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i < kol_parametr; ++i) {
+        sum += parametr[start_index + i];
+    }
+    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
+}
+// Функция для цвычисления параметра х при  параметрическом графе
+double go_x_non_cuda(double* parametr, int start_index, int kol_parametr) {
+    double sum = 0.0;
+    for (int i = 1; i < kol_parametr; ++i) {
+        sum += parametr[start_index + i];
+    }
+    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
+}
+
+#if (SHAFFERA) 
+// Функция для целевой функции Шаффера с 100 переменными
+double BenchShafferaFunction_omp(double* parametr) {
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+
+#pragma omp parallel for reduction(+:r_squared)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_squared += x * x; // Сумма квадратов
+    }
+
+    double r = sqrt(r_squared);
+    double sin_r = sin(r);
+    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
+}
+#endif
+#if (CARROM_TABLE) 
+// CarromTableFunction
+double BenchShafferaFunction_omp(double* parametr) {
+    double r_cos = 1.0;
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:r_squared, r_cos)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_cos *= cos(x);
+        r_squared += x * x;
+    }
+    double a = 1.0 - sqrt(r_squared) / 3.1415926;
+    double OF = r_cos * exp(fabs(a)); // Используем fabs для абсолютного значения
+    return OF * OF; // Возвращаем OF в квадрате
+}
+#endif
+#if (RASTRIGIN)
+// Растригин-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
+    }
+    return sum;
+}
+#endif
+#if (ACKLEY)
+// Акли-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double first_sum = 0.0;
+    double second_sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:first_sum, second_sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        first_sum += x * x;
+        second_sum += cos(2 * M_PI * x);
+    }
+    double exp_term_1 = exp(-0.2 * sqrt(first_sum / num_variables));
+    double exp_term_2 = exp(second_sum / num_variables);
+    return -20 * exp_term_1 - exp_term_2 + M_E + 20;
+}
+#endif
+#if (SPHERE)
+// Сферическая функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+    }
+    return sum;
+}
+#endif
+#if (GRIEWANK)
+// Гриванк-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    double prod = 1.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum, prod)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+        prod *= cos(x / sqrt(i + 1));
+    }
+    return sum / 4000 - prod + 1;
+}
+#endif
+#if (ZAKHAROV)
+// Захаров-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum1 = 0.0;
+    double sum2 = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum1, sum2)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum1 += pow(x, 2);
+        sum2 += 0.5 * i * x;
+    }
+    return sum1 + pow(sum2, 2) + pow(sum2, 4);
+}
+#endif
+#if (SCHWEFEL)
+// Швейфель-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= x * sin(sqrt(abs(x)));
+    }
+    return sum;
+}
+#endif
+#if (LEVY)
+// Леви-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double w_first = 1 + (go_x_non_cuda_omp(parametr, 0, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_last = 1 + (go_x_non_cuda_omp(parametr, PARAMETR_SIZE - PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i <= num_variables - 1; ++i) {
+        double wi = 1 + (go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+        sum += pow(wi - 1, 2) * (1 + 10 * pow(sin(M_PI * wi), 2)) +
+            pow(wi - wi * w_i_prev, 2) * (1 + pow(sin(2 * M_PI * wi), 2));
+    }
+    return pow(sin(M_PI * w_first), 2) + sum + pow(w_last - 1, 2) * (1 + pow(sin(2 * M_PI * w_last), 2));
+}
+#endif
+#if (MICHAELWICZYNSKI)
+// Михаэлевич-Викинский
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= sin(x) * pow(sin((i + 1) * x * x / M_PI), 20);
+    }
+    return sum;
+}
+#endif
+
+// Функция для non_CUDA
+#if (SHAFFERA) 
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_squared += x * x; // Сумма квадратов
+    }
+    double r = sqrt(r_squared);
+    double sin_r = sin(r);
+    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
+}
+#endif
+#if (CARROM_TABLE) 
+// CarromTableFunction
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double r_cos = 1.0;
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_cos *= cos(x);
+        r_squared += x * x;
+    }
+    double a = 1.0 - sqrt(r_squared) / 3.1415926;
+    double OF = r_cos * exp(fabs(a)); // Используем fabs для абсолютного значения
+    return OF * OF; // Возвращаем OF в квадрате
+}
+#endif
+#if (RASTRIGIN)
+// Растригин-функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
+    }
+    return sum;
+}
+#endif
+#if (ACKLEY)
+// Акли-функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double first_sum = 0.0;
+    double second_sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        first_sum += x * x;
+        second_sum += cos(2 * M_PI * x);
+    }
+    double exp_term_1 = exp(-0.2 * sqrt(first_sum / num_variables));
+    double exp_term_2 = exp(second_sum / num_variables);
+    return -20 * exp_term_1 - exp_term_2 + M_E + 20;
+}
+#endif
+#if (SPHERE)
+// Сферическая функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+    }
+    return sum;
+}
+#endif
+#if (GRIEWANK)
+// Гриванк-функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double sum = 0.0;
+    double prod = 1.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+        prod *= cos(x / sqrt(i + 1));
+    }
+    return sum / 4000 - prod + 1;
+}
+#endif
+#if (ZAKHAROV)
+// Захаров-функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double sum1 = 0.0;
+    double sum2 = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum1 += pow(x, 2);
+        sum2 += 0.5 * i * x;
+    }
+    return sum1 + pow(sum2, 2) + pow(sum2, 4);
+}
+#endif
+#if (SCHWEFEL)
+// Швейфель-функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= x * sin(sqrt(abs(x)));
+    }
+    return sum;
+}
+#endif
+#if (LEVY)
+// Леви-функция
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double w_first = 1 + (go_x_non_cuda(parametr, 0, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_last = 1 + (go_x_non_cuda(parametr, PARAMETR_SIZE - PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 1; i <= num_variables - 1; ++i) {
+        double wi = 1 + (go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+        sum += pow(wi - 1, 2) * (1 + 10 * pow(sin(M_PI * wi), 2)) +
+            pow(wi - wi * w_i_prev, 2) * (1 + pow(sin(2 * M_PI * wi), 2));
+    }
+    return pow(sin(M_PI * w_first), 2) + sum + pow(w_last - 1, 2) * (1 + pow(sin(2 * M_PI * w_last), 2));
+}
+#endif
+#if (MICHAELWICZYNSKI)
+// Михаэлевич-Викинский
+double BenchShafferaFunction_non_cuda(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= sin(x) * pow(sin((i + 1) * x * x / M_PI), 20);
+    }
+    return sum;
+}
+#endif
+
 void update_all_Stat(int i, double duration, double duration_iteration, double gpuTime1, double gpuTime2, double gpuTime3, double gpuTime4, double gpuTime5, double gpuTime6, double gpuTime7, double gpuTime8, double minOf, double maxOf, int hash_fail_count) {
 
     stat_duration[i].updateStatistics(duration);
@@ -323,38 +776,6 @@ __device__ void atomicMin(double* address, double value) {
     } while (old != assumed);
 }
 
-// Функция для цвычисления параметра х при  параметрическом графе
-__device__ double go_x(double* parametr, int start_index, int kol_parametr) {
-    double sum = 0.0;
-    for (int i = 1; i < kol_parametr; ++i) {
-        sum += parametr[start_index + i];
-    }
-    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
-}
-
-// Функция для целевой функции Шаффера с 100 переменными
-__device__ double BenchShafferaFunction(double* parametr) {
-    double r_squared = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
-    for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-        r_squared += x * x; // Сумма квадратов
-    }
-    double r = sqrt(r_squared);
-    double sin_r = sin(r);
-    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
-}
-
-__device__ double Bench4Function(double* parametr) {
-    double p0 = go_x(parametr, 0, PARAMETR_SIZE_ONE_X);
-    double p1 = go_x(parametr, PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-    double a1 = p0 * p0;
-    double a2 = p1 * p1;
-    double a = 1.0 - sqrt(a1 + a2) / 3.1415926;
-    double OF = cos(p0) * cos(p1) * exp(fabs(a)); // Используем fabs для абсолютного значения
-    return OF * OF; // Возвращаем OF в квадрате
-}
-
 // Функция для вычисления вероятностной формулы
 // Входные данные - значение феромона pheromon и количества посещений вершины kol_enter
 __device__ double probability_formula(double pheromon, double kol_enter) {
@@ -523,6 +944,7 @@ __global__ void go_all_agent_only(double* parametr, double* norm_matrix_probabil
                 atomicAdd(&kol_hash_fail[0], 1); // Атомарное инкрементирование
                 break;
             case 2: // ACOCCyN
+                nom_iteration = 0;
                 while ((cachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION))
                 {
                     for (int tx = 0; tx < PARAMETR_SIZE; tx++) { // Проходим по всем параметрам
@@ -536,7 +958,7 @@ __global__ void go_all_agent_only(double* parametr, double* norm_matrix_probabil
                     }
                     // Проверка наличия решения в Хэш-таблице
                     cachedResult = getCachedResultOptimized(hashTable, agent_node, bx);
-                    nom_iteration = nom_iteration + 1;
+                    nom_iteration++;
                     atomicAdd(&kol_hash_fail[0], 1); // Атомарное инкрементирование
                 }
                 OF[bx] = BenchShafferaFunction(agent);
@@ -629,7 +1051,6 @@ __global__ void go_all_agent_only_global(double* parametr, double* norm_matrix_p
         }
     }
 }
-
 
 __global__ void go_all_agent_only_const(double* norm_matrix_probability, double* random_values, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (агента) 
@@ -1527,7 +1948,7 @@ static int start_CUDA() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
 
     int numBytes_ant = ANT_SIZE * sizeof(double);
@@ -1731,7 +2152,7 @@ static int start_CUDA_Time() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2008,7 +2429,7 @@ static int start_CUDA_Const() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2283,7 +2704,7 @@ static int start_CUDA_only_block_Time() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2557,7 +2978,7 @@ static int start_CUDA_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2661,7 +3082,6 @@ static int start_CUDA_non_hash() {
                 }
             }
             CUDA_CHECK(cudaEventRecord(start2, 0));
-
 
             go_all_agent_non_hash << <kol_ant, kol_parametr >> > (parametr_value_dev, norm_matrix_probability_dev, random_values_dev, ant_parametr_dev, antOFdev, maxOf_dev, minOf_dev, kol_hash_fail);
             CUDA_CHECK(cudaGetLastError()); // Проверка на ошибки после запуска ядра
@@ -2814,7 +3234,7 @@ static int start_CUDA_ant() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -2954,13 +3374,11 @@ static int start_CUDA_ant() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
-            CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
             std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
-                    std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
-                    //std::cout << ant_parametr[i * PARAMETR_SIZE + j] << "(" << ant[i * PARAMETR_SIZE + j] << ") "; 
+                    std::cout << ant_parametr[i * PARAMETR_SIZE + j] << " ";
                 }
                 std::cout << "-> " << antOF[i] << std::endl;
 
@@ -3101,7 +3519,7 @@ static int start_CUDA_ant_Const() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3239,12 +3657,11 @@ static int start_CUDA_ant_Const() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
-            CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
             std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
-                    std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
+                    std::cout << ant[i * PARAMETR_SIZE + j] << " ";
                     //std::cout << ant_parametr[i * PARAMETR_SIZE + j] << "(" << ant[i * PARAMETR_SIZE + j] << ") "; 
                 }
                 std::cout << "-> " << antOF[i] << std::endl;
@@ -3386,7 +3803,7 @@ static int start_CUDA_ant_add_CPU_Time() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3683,7 +4100,7 @@ static int start_CUDA_ant_add_CPU_Time_global() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -3912,7 +4329,7 @@ static int start_CUDA_ant_add_CPU_Const() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -4396,7 +4813,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -4983,7 +5400,7 @@ static int start_CUDA_ant_add_CPU_optMem() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5180,7 +5597,7 @@ static int start_CUDA_ant_non_hash() {
 
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5460,7 +5877,7 @@ static int start_CUDA_ant_par() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5757,7 +6174,7 @@ static int start_CUDA_ant_par_global() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -5984,7 +6401,7 @@ static int start_CUDA_ant_par_Const() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -6266,7 +6683,7 @@ static int start_CUDA_opt() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -6478,7 +6895,7 @@ static int start_CUDA_opt_Time() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -6743,7 +7160,7 @@ static int start_CUDA_opt_Const() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -7006,7 +7423,7 @@ static int start_CUDA_opt_non_hash() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -7263,7 +7680,7 @@ static int start_CUDA_opt_ant() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -7534,7 +7951,7 @@ static int start_CUDA_opt_ant_Const() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -7797,7 +8214,7 @@ static int start_CUDA_opt_ant_non_hash() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -8060,7 +8477,7 @@ static int start_CUDA_opt_ant_par() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -8341,7 +8758,7 @@ static int start_CUDA_opt_ant_par_global() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -8571,7 +8988,7 @@ static int start_CUDA_opt_ant_par_Const() {
     int i_gpuTime = 0;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -8829,7 +9246,7 @@ static int start_CUDA_opt_one_GPU() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -9113,7 +9530,7 @@ static int start_CUDA_opt_one_GPU_non_hash() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -9247,7 +9664,7 @@ static int start_CUDA_opt_one_GPU_ant() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -9395,7 +9812,7 @@ static int start_CUDA_opt_one_GPU_ant_local() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -9542,7 +9959,7 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     float SumgpuTime3 = 0.0f;
     int numBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double);
     int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); int numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
+    long long numBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(double); long long numBytesInt_matrix_ant = PARAMETR_SIZE * ANT_SIZE * sizeof(int);
     int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
     int numBytes_ant = ANT_SIZE * sizeof(double);
     double global_maxOf = -INT16_MAX;
@@ -9820,84 +10237,6 @@ void saveToCacheOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, 
         i++;
     }
     // If the table is full, handle the error or ignore
-}
-
-// Функция для вычисления параметра x при параметрическом графе
-double go_x_non_cuda_omp(double* parametr, int start_index, int kol_parametr) {
-    double sum = 0.0;
-
-#pragma omp parallel for reduction(+:sum)
-    for (int i = 1; i < kol_parametr; ++i) {
-        sum += parametr[start_index + i];
-    }
-
-    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
-}
-
-// Функция для цвычисления параметра х при  параметрическом графе
-double go_x_non_cuda(double* parametr, int start_index, int kol_parametr) {
-    double sum = 0.0;
-    for (int i = 1; i < kol_parametr; ++i) {
-        sum += parametr[start_index + i];
-    }
-    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
-}
-
-// Функция для цвычисления параметра х1 при 40 параметрическом графе
-double go_x1_21_non_cuda(double* parametr) {
-    return parametr[0] * (parametr[1] + parametr[2] + parametr[3] + parametr[4] + parametr[5] + parametr[6] + parametr[7] + parametr[8] + parametr[9] + parametr[10] + parametr[11] + parametr[12] + parametr[13] + parametr[14] + parametr[15] + parametr[16] + parametr[17] + parametr[18] + parametr[19] + parametr[20]);
-}
-
-// Функция для цвычисления параметра х2 при 40 параметрическом графе
-double go_x2_21_non_cuda(double* parametr) {
-    return parametr[21] * (parametr[22] + parametr[23] + parametr[24] + parametr[25] + parametr[26] + parametr[27] + parametr[28] + parametr[29] + parametr[30] + parametr[31] + parametr[32] + parametr[33] + parametr[34] + parametr[35] + parametr[36] + parametr[37] + parametr[38] + parametr[39] + parametr[40] + parametr[41]);
-}
-// Функция для вычисления параметра x1 при 12 параметрическом графе
-double go_x1_6_non_cuda(double* parametr) {
-    return parametr[0] * (parametr[1] + parametr[2] + parametr[3] + parametr[4] + parametr[5]);
-}
-
-// Функция для вычисления параметра x2 при 12 параметрическом графе
-double go_x2_6_non_cuda(double* parametr) {
-    return parametr[6] * (parametr[7] + parametr[8] + parametr[9] + parametr[10] + parametr[11]);
-}
-
-// Функция для целевой функции Шаффера
-double BenchShafferaFunction_non_cuda_2x(double* parametr) {
-    double x1 = go_x1_21_non_cuda(parametr);
-    double x2 = go_x2_21_non_cuda(parametr);
-    double r = sqrt(x1 * x1 + x2 * x2);
-    double sin_r = sin(r);
-    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * (x1 * x1 + x2 * x2));
-}
-
-// Функция для целевой функции Шаффера с 100 переменными
-double BenchShafferaFunction_omp(double* parametr) {
-    double r_squared = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
-
-#pragma omp parallel for reduction(+:r_squared)
-    for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-        r_squared += x * x; // Сумма квадратов
-    }
-
-    double r = sqrt(r_squared);
-    double sin_r = sin(r);
-    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
-}
-
-// Функция для целевой функции Шаффера с 100 переменными
-double BenchShafferaFunction_non_cuda(double* parametr) {
-    double r_squared = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
-    for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-        r_squared += x * x; // Сумма квадратов
-    }
-    double r = sqrt(r_squared);
-    double sin_r = sin(r);
-    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
 }
 
 // Функция для вычисления вероятностной формулы
