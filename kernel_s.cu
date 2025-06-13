@@ -12819,6 +12819,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
+        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
@@ -12826,13 +12827,12 @@ int main(int argc, char* argv[]) {
         << "KOL_PROGON_STATISTICS: " << KOL_PROGON_STATISTICS << "; "
         << "PARAMETR_Q: " << PARAMETR_Q << "; "
         << "PARAMETR_RO: " << PARAMETR_RO << "; "
-        << "HASH_TABLE_SIZE: " << HASH_TABLE_SIZE << "; "
-        << "MAX_PROBES: " << MAX_PROBES << "; "
         << "TYPE_ACO: " << TYPE_ACO << "; "
         << "ACOCCyN_KOL_ITERATION: " << ACOCCyN_KOL_ITERATION << "; "
-        << "PRINT_INFORMATION: " << (PRINT_INFORMATION ? "true" : "false")
+        << "FUNCTION: " << (SHAFFERA ? "SHAFFERA " : "") << (CARROM_TABLE ? "CARROM_TABLE " : "") << (RASTRIGIN ? "RASTRIGIN " : "") << (ACKLEY ? "ACKLEY " : "") << (SPHERE ? "SPHERE " : "") << (GRIEWANK ? "GRIEWANK " : "") << (ZAKHAROV ? "ZAKHAROV " : "") << (SCHWEFEL ? "SCHWEFEL " : "") << (LEVY ? "LEVY " : "") << (MICHAELWICZYNSKI ? "MICHAELWICZYNSKI " : "")
         << std::endl;
     logFile << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
+        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
@@ -12840,11 +12840,9 @@ int main(int argc, char* argv[]) {
         << "KOL_PROGON_STATISTICS: " << KOL_PROGON_STATISTICS << "; "
         << "PARAMETR_Q: " << PARAMETR_Q << "; "
         << "PARAMETR_RO: " << PARAMETR_RO << "; "
-        << "HASH_TABLE_SIZE: " << HASH_TABLE_SIZE << "; "
-        << "MAX_PROBES: " << MAX_PROBES << "; "
         << "TYPE_ACO: " << TYPE_ACO << "; "
         << "ACOCCyN_KOL_ITERATION: " << ACOCCyN_KOL_ITERATION << "; "
-        << "PRINT_INFORMATION: " << (PRINT_INFORMATION ? "true" : "false")
+        << "FUNCTION: " << (SHAFFERA ? "SHAFFERA " : "") << (CARROM_TABLE ? "CARROM_TABLE " : "") << (RASTRIGIN ? "RASTRIGIN " : "") << (ACKLEY ? "ACKLEY " : "") << (SPHERE ? "SPHERE " : "") << (GRIEWANK ? "GRIEWANK " : "") << (ZAKHAROV ? "ZAKHAROV " : "") << (SCHWEFEL ? "SCHWEFEL " : "") << (LEVY ? "LEVY " : "") << (MICHAELWICZYNSKI ? "MICHAELWICZYNSKI " : "")
         << std::endl;
     //matrix_ACO2_non_hash();
     if (GO_CUDA_TIME) {
