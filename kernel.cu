@@ -5279,6 +5279,10 @@ static int start_CUDA_ant_add_CPU2_Time() {
     delete[] ant;
     delete[] ant_parametr;
     delete[] antOF;
+    delete[] antSumOF;
+    delete[] ant_hash_add;
+    delete[] hashTable;               // Освобождение памяти для хэш-таблицы
+
     CUDA_CHECK(cudaEventRecord(stop, 0));
     CUDA_CHECK(cudaEventSynchronize(stop));
     CUDA_CHECK(cudaEventElapsedTime(&AllgpuTime, startAll, stop));
