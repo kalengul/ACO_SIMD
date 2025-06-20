@@ -33,19 +33,19 @@
 #define NAME_FILE_GRAPH "Parametr_Graph/test2688_100.txt"
 */
 // 4 - 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128
-/*
+
 #define PARAMETR_SIZE 2688   // Количество параметров 21*x (6*х)
 #define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
 #define MAX_VALUE_SIZE 4    // Максимальное количество значений у параметров 5 (100)
 #define NAME_FILE_GRAPH "Parametr_Graph/test2688_4.txt"
-*/
-// 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128
 
+// 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128
+/*
 #define PARAMETR_SIZE 42   // Количество параметров 21*x (6*х)
 #define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
 #define MAX_VALUE_SIZE 5    // Максимальное количество значений у параметров 5 (100)
 #define NAME_FILE_GRAPH "Parametr_Graph/test42.txt"
-
+*/
 #define ANT_SIZE 500      // Максимальное количество агентов 500
 #define KOL_ITERATION 500   // Количество итераций ММК 500
 #define KOL_STAT_LEVEL 20    // Количество этапов сбора статистики 20
@@ -77,7 +77,7 @@
 #define SCHWEFEL 0
 #define LEVY 0 //не работает
 #define MICHAELWICZYNSKI 0
-/*
+
 #define GO_CUDA 0 
 #define GO_CUDA_TIME 0 
 #define GO_CUDA_NON_HASH 0 
@@ -145,7 +145,7 @@
 #define GO_CUDA_OPT_CONST 0
 #define GO_CUDA_OPT_ANT_CONST 0
 #define GO_CUDA_OPT_ANT_PAR_CONST 0
-*/
+/*
 #define GO_CUDA 1 
 #define GO_CUDA_TIME 1 
 #define GO_CUDA_NON_HASH 1 

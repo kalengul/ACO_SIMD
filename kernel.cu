@@ -12768,19 +12768,8 @@ void go_mass_probability_AVX_non_cuda(double* pheromon, double* kol_enter, doubl
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         // Вычисляем sumVector
         double sumVector = 0.0;
-        __m256d sumVector_AVX = _mm256_setzero_pd();
-        for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-            if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
-                __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[MAX_VALUE_SIZE * tx + i]);
-                sumVector_AVX = _mm256_add_pd(sumVector_AVX, pheromonValues_AVX);
-            }
-        }
-
-        // Суммируем значения из вектора
-        double temp[CONST_AVX] = { 0 }; // Инициализация массива
-        _mm256_storeu_pd(temp, sumVector_AVX);
-        for (int j = 0; j < CONST_AVX; j++) {
-            sumVector += temp[j];
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
         }
 
         // Нормируем значения
@@ -12796,7 +12785,7 @@ void go_mass_probability_AVX_non_cuda(double* pheromon, double* kol_enter, doubl
         // Вычисляем svertka и sumVector
         sumVector = 0.0;
         double svertka[MAX_VALUE_SIZE] = { 0 }; // Инициализация массива
-        sumVector_AVX = _mm256_setzero_pd();
+        __m256d sumVector_AVX = _mm256_setzero_pd();
         for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
             if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
                 __m256d kolEnterValues_AVX = _mm256_loadu_pd(&kol_enter[MAX_VALUE_SIZE * tx + i]);
@@ -12819,6 +12808,7 @@ void go_mass_probability_AVX_non_cuda(double* pheromon, double* kol_enter, doubl
             }
         }
         // Суммируем значения из вектора svertka
+        double temp[CONST_AVX] = { 0 };
         _mm256_storeu_pd(temp, sumVector_AVX);
         for (int j = 0; j < CONST_AVX; j++) {
             sumVector += temp[j];
@@ -12838,19 +12828,8 @@ void go_mass_probability_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, d
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         // Вычисляем sumVector
         double sumVector = 0.0;
-        __m256d sumVector_AVX = _mm256_setzero_pd();
-        for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-            if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
-                __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[MAX_VALUE_SIZE * tx + i]);
-                sumVector_AVX = _mm256_add_pd(sumVector_AVX, pheromonValues_AVX);
-            }
-        }
-
-        // Суммируем значения из вектора
-        double temp[CONST_AVX] = { 0 }; // Инициализация массива
-        _mm256_storeu_pd(temp, sumVector_AVX);
-        for (int j = 0; j < CONST_AVX; j++) {
-            sumVector += temp[j];
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
         }
 
         // Нормируем значения
@@ -12867,7 +12846,7 @@ void go_mass_probability_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, d
         // Вычисляем svertka и sumVector
         sumVector = 0.0;
         double svertka[MAX_VALUE_SIZE] = { 0 }; // Инициализация массива
-        sumVector_AVX = _mm256_setzero_pd();
+        __m256d sumVector_AVX = _mm256_setzero_pd();
 #pragma omp parallel for reduction(+:sumVector)
         for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
             if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
@@ -12891,6 +12870,7 @@ void go_mass_probability_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, d
             }
         }
         // Суммируем значения из вектора svertka
+        double temp[CONST_AVX] = { 0 };
         _mm256_storeu_pd(temp, sumVector_AVX);
         for (int j = 0; j < CONST_AVX; j++) {
             sumVector += temp[j];
@@ -12912,10 +12892,7 @@ void go_mass_probability_AVX_non_cuda_4(double* pheromon, double* kol_enter, dou
         __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[MAX_VALUE_SIZE * tx]);
         __m256d kolEnterValues_AVX = _mm256_loadu_pd(&kol_enter[MAX_VALUE_SIZE * tx]);
         // Вычисляем sumVector
-        double sumVector = 0.0;
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
-        }
+        double sumVector = pheromon[MAX_VALUE_SIZE * tx]+ pheromon[MAX_VALUE_SIZE * tx + 1]+ pheromon[MAX_VALUE_SIZE * tx + 2]+ pheromon[MAX_VALUE_SIZE * tx + 3];
         __m256d pheromonNormValues_AVX = _mm256_div_pd(pheromonValues_AVX, _mm256_set1_pd(sumVector)); // Нормируем значения феромона
         
         __m256d mask_AVX = _mm256_cmp_pd(kolEnterValues_AVX, _mm256_setzero_pd(), _CMP_NEQ_OQ); // Создаем маску для проверки условий
@@ -12926,18 +12903,15 @@ void go_mass_probability_AVX_non_cuda_4(double* pheromon, double* kol_enter, dou
         svertkaValues_AVX = _mm256_blendv_pd(_mm256_setzero_pd(), svertkaValues_AVX, mask_AVX);
 
         double svertka[MAX_VALUE_SIZE] = { 0 };
-        sumVector = 0;
         // Суммируем значения из вектора svertka
         _mm256_storeu_pd(svertka, svertkaValues_AVX);
-         for (int j = 0; j < MAX_VALUE_SIZE; j++) {
-            sumVector += svertka[j];
-        }
+        sumVector = svertka[0]+ svertka[1]+ svertka[2]+ svertka[3];
         // Заполняем norm_matrix_probability
         if (sumVector != 0) { // Проверка на деление на ноль
             norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + 1] = (svertka[1] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx];
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + 2] = (svertka[2] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + 1];
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + 3] = (svertka[3] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + 2];
         }
     }
 }
