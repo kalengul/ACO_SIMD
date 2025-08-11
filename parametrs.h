@@ -27,25 +27,25 @@
 */
 // 100 - 12 24 48 96 192 384 768
 /*
-#define PARAMETR_SIZE 768   // Количество параметров 21*x (6*х)
+#define PARAMETR_SIZE 384   // Количество параметров 21*x (6*х)
 #define PARAMETR_SIZE_ONE_X 6    // Количество параметров на оди x 21 (6)
 #define MAX_VALUE_SIZE 100    // Максимальное количество значений у параметров 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test2688_100.txt"
+#define NAME_FILE_GRAPH "Parametr_Graph/test1344_100.txt"
 */
 // 4 - 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128
-
-#define PARAMETR_SIZE 2688   // Количество параметров 21*x (6*х)
-#define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
-#define MAX_VALUE_SIZE 4    // Максимальное количество значений у параметров 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test2688_4.txt"
-
-// 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128
 /*
 #define PARAMETR_SIZE 42   // Количество параметров 21*x (6*х)
 #define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
-#define MAX_VALUE_SIZE 5    // Максимальное количество значений у параметров 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test42.txt"
+#define MAX_VALUE_SIZE 4    // Максимальное количество значений у параметров 5 (100)
+#define NAME_FILE_GRAPH "Parametr_Graph/test42_4.txt"
 */
+// 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128, 1376256
+
+#define PARAMETR_SIZE 336   // Количество параметров 21*x (6*х)
+#define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
+#define MAX_VALUE_SIZE 5    // Максимальное количество значений у параметров 5 (100)
+#define NAME_FILE_GRAPH "Parametr_Graph/test336.txt"
+
 #define ANT_SIZE 500      // Максимальное количество агентов 500
 #define KOL_ITERATION 500   // Количество итераций ММК 500
 #define KOL_STAT_LEVEL 20    // Количество этапов сбора статистики 20
@@ -66,8 +66,13 @@
 #define CONST_AVX 4 //double = 4, floaf,int = 8
 #define CONST_RANDOM 100000
 #define MAX_CONST 8000
+#define BIN_SEARCH 0
 
-#define SHAFFERA 1
+#define GO_ALG_MINMAX 1
+#define PAR_MAX_ALG_MINMAX 1000
+#define PAR_MIN_ALG_MINMAX 1
+
+#define SHAFFERA 0
 #define CARROM_TABLE 0
 #define RASTRIGIN 0
 #define ACKLEY 0
@@ -77,6 +82,11 @@
 #define SCHWEFEL 0
 #define LEVY 0 //не работает
 #define MICHAELWICZYNSKI 0
+#define DELT4 1
+
+#define OPTIMIZE_MIN_1 0
+#define OPTIMIZE_MIN_2 0
+#define OPTIMIZE_MAX 1
 
 #define GO_CUDA 0 
 #define GO_CUDA_TIME 0 
@@ -126,7 +136,7 @@
 #define GO_NON_CUDA_AVX_OMP_NON_HASH 0
 #define GO_CUDA_ANT_ADD_CPU_AVX 0 
 #define GO_CUDA_ANT_ADD_CPU_AVX_TIME 0 
-#define GO_CUDA_ANT_ADD_CPU_AVX_NON_HASH 0 
+#define GO_CUDA_ANT_ADD_CPU_AVX_NON_HASH 0
 #define GO_NON_CUDA_TRANSP_AVX_TIME 0
 #define GO_NON_CUDA_TRANSP_AVX 0
 #define GO_NON_CUDA_TRANSP_AVX_NON_HASH 0
@@ -136,15 +146,27 @@
 #define GO_CUDA_ANT_ADD_CPU_AVX_TRANSP 0  
 #define GO_CUDA_ANT_ADD_CPU_AVX_TRANSP_TIME 0 
 #define GO_CUDA_ANT_ADD_CPU_AVX_TRANSP_NON_HASH 0 
-#define GO_NON_CUDA_AVX_TIME_4 1
-#define GO_CUDA_ANT_ADD_CPU_AVX_TIME_4 1 
-#define GO_CUDA_CONST 0  
+#define GO_NON_CUDA_AVX_TIME_4 0
+#define GO_CUDA_ANT_ADD_CPU_AVX_TIME_4 0 
+#define GO_CUDA_ANT_ADD_CPU_AVX_TIME_4_NOT_F 0 // работает только при 100 агентах
+
+#define GO_CUDA_CONST 0 
 #define GO_CUDA_ANT_CONST 0
 #define GO_CUDA_ANT_PAR_CONST 0
 #define GO_CUDA_ANT_ADD_CPU_CONST 0
 #define GO_CUDA_OPT_CONST 0
 #define GO_CUDA_OPT_ANT_CONST 0
 #define GO_CUDA_OPT_ANT_PAR_CONST 0
+
+#define GO_CUDA_ANT_DECREASE_PAR_CONST 0
+#define GO_CUDA_ANT_DECREASE_PAR_BLOCK_CONST 0
+#define GO_CUDA_ANT_DECREASE_ANT_CONST 0
+#define GO_CUDA_ANT_DECREASE_ANT_BLOCK_CONST 0
+#define GO_CUDA_ANT_DECREASE_ANT_PAR_CONST 1
+#define GO_CUDA_ANT_DECREASE_ANT_PAR_TRANSP_CONST 1
+
+#define GO_CUDA_ANT_PAR_NOT_F 0
+#define GO_CUDA_ANT_PAR_SORT 0
 /*
 #define GO_CUDA 1 
 #define GO_CUDA_TIME 1 
