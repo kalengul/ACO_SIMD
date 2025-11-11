@@ -1,0 +1,28 @@
+Используемые команды OpenMP
+
+omp_get_thread_num();
+
+#pragma omp parallel
+#pragma omp parallel for 
+#pragma omp parallel for reduction(+:sum, prod)
+#pragma omp parallel for schedule(static)
+#pragma omp for schedule(static) nowait
+
+#pragma omp critical(hash_lookup)
+
+// OpenMP 4.0+
+#pragma omp simd
+
+#pragma omp simd reduction(inscan,+:sumVector) - не для clang
+
+// OpenMP 4.5+
+#pragma omp parallel for if(PARAMETR_SIZE > 100)
+
+// OpenMP 5.0+
+#pragma omp reduction(inscan,...)
+#pragma omp scan inclusive(sumVector)
+
+// OpenMP 5.1+
+
+// OpenMP 5.2+
+#pragma omp assume PARAMETR_SIZE <= 100

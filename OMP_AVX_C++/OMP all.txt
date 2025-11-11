@@ -1,0 +1,995 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <chrono>
+#include <cstdlib>
+#include <limits.h>
+#include <iomanip>
+#include <vector>
+#include <random>
+#include <ctime>
+#include <unordered_map>
+#include <string>
+#include <algorithm>
+#include <omp.h>
+#include <mutex>
+#include <thread>
+#include "parametrs.h" 
+
+std::ofstream logFile; // Глобальная переменная для лог-файла
+std::ofstream outfile("statistics.txt"); // Глобальная переменная для файла статистики
+std::mutex mtx; // Мьютекс для защиты доступа к общим данным
+
+#ifdef _WIN32
+#include <malloc.h>
+#define ALIGNED_ALLOC(alignment, size) _aligned_malloc(size, alignment)
+#define ALIGNED_FREE(ptr) _aligned_free(ptr)
+#else
+#include <cstdlib>
+#define ALIGNED_ALLOC(alignment, size) aligned_alloc(alignment, size)
+#define ALIGNED_FREE(ptr) free(ptr)
+#endif
+
+
+//Структура для сбора статистики 
+class Statistics {
+public:
+    double sum;
+    double sum_sq;
+    int count;
+
+    Statistics() : sum(0), sum_sq(0), count(0) {}
+    void updateStatistics(double value) {
+        sum += value;
+        sum_sq += value * value;
+        count++;
+    }
+    double mean() const {
+        return count > 0 ? sum / count : 0.0;
+    }
+    double variance() const {
+        if (count > 1) {
+            double mean_val = mean();
+            return (sum_sq / count) - (mean_val * mean_val);
+        }
+        return 0.0;
+    }
+    void clear() {
+        sum_sq = 0;
+        sum = 0;
+        count = 0;
+    }
+};
+//Глобальные переменные для сбора статистики
+std::vector<Statistics> stat_duration(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_duration_iteration(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime1(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime2(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime3(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime4(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime5(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime6(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime7(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_SumgpuTime8(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_global_minOf(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_global_maxOf(KOL_STAT_LEVEL);
+std::vector<Statistics> stat_kol_hash_fail(KOL_STAT_LEVEL);
+
+// Функция для вычисления параметра x при параметрическом графе
+double go_x_non_cuda_omp(double* parametr, int start_index, int kol_parametr) {
+    double sum = 0.0;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i < kol_parametr; ++i) {
+        sum += parametr[start_index + i];
+    }
+    return parametr[start_index] * sum; // Умножаем на первый параметр в диапазоне
+}
+
+#if (SHAFFERA) 
+// Функция для целевой функции Шаффера с 100 переменными
+double BenchShafferaFunction_omp(double* parametr) {
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+
+#pragma omp parallel for reduction(+:r_squared)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_squared += x * x; // Сумма квадратов
+    }
+
+    double r = sqrt(r_squared);
+    double sin_r = sin(r);
+    return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
+}
+#endif
+#if (DELT4)
+// Михаэлевич-Викинский
+double BenchShafferaFunction_omp(double* parametr) {
+    double r_squared = 0.0;
+    double sum_if = 0.0;
+    double sum = 0.0;
+    double second_sum = 0.0;
+    double r_cos = 1.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum_if += x;
+        r_squared += x * x; // Сумма квадратов
+        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
+        second_sum += cos(2 * M_PI * x);
+        r_cos *= cos(x);
+    }
+    if (sum_if >= -10 * num_variables && sum_if <= -5 * num_variables) {
+        double r = sqrt(r_squared); //Шаффер
+        double sin_r = sin(r);
+        return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
+    }
+    if (sum_if > -5 * num_variables && sum_if <= 0) {
+        return sum; //Растрыгин
+    }
+    if (sum_if > 0 && sum_if <= 5 * num_variables) {
+        double exp_term_1 = exp(-0.2 * sqrt(r_squared / num_variables));
+        double exp_term_2 = exp(second_sum / num_variables);
+        return -20 * exp_term_1 - exp_term_2 + M_E + 20; //Akley
+    }
+    if (sum_if > 5 * num_variables && sum_if <= 10 * num_variables) {
+        double a = 1.0 - sqrt(r_squared) / M_PI; //Carrom
+        double OF = r_cos * exp(fabs(a)); // Используем fabs для абсолютного значения
+        return OF * OF; // Возвращаем OF в квадрате
+    }
+    return 0;
+}
+#endif
+#if (CARROM_TABLE) 
+// CarromTableFunction
+double BenchShafferaFunction_omp(double* parametr) {
+    double r_cos = 1.0;
+    double r_squared = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:r_squared, r_cos)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        r_cos *= cos(x);
+        r_squared += x * x;
+    }
+    double a = 1.0 - sqrt(r_squared) / M_PI;
+    double OF = r_cos * exp(fabs(a)); // Используем fabs для абсолютного значения
+    return OF * OF; // Возвращаем OF в квадрате
+}
+#endif
+#if (RASTRIGIN)
+// Растригин-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
+    }
+    return sum;
+}
+#endif
+#if (ACKLEY)
+// Акли-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double first_sum = 0.0;
+    double second_sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:first_sum, second_sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        first_sum += x * x;
+        second_sum += cos(2 * M_PI * x);
+    }
+    double exp_term_1 = exp(-0.2 * sqrt(first_sum / num_variables));
+    double exp_term_2 = exp(second_sum / num_variables);
+    return -20 * exp_term_1 - exp_term_2 + M_E + 20;
+}
+#endif
+#if (SPHERE)
+// Сферическая функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+    }
+    return sum;
+}
+#endif
+#if (GRIEWANK)
+// Гриванк-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    double prod = 1.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum, prod)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+        prod *= cos(x / sqrt(i + 1));
+    }
+    return sum / 4000 - prod + 1;
+}
+#endif
+#if (ZAKHAROV)
+// Захаров-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum1 = 0.0;
+    double sum2 = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum1, sum2)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum1 += pow(x, 2);
+        sum2 += 0.5 * i * x;
+    }
+    return sum1 + pow(sum2, 2) + pow(sum2, 4);
+}
+#endif
+#if (SCHWEFEL)
+// Швейфель-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= x * sin(sqrt(abs(x)));
+    }
+    return sum;
+}
+#endif
+#if (LEVY)
+// Леви-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double w_first = 1 + (go_x_non_cuda_omp(parametr, 0, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_last = 1 + (go_x_non_cuda_omp(parametr, PARAMETR_SIZE - PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i <= num_variables - 1; ++i) {
+        double wi = 1 + (go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+        sum += pow(wi - 1, 2) * (1 + 10 * pow(sin(M_PI * wi), 2)) +
+            pow(wi - wi * w_i_prev, 2) * (1 + pow(sin(2 * M_PI * wi), 2));
+    }
+    return pow(sin(M_PI * w_first), 2) + sum + pow(w_last - 1, 2) * (1 + pow(sin(2 * M_PI * w_last), 2));
+}
+#endif
+#if (MICHAELWICZYNSKI)
+// Михаэлевич-Викинский
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        sum -= sin(x) * pow(sin((i + 1) * x * x / M_PI), 20);
+    }
+    return sum;
+}
+#endif
+
+// ----------------- Hash Table Entry Structure -----------------
+struct HashEntry {
+    unsigned long long key; // Unique key composed of parameters
+    double value;           // Objective function value
+};
+
+// Функция для загрузки матрицы из файла
+bool load_matrix(const std::string& filename, double* parametr_value, double* pheromon_value, double* kol_enter_value)
+{
+    std::ifstream infile(filename);
+    if (!infile) {
+        std::cerr << "Don't open file!" << std::endl;
+        return false;
+    }
+    for (int i = 0; i < PARAMETR_SIZE; ++i) {
+        for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
+            int k = MAX_VALUE_SIZE * i + j;
+            if (!(infile >> parametr_value[k])) { // Чтение элемента в массив a
+                std::cerr << "Error load element [" << i << "][" << j << "]" << std::endl;
+                return false;
+            }
+            if (parametr_value[k] != -100) {
+                pheromon_value[k] = 1.0; // Присваиваем значение pheromon_value
+                kol_enter_value[k] = 1.0;
+            }
+            else {
+                pheromon_value[k] = 0.0; // Присваиваем значение pheromon_value
+                parametr_value[k] = 0.0; //Нужно ли????
+                kol_enter_value[k] = 0.0;
+            }
+        }
+    }
+    infile.close();
+    return true;
+}
+// ----------------- Инициализация хэш-таблицы -----------------
+void initializeHashTable_non_cuda(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key = ZERO_HASH;
+        hashTable[i].value = 0.0;
+    }
+}
+
+// ----------------- Очистка хэш-таблицы -----------------
+void clearHashTable(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key = ZERO_HASH;
+        hashTable[i].value = 0.0;
+    }
+}
+
+// ----------------- Быстрая хэш-функция -----------------
+inline unsigned long long fastHashFunction(unsigned long long key) {
+    // Оптимизированная хэш-функция для MSVC
+    key = (~key) + (key << 21);
+    key = key ^ (key >> 24);
+    key = (key + (key << 3)) + (key << 8);
+    key = key ^ (key >> 14);
+    key = (key + (key << 2)) + (key << 4);
+    key = key ^ (key >> 28);
+    key = key + (key << 31);
+
+    // Быстрый модуль через битовую маску
+    return key & (HASH_TABLE_SIZE - 1);
+}
+
+// ----------------- Генерация ключа из пути агента -----------------
+inline unsigned long long generateKey(const int* agent_path) {
+    // Полиномиальное хэширование для лучшего распределения
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long key = 14695981039346656037ULL;
+
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        key ^= static_cast<unsigned long long>(agent_path[i]);
+        key *= prime;
+    }
+
+    return key;
+}
+
+// ----------------- Альтернативная генерация ключа -----------------
+inline unsigned long long generateKeySimple(const int* agent_path) {
+    unsigned long long key = 0;
+
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        key = key * MAX_VALUE_SIZE + agent_path[i];
+    }
+
+    return key;
+}
+
+// ----------------- Поиск в хэш-таблице -----------------
+double getCachedResultOptimized_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    // Поиск с квадратичным probing
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+        // Используем совместимый макрос для предсказания ветвлений
+        if (hashTable[new_idx].key == key) {
+            return hashTable[new_idx].value; // Найдено
+        }
+        if (hashTable[new_idx].key == ZERO_HASH) {
+            return ZERO_HASH_RESULT; // Не найдено - пустой слот
+        }
+    }
+
+    return ZERO_HASH_RESULT; // Не найдено после всех проб
+}
+
+// ----------------- Сохранение в хэш-таблицу -----------------
+bool saveToCacheOptimized_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx, double value) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    // Поиск пустого слота или обновление существующего
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+        if (hashTable[new_idx].key == ZERO_HASH || hashTable[new_idx].key == key) {
+            // Найден пустой слот или существующий ключ
+            hashTable[new_idx].key = key;
+            hashTable[new_idx].value = value;
+            return true;
+        }
+    }
+
+    // Не удалось найти слот
+    std::cerr << "Warning: Hash table full, could not insert key" << std::endl;
+    return false;
+}
+
+// ----------------- Потокобезопасная версия поиска -----------------
+double getCachedResultOptimized_OMP_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    double result = ZERO_HASH_RESULT;
+
+    // Критическая секция для потокобезопасного доступа
+#pragma omp critical(hash_lookup)
+    {
+        for (int i = 0; i < MAX_PROBES; i++) {
+            unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+            if (hashTable[new_idx].key == key) {
+                result = hashTable[new_idx].value;
+                break;
+            }
+            if (hashTable[new_idx].key == ZERO_HASH) {
+                result = ZERO_HASH_RESULT;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+// ----------------- Потокобезопасная версия сохранения -----------------
+bool saveToCacheOptimized_OMP_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx, double value) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    bool success = false;
+
+#pragma omp critical(hash_save)
+    {
+        for (int i = 0; i < MAX_PROBES; i++) {
+            unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+            if (hashTable[new_idx].key == ZERO_HASH || hashTable[new_idx].key == key) {
+                hashTable[new_idx].key = key;
+                hashTable[new_idx].value = value;
+                success = true;
+                break;
+            }
+        }
+    }
+
+    return success;
+}
+
+// ----------------- Статистика хэш-таблицы -----------------
+void printHashTableStats(const HashEntry* hashTable, int size) {
+    int used_slots = 0;
+
+#pragma omp parallel for reduction(+:used_slots) schedule(static)
+    for (int i = 0; i < size; i++) {
+        if (hashTable[i].key != ZERO_HASH) {
+            used_slots++;
+        }
+    }
+
+    double load_factor = static_cast<double>(used_slots) / size;
+
+    std::cout << "=== Hash Table Statistics ===" << std::endl;
+    std::cout << "Size: " << size << std::endl;
+    std::cout << "Used slots: " << used_slots << std::endl;
+    std::cout << "Load factor: " << (load_factor * 100.0) << "%" << std::endl;
+    std::cout << "Max probes: " << MAX_PROBES << std::endl;
+    std::cout << "=============================" << std::endl;
+}
+
+// ----------------- Коэффициент заполнения -----------------
+double getHashTableLoadFactor(const HashEntry* hashTable, int size) {
+    int used_slots = 0;
+
+#pragma omp parallel for reduction(+:used_slots) schedule(static)
+    for (int i = 0; i < size; i++) {
+        if (hashTable[i].key != ZERO_HASH) {
+            used_slots++;
+        }
+    }
+
+    return static_cast<double>(used_slots) / size;
+}
+
+// Функция для вычисления вероятностной формулы
+inline double probability_formula_non_cuda(double pheromon, double kol_enter) {
+    return (kol_enter != 0.0 && pheromon != 0.0) ? (1.0 / kol_enter + pheromon) : 0.0;
+}
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.0 version (SIMD vectorization)\n");
+
+    // OpenMP 4.0: separate simd directive
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+
+void go_all_agent_omp(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
+
+    int local_kol_hash_fail = 0;
+    double local_totalHashTime = 0.0;
+    double local_totalOFTime = 0.0;
+
+    // Универсальная параллельная секция с условными директивами
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime) // if(ANT_SIZE > 100)
+#else
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime)
+#endif
+    {
+        uint64_t seed = 123 + gpuTime + omp_get_thread_num();
+
+        // Условное распределение работы в зависимости от версии OpenMP
+#if defined(__clang__)
+        // Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+        // Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for(int bx = 0; bx < ANT_SIZE; bx++) {
+            // Оптимизированная генерация пути с учетом малого MAX_VALUE_SIZE
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = unified_fast_random(seed);
+
+                // Линейный поиск с предположением о малом размере
+                int k = 0;
+                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
+                    k++;
+                }
+                agent_node[bx * PARAMETR_SIZE + tx] = k;
+                agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
+            }
+
+            auto start = std::chrono::high_resolution_clock::now();
+            double cachedResult = -1.0;
+
+#pragma omp critical (hash_lookup)
+            {
+                cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
+            }
+
+            if (cachedResult == -1.0) {
+                auto start_OF = std::chrono::high_resolution_clock::now();
+                OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
+                auto end_OF = std::chrono::high_resolution_clock::now();
+                local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+
+#pragma omp critical(hash_write)
+                {
+                    saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
+                }
+            }
+            else {
+                local_kol_hash_fail++;
+
+                // Обработка в зависимости от типа алгоритма
+                switch (TYPE_ACO) {
+                case 0: // ACOCN
+                    OF[bx] = cachedResult;
+                    break;
+
+                case 1: // ACOCNI
+                    OF[bx] = ZERO_HASH_RESULT;
+                    break;
+                case 2: // ACOCCyN
+                {
+                    int nom_iteration = 0;
+                    double currentCachedResult = cachedResult;
+
+                    // Пытаемся найти уникальный путь
+                    while (currentCachedResult != -1.0 && nom_iteration < ACOCCyN_KOL_ITERATION) {
+                        // Генерируем новый путь с тем же генератором
+                        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                            double randomValue = unified_fast_random(seed);
+
+                            int k = 0;
+                            while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
+                                k++;
+                            }
+                            agent_node[bx * PARAMETR_SIZE + tx] = k;
+                            agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
+                        }
+
+#pragma omp critical (hash_lookup)
+                        {
+                            currentCachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
+                        }
+                        nom_iteration++;
+                        local_kol_hash_fail++;
+                    }
+
+                    // Если нашли уникальный путь или превысили лимит итераций
+                    if (currentCachedResult == -1.0) {
+                        auto start_OF = std::chrono::high_resolution_clock::now();
+                        OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
+                        auto end_OF = std::chrono::high_resolution_clock::now();
+                        local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+
+#pragma omp critical(hash_write)
+                        {
+                            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
+                        }
+                    }
+                    else {
+                        // Используем последнее найденное кэшированное значение
+                        OF[bx] = currentCachedResult;
+                    }
+                }
+                break;
+
+                default:
+                    OF[bx] = cachedResult;
+                    break;
+                }
+            }
+
+            auto end = std::chrono::high_resolution_clock::now();
+            local_totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
+        }
+    }
+    // Обновление глобальных переменных
+    kol_hash_fail += local_kol_hash_fail;
+    totalHashTime += local_totalHashTime;
+    totalOFTime += local_totalOFTime;
+}
+
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void add_pheromon_iteration_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Phase 1: Evaporation with SIMD
+#pragma omp parallel for simd
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Phase 2: Accumulation with optimized thread-local buffers
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+            double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+            double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+            // Cache-friendly access pattern
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                int idx = MAX_VALUE_SIZE * tx + k;
+
+                local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                if (delta > 0) {
+                    local_pheromon_add[idx] += PARAMETR_Q * delta;
+                }
+#elif OPTIMIZE_MIN_2
+                local_pheromon_add[idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                local_pheromon_add[idx] += agent_of_scaled;
+#endif
+            }
+        }
+
+        // Merge thread-local results with SIMD
+#pragma omp critical
+        {
+#pragma omp simd
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+
+int start_omp() {
+    auto start = std::chrono::high_resolution_clock::now();
+    double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumgpuTime4 = 0.0f, SumgpuTime5 = 0.0f, SumgpuTime6 = 0.0f, SumgpuTime7 = 0.0f;
+    double duration = 0.0f, duration_iteration = 0.0f;
+    int kol_hash_fail = 0;
+    const int kol_shag_stat = KOL_ITERATION / KOL_STAT_LEVEL;
+    const int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
+    const int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
+
+    // Выделение памяти для хэш-таблицы на CPU
+    HashEntry* hashTable = new HashEntry[HASH_TABLE_SIZE];
+    // Вызов функции инициализации
+    initializeHashTable_non_cuda(hashTable, HASH_TABLE_SIZE);
+
+    double global_maxOf = -std::numeric_limits<double>::max();
+    double global_minOf = std::numeric_limits<double>::max();
+
+    // Выделение памяти на хосте
+    double* parametr_value = new double[kolBytes_matrix_graph];
+    double* pheromon_value = new double[kolBytes_matrix_graph];
+    double* kol_enter_value = new double[kolBytes_matrix_graph];
+    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
+    double* ant = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
+    double* antOF = new double[ANT_SIZE];
+
+    // Загрузка матрицы из файла
+    if (!load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value)) {
+        std::cerr << "Failed to load matrix from file: " << NAME_FILE_GRAPH << std::endl;
+        return -1;
+    }
+
+    auto start_iteration = std::chrono::high_resolution_clock::now();
+
+    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
+        auto start1 = std::chrono::high_resolution_clock::now();
+
+        // Расчет нормализованной вероятности
+        go_mass_probability_omp(pheromon_value, kol_enter_value, norm_matrix_probability);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << std::endl;
+            for (int i = 0; i < PARAMETR_SIZE; ++i) {
+                for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
+                    std::cout << parametr_value[i * MAX_VALUE_SIZE + j] << "("
+                        << pheromon_value[i * MAX_VALUE_SIZE + j] << ", "
+                        << kol_enter_value[i * MAX_VALUE_SIZE + j] << "-> "
+                        << norm_matrix_probability[i * MAX_VALUE_SIZE + j] << ") ";
+                }
+                std::cout << std::endl;
+            }
+        }
+
+        // Вычисление пути агентов
+        auto start2 = std::chrono::high_resolution_clock::now();
+        auto end_temp = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> current_time = end_temp - start;
+        //std::cout << "go_all_agent_omp";
+        go_all_agent_omp(int(current_time.count() * CONST_RANDOM), parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, hashTable, kol_hash_fail, SumgpuTime4, SumgpuTime5);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                for (int j = 0; j < PARAMETR_SIZE; ++j) {
+                    std::cout << ant[i * PARAMETR_SIZE + j] << " ";
+                }
+                std::cout << "-> " << antOF[i] << std::endl;
+            }
+        }
+
+        auto start3 = std::chrono::high_resolution_clock::now();
+
+        // Обновление весов-феромонов
+        add_pheromon_iteration_omp(pheromon_value, kol_enter_value, ant_parametr, antOF);
+
+        #pragma omp parallel 
+        {
+            // Поиск максимума и минимума
+            double maxOf = -std::numeric_limits<double>::max();
+            double minOf = std::numeric_limits<double>::max();
+
+            #pragma omp for
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                if (antOF[i] != ZERO_HASH_RESULT) {
+                    if (antOF[i] > maxOf) maxOf = antOF[i];
+                    if (antOF[i] < minOf) minOf = antOF[i];
+                }
+            }
+            #pragma omp critical
+            {
+                if (maxOf > global_maxOf) global_maxOf = maxOf;
+                if (minOf < global_minOf) global_minOf = minOf;
+            }
+        }
+   
+        auto end_iter = std::chrono::high_resolution_clock::now();
+        SumgpuTime1 += std::chrono::duration<double, std::milli>(end_iter - start1).count();
+        SumgpuTime2 += std::chrono::duration<double, std::milli>(end_iter - start2).count();
+        SumgpuTime3 += std::chrono::duration<double, std::milli>(end_iter - start3).count();
+        if ((nom_iter + 1) % kol_shag_stat == 0) {
+            int NomStatistics = nom_iter / kol_shag_stat;
+            if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
+            update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, kol_hash_fail);
+        }
+    }
+    auto end_iteration = std::chrono::high_resolution_clock::now();
+    duration_iteration += std::chrono::duration<double, std::milli>(end_iteration - start_iteration).count();
+
+    // Освобождение памяти в конце программы
+    delete[] hashTable;               // Освобождение памяти для хэш-таблицы
+    delete[] parametr_value;          // Освобождение памяти для параметров
+    delete[] pheromon_value;          // Освобождение памяти для феромонов
+    delete[] kol_enter_value;         // Освобождение памяти для количества входов
+    delete[] norm_matrix_probability; // Освобождение памяти для нормализованной матрицы вероятностей
+    delete[] ant;                     // Освобождение памяти для муравьев
+    delete[] ant_parametr;            // Освобождение памяти для параметров муравьев
+    delete[] antOF;                   // Освобождение памяти для результата муравьев
+
+    auto end = std::chrono::high_resolution_clock::now();
+    duration += std::chrono::duration<double, std::milli>(end - start).count();
+    std::cout << "Time omp:;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << SumgpuTime4 << "; " << SumgpuTime5 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time omp:;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << "; " << SumgpuTime5 << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+
+    // Возвращаем результат или выводим информацию о времени
+    return 0; // или другой результат по необходимости
+}
+int main(int argc, char* argv[]) {
+    // Открытие лог-файла
+    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    std::cout << __cplusplus << std::endl;
+    logFile.open("log.txt");
+    if (!logFile.is_open()) {
+        std::cerr << "Ошибка открытия лог-файла!" << std::endl;
+        return 1; // Возврат с ошибкой
+    }
+    std::cout << "Max threads OMP : " << omp_get_max_threads() << " ";
+    std::cout << "OpenMP version: " << _OPENMP << " :";
+#if _OPENMP >= 202411 
+    std::cout << "OpenMP 6.0 (2026) plane" << std::endl;
+#elif _OPENMP >= 202111 
+    std::cout << "OpenMP 5.2 (2023) active" << std::endl;
+#elif _OPENMP >= 202011 
+    std::cout << "OpenMP 5.1 (2021) active" << std::endl;
+#elif _OPENMP >= 201811 
+    std::cout << "OpenMP 5.0 (2018) active" << std::endl;
+#elif _OPENMP >= 201511 
+    std::cout << "OpenMP 4.5 (2015) optimal" << std::endl;
+#elif _OPENMP >= 201307 
+    std::cout << "OpenMP 4.0 (2013) active" << std::endl;
+#elif _OPENMP >= 201107 
+    std::cout << "OpenMP 3.1 (2011) supported" << std::endl;
+#elif _OPENMP >= 200805 
+    std::cout << "OpenMP 3.0 (2008) supported" << std::endl;
+#elif _OPENMP >= 200505 
+    std::cout << "OpenMP 2.5 (2005) outdated" << std::endl;
+#elif _OPENMP >= 200203 
+    std::cout << "OpenMP 2.0 (2002) outdated" << std::endl;
+#elif _OPENMP >= 199710 
+    std::cout << "OpenMP 1.0 (1999) outdated" << std::endl;
+#else 
+    std::cout << "Older OpenMP version" << std::endl;
+#endif
+    logFile << "Max threads OMP : " << omp_get_max_threads() << " ";
+    logFile << "OpenMP version: " << _OPENMP << " :";
+#if _OPENMP >= 202611 
+    logFile << "OpenMP 6.0 (2026) plane" << std::endl;
+#elif _OPENMP >= 202311 
+    logFile << "OpenMP 5.2 (2023) active" << std::endl;
+#elif _OPENMP >= 202111 
+    logFile << "OpenMP 5.1 (2021) active" << std::endl;
+#elif _OPENMP >= 201811 
+    logFile << "OpenMP 5.0 (2018) active" << std::endl;
+#elif _OPENMP >= 201511 
+    logFile << "OpenMP 4.5 (2015) optimal" << std::endl;
+#elif _OPENMP >= 201307 
+    logFile << "OpenMP 4.0 (2013) active" << std::endl;
+#elif _OPENMP >= 201107 
+    logFile << "OpenMP 3.1 (2011) supported" << std::endl;
+#elif _OPENMP >= 200805 
+    logFile << "OpenMP 3.0 (2008) supported" << std::endl;
+#elif _OPENMP >= 200505 
+    logFile << "OpenMP 2.5 (2005) outdated" << std::endl;
+#elif _OPENMP >= 200203 
+    logFile << "OpenMP 2.0 (2002) outdated" << std::endl;
+#elif _OPENMP >= 199910 
+    logFile << "OpenMP 1.0 (1999) outdated" << std::endl;
+#else 
+    logFile << "Older OpenMP version" << std::endl;
+#endif
+    std::cout << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
+        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
+        << "ANT_SIZE: " << ANT_SIZE << "; "
+        << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
+        << "KOL_ITERATION: " << KOL_ITERATION << "; "
+        << "KOL_PROGON_STATISTICS: " << KOL_PROGON_STATISTICS << "; "
+        << "PARAMETR_Q: " << PARAMETR_Q << "; "
+        << "PARAMETR_RO: " << PARAMETR_RO << "; "
+        << "TYPE_ACO: " << TYPE_ACO << "; "
+        << "ACOCCyN_KOL_ITERATION: " << ACOCCyN_KOL_ITERATION << ", " << "MAX_PARAMETR_VALUE_TO_MIN_OPT: " << MAX_PARAMETR_VALUE_TO_MIN_OPT << ", " << "HASH_TABLE_SIZE: " << HASH_TABLE_SIZE << ", " << "MAX_PROBES: " << MAX_PROBES << ", " << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << ", " << "CPU_RANDOM: " << CPU_RANDOM << ", " << "KOL_THREAD_CPU_ANT: " << KOL_THREAD_CPU_ANT << ", " << "CONST_RANDOM: " << CONST_RANDOM << ", " << "MAX_CONST: " << MAX_CONST << ", "
+        << "OPTIMIZE: " << (OPTIMIZE_MIN_1 ? "OPTIMIZE_MIN_1 " : "") << (OPTIMIZE_MIN_2 ? "OPTIMIZE_MIN_2 " : "") << (OPTIMIZE_MAX ? "OPTIMIZE_MAX " : "") << "; "
+        << "FUNCTION: " << (SHAFFERA ? "SHAFFERA " : "") << (CARROM_TABLE ? "CARROM_TABLE " : "") << (RASTRIGIN ? "RASTRIGIN " : "") << (ACKLEY ? "ACKLEY " : "") << (SPHERE ? "SPHERE " : "") << (GRIEWANK ? "GRIEWANK " : "") << (ZAKHAROV ? "ZAKHAROV " : "") << (SCHWEFEL ? "SCHWEFEL " : "") << (LEVY ? "LEVY " : "") << (MICHAELWICZYNSKI ? "MICHAELWICZYNSKI " : "")
+        << "GO_ALG_MINMAX: " << GO_ALG_MINMAX << "(" << PAR_MIN_ALG_MINMAX << ", " << PAR_MAX_ALG_MINMAX << ")" << "; "
+        << std::endl;
+    logFile << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
+        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
+        << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
+        << "ANT_SIZE: " << ANT_SIZE << "; "
+        << "KOL_ITERATION: " << KOL_ITERATION << "; "
+        << "KOL_PROGON_STATISTICS: " << KOL_PROGON_STATISTICS << "; "
+        << "PARAMETR_Q: " << PARAMETR_Q << "; "
+        << "PARAMETR_RO: " << PARAMETR_RO << "; "
+        << "TYPE_ACO: " << TYPE_ACO << "; "
+        << "ACOCCyN_KOL_ITERATION: " << ACOCCyN_KOL_ITERATION << ", " << "MAX_PARAMETR_VALUE_TO_MIN_OPT: " << MAX_PARAMETR_VALUE_TO_MIN_OPT << ", " << "HASH_TABLE_SIZE: " << HASH_TABLE_SIZE << ", " << "MAX_PROBES: " << MAX_PROBES << ", " << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << ", " << "CPU_RANDOM: " << CPU_RANDOM << ", " << "KOL_THREAD_CPU_ANT: " << KOL_THREAD_CPU_ANT << ", " << "CONST_RANDOM: " << CONST_RANDOM << ", " << "MAX_CONST: " << MAX_CONST << ", "
+        << "OPTIMIZE: " << (OPTIMIZE_MIN_1 ? "OPTIMIZE_MIN_1 " : "") << (OPTIMIZE_MIN_2 ? "OPTIMIZE_MIN_2 " : "") << (OPTIMIZE_MAX ? "OPTIMIZE_MAX " : "") << "; "
+        << "FUNCTION: " << (SHAFFERA ? "SHAFFERA " : "") << (CARROM_TABLE ? "CARROM_TABLE " : "") << (RASTRIGIN ? "RASTRIGIN " : "") << (ACKLEY ? "ACKLEY " : "") << (SPHERE ? "SPHERE " : "") << (GRIEWANK ? "GRIEWANK " : "") << (ZAKHAROV ? "ZAKHAROV " : "") << (SCHWEFEL ? "SCHWEFEL " : "") << (LEVY ? "LEVY " : "") << (MICHAELWICZYNSKI ? "MICHAELWICZYNSKI " : "")
+        << "GO_ALG_MINMAX: " << GO_ALG_MINMAX << "(" << PAR_MIN_ALG_MINMAX << ", " << PAR_MAX_ALG_MINMAX << ")" << "; "
+        << std::endl;
+if (GO_OMP) {
+    int j = 0;
+    while (j < KOL_PROGREV)
+    {
+        std::cout << "PROGREV " << j << " ";
+        start_omp();
+        j = j + 1;
+    }
+    // Запуск таймера
+    clear_all_stat();
+    auto start2 = std::chrono::high_resolution_clock::now();
+    int i = 0;
+    while (i < KOL_PROGON_STATISTICS)
+    {
+        std::cout << i << " ";
+        start_omp();
+        i = i + 1;
+    }
+    // Остановка таймера
+    auto end2 = std::chrono::high_resolution_clock::now();
+    // Вычисление времени выполнения
+    std::chrono::duration<double, std::milli> duration = end2 - start2;
+    std::string message = "Time omp:;" + std::to_string(duration.count()) + ";sec";
+    std::cout << message << std::endl;
+    logFile << message << std::endl; // Запись в лог-файл
+    save_all_stat_text_file("omp");
+}
+    // Закрытие лог-файла
+    logFile.close();
+    outfile.close();
+}

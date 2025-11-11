@@ -1,0 +1,1 @@
+clang++ -fopenmp -O3 -march=native OMP_AVX_C++.cpp -o OMP_AVX_C++.exe

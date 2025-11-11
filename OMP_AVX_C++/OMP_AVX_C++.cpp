@@ -21,6 +21,16 @@ std::ofstream logFile; // Глобальная переменная для ло�
 std::ofstream outfile("statistics.txt"); // Глобальная переменная для файла статистики
 std::mutex mtx; // Мьютекс для защиты доступа к общим данным
 
+#ifdef _WIN32
+#include <malloc.h>
+#define ALIGNED_ALLOC(alignment, size) _aligned_malloc(size, alignment)
+#define ALIGNED_FREE(ptr) _aligned_free(ptr)
+#else
+#include <cstdlib>
+#define ALIGNED_ALLOC(alignment, size) aligned_alloc(alignment, size)
+#define ALIGNED_FREE(ptr) free(ptr)
+#endif
+
 
 //Структура для сбора статистики 
 class Statistics {
@@ -271,7 +281,6 @@ double BenchShafferaFunction_omp(double* parametr) {
     return sum;
 }
 #endif
-
 
 // Функция для non_CUDA
 #if (SHAFFERA) 
@@ -533,7 +542,6 @@ struct HashEntry {
     double value;           // Objective function value
 };
 
-
 // Функция для загрузки матрицы из файла
 bool load_matrix(const std::string& filename, double* parametr_value, double* pheromon_value, double* kol_enter_value)
 {
@@ -593,179 +601,209 @@ bool load_matrix_transp(const std::string& filename, double* parametr_value, dou
     return true;
 }
 
-// ----------------- Kernel: Initializing Hash Table -----------------
-void initializeHashTable_omp(HashEntry* hashTable, int size) {
-#pragma omp parallel for
-    for (int i = 0; i < size; i++) {
-        hashTable[i].key = ZERO_HASH_RESULT;
-        hashTable[i].value = 0.0;
-    }
-}
-
-// ----------------- Kernel: Initializing Hash Table -----------------
+// ----------------- Инициализация хэш-таблицы -----------------
 void initializeHashTable_non_cuda(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < size; i++) {
-        hashTable[i].key = ZERO_HASH_RESULT;
+        hashTable[i].key = ZERO_HASH;
         hashTable[i].value = 0.0;
     }
 }
 
-// ----------------- MurmurHash64A Implementation -----------------
-unsigned long long murmurHash64A_non_cuda(unsigned long long key, unsigned long long seed = 0xDEADBEEFDEADBEEF) {
-    unsigned long long m = 0xc6a4a7935bd1e995;
-    int r = 47;
-    unsigned long long h = seed ^ (8 * m);
-
-    unsigned long long k = key;
-    k *= m;
-    k ^= k >> r;
-    k *= m;
-
-    h ^= k;
-    h *= m;
-
-    h ^= h >> r;
-    h *= m;
-    h ^= h >> r;
-
-    return h;
-}
-
-// ----------------- Improved Hash Function Using MurmurHash -----------------
-unsigned long long betterHashFunction_non_cuda(unsigned long long key) {
-    return murmurHash64A_non_cuda(key) % HASH_TABLE_SIZE;
-}
-
-// ----------------- Key Generation Function -----------------
-unsigned long long generateKey_non_cuda(const int* agent_node, int bx) {
-    unsigned long long key = 0;
-    unsigned long long factor = 1;
-    for (int i = 0; i < PARAMETR_SIZE; i++) {
-        int val = agent_node[bx * PARAMETR_SIZE + i];
-        //        std::cout << val << " ";
-        key += val * factor;
-        factor *= MAX_VALUE_SIZE;
+// ----------------- Очистка хэш-таблицы -----------------
+void clearHashTable(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key = ZERO_HASH;
+        hashTable[i].value = 0.0;
     }
-    //    std::cout <<" key=" << key;
-    //    std::cout << std::endl;
+}
+
+// ----------------- Быстрая хэш-функция -----------------
+inline unsigned long long fastHashFunction(unsigned long long key) {
+    // Оптимизированная хэш-функция для MSVC
+    key = (~key) + (key << 21);
+    key = key ^ (key >> 24);
+    key = (key + (key << 3)) + (key << 8);
+    key = key ^ (key >> 14);
+    key = (key + (key << 2)) + (key << 4);
+    key = key ^ (key >> 28);
+    key = key + (key << 31);
+
+    // Быстрый модуль через битовую маску
+    return key & (HASH_TABLE_SIZE - 1);
+}
+
+// ----------------- Генерация ключа из пути агента -----------------
+inline unsigned long long generateKey(const int* agent_path) {
+    // Полиномиальное хэширование для лучшего распределения
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long key = 14695981039346656037ULL;
+
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        key ^= static_cast<unsigned long long>(agent_path[i]);
+        key *= prime;
+    }
+
     return key;
 }
 
-// ---------------- - Hash Table Search with Quadratic Probing---------------- -
-double getCachedResultOptimized_omp(HashEntry* hashTable, const int* agent_node, int bx) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
+// ----------------- Альтернативная генерация ключа -----------------
+inline unsigned long long generateKeySimple(const int* agent_path) {
+    unsigned long long key = 0;
 
-#pragma omp parallel for
-    for (int i = 1; i <= MAX_PROBES; i++) {
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-
-        // Используем критическую секцию для безопасного доступа к хэш-таблице
-#pragma omp critical
-        {
-            if (hashTable[idx].key == key) {
-                return hashTable[idx].value; // Found
-            }
-            if (hashTable[idx].key == ZERO_HASH_RESULT) {
-                return -1.0; // Not found and slot is empty
-            }
-        }
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        key = key * MAX_VALUE_SIZE + agent_path[i];
     }
-    return -1.0; // Not found after maximum probes
+
+    return key;
 }
 
-// ----------------- Hash Table Search with Quadratic Probing -----------------
-double getCachedResultOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, int bx) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
-    int i = 1;
+// ----------------- Поиск в хэш-таблице -----------------
+double getCachedResultOptimized_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
 
-    while (i <= MAX_PROBES) {
-        if (hashTable[idx].key == key) {
-            return hashTable[idx].value; // Found
+    // Поиск с квадратичным probing
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+        // Используем совместимый макрос для предсказания ветвлений
+        if (hashTable[new_idx].key == key) {
+            return hashTable[new_idx].value; // Найдено
         }
-        if (hashTable[idx].key == ZERO_HASH_RESULT) {
-            return -1.0; // Not found and slot is empty
+        if (hashTable[new_idx].key == ZERO_HASH) {
+            return ZERO_HASH_RESULT; // Не найдено - пустой слот
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        i++;
     }
-    return -1.0; // Not found after maximum probes
+
+    return ZERO_HASH_RESULT; // Не найдено после всех проб
 }
 
-// ----------------- Hash Table Insertion with Quadratic Probing -----------------
-void saveToCacheOptimized_omp(HashEntry* hashTable, const int* agent_node, int bx, double value) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
+// ----------------- Сохранение в хэш-таблицу -----------------
+bool saveToCacheOptimized_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx, double value) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
 
-#pragma omp parallel for
-    for (int i = 1; i <= MAX_PROBES; i++) {
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        unsigned long long expected = ZERO_HASH_RESULT;
-        unsigned long long old_key;
+    // Поиск пустого слота или обновление существующего
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
 
-        // Используем критическую секцию для безопасного доступа к хэш-таблице
-#pragma omp critical
-        {
-            old_key = hashTable[idx].key;
-
-            if (old_key == expected) {
-                // Successfully inserted
-                hashTable[idx].key = key;
-                hashTable[idx].value = value;
-                return;
-            }
-            else if (old_key == key) {
-                // Key already exists
-                hashTable[idx].value = value; // Update value
-                return;
-            }
+        if (hashTable[new_idx].key == ZERO_HASH || hashTable[new_idx].key == key) {
+            // Найден пустой слот или существующий ключ
+            hashTable[new_idx].key = key;
+            hashTable[new_idx].value = value;
+            return true;
         }
     }
-    // Если таблица полна, обработайте ошибку или игнорируйте
+
+    // Не удалось найти слот
+    std::cerr << "Warning: Hash table full, could not insert key" << std::endl;
+    return false;
 }
 
-// ----------------- Hash Table Insertion with Quadratic Probing -----------------
-void saveToCacheOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, int bx, double value) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
-    int i = 1;
+// ----------------- Потокобезопасная версия поиска -----------------
+double getCachedResultOptimized_OMP_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
 
-    while (i <= MAX_PROBES) {
-        unsigned long long expected = ZERO_HASH_RESULT;
-        unsigned long long old_key = hashTable[idx].key;
+    double result = ZERO_HASH_RESULT;
 
-        if (old_key == expected) {
-            // Successfully inserted
-            hashTable[idx].key = key;
-            hashTable[idx].value = value;
-            return;
+    // Критическая секция для потокобезопасного доступа
+#pragma omp critical(hash_lookup)
+    {
+        for (int i = 0; i < MAX_PROBES; i++) {
+            unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+            if (hashTable[new_idx].key == key) {
+                result = hashTable[new_idx].value;
+                break;
+            }
+            if (hashTable[new_idx].key == ZERO_HASH) {
+                result = ZERO_HASH_RESULT;
+                break;
+            }
         }
-        else if (old_key == key) {
-            // Key already exists
-            hashTable[idx].value = value; // Update value
-            return;
-        }
-
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        i++;
     }
-    // If the table is full, handle the error or ignore
+
+    return result;
+}
+
+// ----------------- Потокобезопасная версия сохранения -----------------
+bool saveToCacheOptimized_OMP_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx, double value) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    bool success = false;
+
+#pragma omp critical(hash_save)
+    {
+        for (int i = 0; i < MAX_PROBES; i++) {
+            unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+            if (hashTable[new_idx].key == ZERO_HASH || hashTable[new_idx].key == key) {
+                hashTable[new_idx].key = key;
+                hashTable[new_idx].value = value;
+                success = true;
+                break;
+            }
+        }
+    }
+
+    return success;
+}
+
+// ----------------- Статистика хэш-таблицы -----------------
+void printHashTableStats(const HashEntry* hashTable, int size) {
+    int used_slots = 0;
+
+#pragma omp parallel for reduction(+:used_slots) schedule(static)
+    for (int i = 0; i < size; i++) {
+        if (hashTable[i].key != ZERO_HASH) {
+            used_slots++;
+        }
+    }
+
+    double load_factor = static_cast<double>(used_slots) / size;
+
+    std::cout << "=== Hash Table Statistics ===" << std::endl;
+    std::cout << "Size: " << size << std::endl;
+    std::cout << "Used slots: " << used_slots << std::endl;
+    std::cout << "Load factor: " << (load_factor * 100.0) << "%" << std::endl;
+    std::cout << "Max probes: " << MAX_PROBES << std::endl;
+    std::cout << "=============================" << std::endl;
+}
+
+// ----------------- Коэффициент заполнения -----------------
+double getHashTableLoadFactor(const HashEntry* hashTable, int size) {
+    int used_slots = 0;
+
+#pragma omp parallel for reduction(+:used_slots) schedule(static)
+    for (int i = 0; i < size; i++) {
+        if (hashTable[i].key != ZERO_HASH) {
+            used_slots++;
+        }
+    }
+
+    return static_cast<double>(used_slots) / size;
 }
 
 // Функция для вычисления вероятностной формулы
-double probability_formula_non_cuda(double pheromon, double kol_enter) {
-    double res = 0;
-    if ((kol_enter != 0) && (pheromon != 0)) {
-        res = 1.0 / kol_enter + pheromon;
-    }
-    return res;
+inline double probability_formula_non_cuda(double pheromon, double kol_enter) {
+    return (kol_enter != 0.0 && pheromon != 0.0) ? (1.0 / kol_enter + pheromon) : 0.0;
 }
 
 // Подготовка массива для вероятностного поиска
-void go_mass_probability_omp(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
-    // Нормализация слоя с феромоном
-#pragma omp parallel for
+
+// Базовая версия OpenMP 2.0/3.0/3.1 - только CPU параллелизм
+void go_mass_probability_omp_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 2.0-3.1 version (CPU parallel for)\n");
+
+#pragma omp parallel for 
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         double sumVector = 0;
         double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
@@ -791,13 +829,245 @@ void go_mass_probability_omp(double* pheromon, double* kol_enter, double* norm_m
 
         norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
         for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1]; // Нормирование значений матрицы с накоплением
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
         }
     }
 }
-void go_mass_probability_non_cuda_not_f_omp(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
-    // Нормализация слоя с феромоном
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.0 version (SIMD vectorization)\n");
+
+    // OpenMP 4.0: separate simd directive
 #pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_mass_probability_omp_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.5 version (if clause and loop nesting)\n");
+
+    // OpenMP 4.5: if clause для условного выполнения
+#if defined(__clang__)
+#pragma omp parallel for
+#else
+#pragma omp parallel for // if(PARAMETR_SIZE > 100)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Автоматическая векторизация внутренних циклов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_mass_probability_omp_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.0 version (loop transformation)\n");
+
+    // OpenMP 5.0: tile directive для оптимизации доступа к памяти
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // OpenMP 5.0: scan directive для редукций (если поддерживается)
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVector)
+#else
+#pragma omp simd reduction(inscan,+:sumVector)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVector)
+#endif
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVector)
+#else
+#pragma omp simd reduction(inscan,+:sumVector)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVector)
+#endif
+        }
+
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_mass_probability_omp_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.1 version (error recovery and loop features)\n");
+
+    // OpenMP 5.1: order(concurrent) для неупорядоченного выполнения
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // OpenMP 5.1: неблокирующие редукции
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_mass_probability_omp_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.2 version (latest features)\n");
+
+    // OpenMP 5.2: assume clauses для оптимизатора
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // OpenMP 5.2: улучшенные редукции
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+void go_mass_probability_omp(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("OpenMP version detected: %d\n", _OPENMP);
+
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_mass_probability_omp_5_2(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_mass_probability_omp_5_1(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_mass_probability_omp_5_0(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_mass_probability_omp_4_5(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_mass_probability_omp_4_0(pheromon, kol_enter, norm_matrix_probability);
+#else  // OpenMP 2.0/3.0/3.1
+    go_mass_probability_omp_2_0(pheromon, kol_enter, norm_matrix_probability);
+#endif
+}
+// Базовая версия OpenMP 2.0/3.0/3.1 - только CPU параллелизм
+void go_mass_probability_non_cuda_not_f_omp_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 2.0-3.1 version (CPU parallel for)\n");
+
+#pragma omp parallel for 
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         double sumVector = 0;
         double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
@@ -815,19 +1085,250 @@ void go_mass_probability_non_cuda_not_f_omp(double* pheromon, double* kol_enter,
         sumVector = 0;
         double svertka[MAX_VALUE_SIZE] = { 0 };
 
+        // Вычисляем вероятностные значения
         for (int i = 0; i < MAX_VALUE_SIZE; i++) {
             svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
             sumVector += svertka[i];
         }
 
+        // Записываем нормализованные вероятности
         for (int i = 0; i < MAX_VALUE_SIZE; i++) {
             norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = svertka[i] / sumVector;
         }
     }
 }
-void go_mass_probability_non_cuda_sort_omp(double* pheromon, double* kol_enter, double* norm_matrix_probability, int* indices) {
-    // Нормализация слоя с феромоном
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_non_cuda_not_f_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.0 version (SIMD vectorization)\n");
+
 #pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Записываем нормализованные вероятности
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = svertka[i] / sumVector;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_mass_probability_non_cuda_not_f_omp_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.5 version (if clause and loop nesting)\n");
+#if defined(__clang__)
+#pragma omp parallel for 
+#else
+#pragma omp parallel for // if(PARAMETR_SIZE > 100)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Записываем нормализованные вероятности
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = svertka[i] / sumVector;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_mass_probability_non_cuda_not_f_omp_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.0 version (loop transformation)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVector)
+#else
+#pragma omp simd reduction(inscan,+:sumVector)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVector)
+#endif
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVector)
+#else
+#pragma omp simd reduction(inscan,+:sumVector)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVector)
+#endif
+        }
+
+        // Записываем нормализованные вероятности
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = svertka[i] / sumVector;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_mass_probability_non_cuda_not_f_omp_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.1 version (error recovery and loop features)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Записываем нормализованные вероятности
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = svertka[i] / sumVector;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_mass_probability_non_cuda_not_f_omp_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.2 version (latest features)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Записываем нормализованные вероятности
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = svertka[i] / sumVector;
+        }
+    }
+}
+#endif
+void go_mass_probability_non_cuda_not_f_omp(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_mass_probability_non_cuda_not_f_omp_5_2(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_mass_probability_non_cuda_not_f_omp_5_1(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_mass_probability_non_cuda_not_f_omp_5_0(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_mass_probability_non_cuda_not_f_omp_4_5(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_mass_probability_non_cuda_not_f_omp_4_0(pheromon, kol_enter, norm_matrix_probability);
+#else  // OpenMP 2.0/3.0/3.1
+    go_mass_probability_non_cuda_not_f_omp_2_0(pheromon, kol_enter, norm_matrix_probability);
+#endif
+}
+// Базовая версия OpenMP 2.0/3.0/3.1 - только CPU параллелизм
+void go_mass_probability_non_cuda_sort_omp_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+    //printf("Using OpenMP 2.0-3.1 version (CPU parallel for)\n");
+
+#pragma omp parallel for 
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         double sumVector = 0;
         double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
@@ -845,37 +1346,748 @@ void go_mass_probability_non_cuda_sort_omp(double* pheromon, double* kol_enter, 
         sumVector = 0;
         double svertka[MAX_VALUE_SIZE] = { 0 };
 
+        // Вычисляем вероятностные значения
         for (int i = 0; i < MAX_VALUE_SIZE; i++) {
             svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
             sumVector += svertka[i];
         }
+
         // Заполняем массив индексов начальными значениями
         for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            indices[i] = i;
+            indices[MAX_VALUE_SIZE * tx + i] = i;
         }
-        //Может посмотреть встроенные сортировки
+
         // Ручная сортировка методом вставки с сохранением индексов
         for (int j = 1; j < MAX_VALUE_SIZE; ++j) {
             double key = svertka[j];               // Значение текущего элемента
-            int idx_key = indices[j];              // Индекс текущего элемента
+            int idx_key = indices[MAX_VALUE_SIZE * tx + j]; // Индекс текущего элемента
             int i = j - 1;                         // Начинаем проверку с предыдущего элемента
 
             while (i >= 0 && svertka[i] > key) {
                 svertka[i + 1] = svertka[i];         // Сдвигаем больше элементы вправо
-                indices[i + 1] = indices[i];         // Обновляем соответствующий индекс
+                indices[MAX_VALUE_SIZE * tx + i + 1] = indices[MAX_VALUE_SIZE * tx + i]; // Обновляем соответствующий индекс
                 i--;
             }
             svertka[i + 1] = key;                   // Кладём ключ на новое место
-            indices[i + 1] = idx_key;                // Сохраняем индекс ключа
+            indices[MAX_VALUE_SIZE * tx + i + 1] = idx_key; // Сохраняем индекс ключа
         }
+
+        // Нормирование значений матрицы с накоплением
         norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
         for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1]; // Нормирование значений матрицы с накоплением
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
         }
     }
 }
-// Подготовка массива для вероятностного поиска
-void go_mass_probability_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_non_cuda_sort_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+    //printf("Using OpenMP 4.0 version (SIMD vectorization)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Заполняем массив индексов начальными значениями
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            indices[MAX_VALUE_SIZE * tx + i] = i;
+        }
+
+        // Ручная сортировка методом вставки с сохранением индексов
+        for (int j = 1; j < MAX_VALUE_SIZE; ++j) {
+            double key = svertka[j];               // Значение текущего элемента
+            int idx_key = indices[MAX_VALUE_SIZE * tx + j]; // Индекс текущего элемента
+            int i = j - 1;                         // Начинаем проверку с предыдущего элемента
+
+            while (i >= 0 && svertka[i] > key) {
+                svertka[i + 1] = svertka[i];         // Сдвигаем больше элементы вправо
+                indices[MAX_VALUE_SIZE * tx + i + 1] = indices[MAX_VALUE_SIZE * tx + i]; // Обновляем соответствующий индекс
+                i--;
+            }
+            svertka[i + 1] = key;                   // Кладём ключ на новое место
+            indices[MAX_VALUE_SIZE * tx + i + 1] = idx_key; // Сохраняем индекс ключа
+        }
+
+        // Нормирование значений матрицы с накоплением
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_mass_probability_non_cuda_sort_omp_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+    //printf("Using OpenMP 4.5 version (if clause and loop nesting)\n");
+#if defined(__clang__)
+#pragma omp parallel for 
+#else
+#pragma omp parallel for // if(PARAMETR_SIZE > 100)
+#endif
+
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Заполняем массив индексов начальными значениями
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            indices[MAX_VALUE_SIZE * tx + i] = i;
+        }
+
+        // Ручная сортировка методом вставки с сохранением индексов
+        for (int j = 1; j < MAX_VALUE_SIZE; ++j) {
+            double key = svertka[j];               // Значение текущего элемента
+            int idx_key = indices[MAX_VALUE_SIZE * tx + j]; // Индекс текущего элемента
+            int i = j - 1;                         // Начинаем проверку с предыдущего элемента
+
+            while (i >= 0 && svertka[i] > key) {
+                svertka[i + 1] = svertka[i];         // Сдвигаем больше элементы вправо
+                indices[MAX_VALUE_SIZE * tx + i + 1] = indices[MAX_VALUE_SIZE * tx + i]; // Обновляем соответствующий индекс
+                i--;
+            }
+            svertka[i + 1] = key;                   // Кладём ключ на новое место
+            indices[MAX_VALUE_SIZE * tx + i + 1] = idx_key; // Сохраняем индекс ключа
+        }
+
+        // Нормирование значений матрицы с накоплением
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_mass_probability_non_cuda_sort_omp_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+    //printf("Using OpenMP 5.0 version (loop transformation)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVector)
+#else
+#pragma omp simd reduction(inscan,+:sumVector)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVector)
+#endif
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVector)
+#else
+#pragma omp simd reduction(inscan,+:sumVector)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVector)
+#endif
+        }
+
+        // Заполняем массив индексов начальными значениями
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            indices[MAX_VALUE_SIZE * tx + i] = i;
+        }
+
+        // Ручная сортировка методом вставки с сохранением индексов
+        for (int j = 1; j < MAX_VALUE_SIZE; ++j) {
+            double key = svertka[j];               // Значение текущего элемента
+            int idx_key = indices[MAX_VALUE_SIZE * tx + j]; // Индекс текущего элемента
+            int i = j - 1;                         // Начинаем проверку с предыдущего элемента
+
+            while (i >= 0 && svertka[i] > key) {
+                svertka[i + 1] = svertka[i];         // Сдвигаем больше элементы вправо
+                indices[MAX_VALUE_SIZE * tx + i + 1] = indices[MAX_VALUE_SIZE * tx + i]; // Обновляем соответствующий индекс
+                i--;
+            }
+            svertka[i + 1] = key;                   // Кладём ключ на новое место
+            indices[MAX_VALUE_SIZE * tx + i + 1] = idx_key; // Сохраняем индекс ключа
+        }
+
+        // Нормирование значений матрицы с накоплением
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_mass_probability_non_cuda_sort_omp_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+    //printf("Using OpenMP 5.1 version (error recovery and loop features)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Заполняем массив индексов начальными значениями
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            indices[MAX_VALUE_SIZE * tx + i] = i;
+        }
+
+        // Ручная сортировка методом вставки с сохранением индексов
+        for (int j = 1; j < MAX_VALUE_SIZE; ++j) {
+            double key = svertka[j];               // Значение текущего элемента
+            int idx_key = indices[MAX_VALUE_SIZE * tx + j]; // Индекс текущего элемента
+            int i = j - 1;                         // Начинаем проверку с предыдущего элемента
+
+            while (i >= 0 && svertka[i] > key) {
+                svertka[i + 1] = svertka[i];         // Сдвигаем больше элементы вправо
+                indices[MAX_VALUE_SIZE * tx + i + 1] = indices[MAX_VALUE_SIZE * tx + i]; // Обновляем соответствующий индекс
+                i--;
+            }
+            svertka[i + 1] = key;                   // Кладём ключ на новое место
+            indices[MAX_VALUE_SIZE * tx + i + 1] = idx_key; // Сохраняем индекс ключа
+        }
+
+        // Нормирование значений матрицы с накоплением
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_mass_probability_non_cuda_sort_omp_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+    //printf("Using OpenMP 5.2 version (latest features)\n");
+
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVector = 0;
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+        }
+
+        // Нормализуем значения феромонов
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[MAX_VALUE_SIZE * tx + i] / sumVector;
+        }
+
+        sumVector = 0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        // Вычисляем вероятностные значения
+#pragma omp simd reduction(+:sumVector)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            svertka[i] = probability_formula_non_cuda(pheromon_norm[i], kol_enter[MAX_VALUE_SIZE * tx + i]);
+            sumVector += svertka[i];
+        }
+
+        // Заполняем массив индексов начальными значениями
+#pragma omp simd
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            indices[MAX_VALUE_SIZE * tx + i] = i;
+        }
+
+        // Ручная сортировка методом вставки с сохранением индексов
+        for (int j = 1; j < MAX_VALUE_SIZE; ++j) {
+            double key = svertka[j];               // Значение текущего элемента
+            int idx_key = indices[MAX_VALUE_SIZE * tx + j]; // Индекс текущего элемента
+            int i = j - 1;                         // Начинаем проверку с предыдущего элемента
+
+            while (i >= 0 && svertka[i] > key) {
+                svertka[i + 1] = svertka[i];         // Сдвигаем больше элементы вправо
+                indices[MAX_VALUE_SIZE * tx + i + 1] = indices[MAX_VALUE_SIZE * tx + i]; // Обновляем соответствующий индекс
+                i--;
+            }
+            svertka[i + 1] = key;                   // Кладём ключ на новое место
+            indices[MAX_VALUE_SIZE * tx + i + 1] = idx_key; // Сохраняем индекс ключа
+        }
+
+        // Нормирование значений матрицы с накоплением
+        norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+            norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+        }
+    }
+}
+#endif
+void go_mass_probability_non_cuda_sort_omp(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_mass_probability_non_cuda_sort_omp_5_2(pheromon, kol_enter, norm_matrix_probability, indices);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_mass_probability_non_cuda_sort_omp_5_1(pheromon, kol_enter, norm_matrix_probability, indices);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_mass_probability_non_cuda_sort_omp_5_0(pheromon, kol_enter, norm_matrix_probability, indices);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_mass_probability_non_cuda_sort_omp_4_5(pheromon, kol_enter, norm_matrix_probability, indices);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_mass_probability_non_cuda_sort_omp_4_0(pheromon, kol_enter, norm_matrix_probability, indices);
+#else  // OpenMP 2.0/3.0/3.1
+    go_mass_probability_non_cuda_sort_omp_2_0(pheromon, kol_enter, norm_matrix_probability, indices);
+#endif
+}
+// Базовая версия OpenMP 2.0/3.0/3.1 - только CPU параллелизм
+void go_opt_mass_probability_omp_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 2.0-3.1 version (CPU parallel for)\n");
+
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumPheromon = 0.0;
+        // Суммируем значения феромонов
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumPheromon += pheromon[base_idx + i];
+        }
+
+        // Обработка случая нулевой суммы
+        if (sumPheromon == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+            continue;
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumSvertka = 0.0;
+        double svertka_values[MAX_VALUE_SIZE];
+
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            double pheromon_norm = pheromon[base_idx + i] / sumPheromon;
+            svertka_values[i] = probability_formula_non_cuda(pheromon_norm, kol_enter[base_idx + i]);
+            sumSvertka += svertka_values[i];
+        }
+
+        // Обработка случая нулевой суммы svertka
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+        }
+        else {
+            // Вычисляем кумулятивные вероятности
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka_values[i] / sumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0 (из-за ошибок округления)
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_opt_mass_probability_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.0 version (SIMD vectorization)\n");
+
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumPheromon = 0.0;
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumPheromon)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumPheromon += pheromon[base_idx + i];
+        }
+
+        // Обработка случая нулевой суммы
+        if (sumPheromon == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+            continue;
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumSvertka = 0.0;
+        double svertka_values[MAX_VALUE_SIZE];
+
+#pragma omp simd reduction(+:sumSvertka)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            double pheromon_norm = pheromon[base_idx + i] / sumPheromon;
+            svertka_values[i] = probability_formula_non_cuda(pheromon_norm, kol_enter[base_idx + i]);
+            sumSvertka += svertka_values[i];
+        }
+
+        // Обработка случая нулевой суммы svertka
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+        }
+        else {
+            // Вычисляем кумулятивные вероятности
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka_values[i] / sumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0 (из-за ошибок округления)
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_opt_mass_probability_omp_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 4.5 version (if clause and loop nesting)\n");
+
+#if defined(__clang__)
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for schedule(static) // if(PARAMETR_SIZE > 100)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumPheromon = 0.0;
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumPheromon)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumPheromon += pheromon[base_idx + i];
+        }
+
+        // Обработка случая нулевой суммы
+        if (sumPheromon == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+            continue;
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumSvertka = 0.0;
+        double svertka_values[MAX_VALUE_SIZE];
+
+#pragma omp simd reduction(+:sumSvertka)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            double pheromon_norm = pheromon[base_idx + i] / sumPheromon;
+            svertka_values[i] = probability_formula_non_cuda(pheromon_norm, kol_enter[base_idx + i]);
+            sumSvertka += svertka_values[i];
+        }
+
+        // Обработка случая нулевой суммы svertka
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+        }
+        else {
+            // Вычисляем кумулятивные вероятности
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka_values[i] / sumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0 (из-за ошибок округления)
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_opt_mass_probability_omp_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.0 version (loop transformation)\n");
+
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumPheromon = 0.0;
+        // Суммируем значения феромонов
+#ifdef __clang__
+#pragma omp simd reduction(+:sumPheromon)
+#else
+#pragma omp simd reduction(inscan,+:sumPheromon)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumPheromon += pheromon[base_idx + i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumPheromon)
+#endif
+        }
+
+        // Обработка случая нулевой суммы
+        if (sumPheromon == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+            continue;
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumSvertka = 0.0;
+        double svertka_values[MAX_VALUE_SIZE];
+
+#ifdef __clang__
+#pragma omp simd reduction(+:sumSvertka)
+#else
+#pragma omp simd reduction(inscan,+:sumSvertka)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            double pheromon_norm = pheromon[base_idx + i] / sumPheromon;
+            svertka_values[i] = probability_formula_non_cuda(pheromon_norm, kol_enter[base_idx + i]);
+            sumSvertka += svertka_values[i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumSvertka)
+#endif
+        }
+
+        // Обработка случая нулевой суммы svertka
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+        }
+        else {
+            // Вычисляем кумулятивные вероятности
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka_values[i] / sumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0 (из-за ошибок округления)
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_opt_mass_probability_omp_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.1 version (error recovery and loop features)\n");
+
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumPheromon = 0.0;
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumPheromon)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumPheromon += pheromon[base_idx + i];
+        }
+
+        // Обработка случая нулевой суммы
+        if (sumPheromon == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+            continue;
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumSvertka = 0.0;
+        double svertka_values[MAX_VALUE_SIZE];
+
+#pragma omp simd reduction(+:sumSvertka)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            double pheromon_norm = pheromon[base_idx + i] / sumPheromon;
+            svertka_values[i] = probability_formula_non_cuda(pheromon_norm, kol_enter[base_idx + i]);
+            sumSvertka += svertka_values[i];
+        }
+
+        // Обработка случая нулевой суммы svertka
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+        }
+        else {
+            // Вычисляем кумулятивные вероятности
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka_values[i] / sumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0 (из-за ошибок округления)
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_opt_mass_probability_omp_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("Using OpenMP 5.2 version (latest features)\n");
+
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumPheromon = 0.0;
+        // Суммируем значения феромонов
+#pragma omp simd reduction(+:sumPheromon)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumPheromon += pheromon[base_idx + i];
+        }
+
+        // Обработка случая нулевой суммы
+        if (sumPheromon == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+            continue;
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumSvertka = 0.0;
+        double svertka_values[MAX_VALUE_SIZE];
+
+#pragma omp simd reduction(+:sumSvertka)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            double pheromon_norm = pheromon[base_idx + i] / sumPheromon;
+            svertka_values[i] = probability_formula_non_cuda(pheromon_norm, kol_enter[base_idx + i]);
+            sumSvertka += svertka_values[i];
+        }
+
+        // Обработка случая нулевой суммы svertka
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[base_idx] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[base_idx + i] = norm_matrix_probability[base_idx + i - 1] + uniform_prob;
+            }
+        }
+        else {
+            // Вычисляем кумулятивные вероятности
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka_values[i] / sumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0 (из-за ошибок округления)
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+void go_opt_mass_probability_omp(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    //printf("OpenMP version detected: %d\n", _OPENMP);
+
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_opt_mass_probability_omp_5_2(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_opt_mass_probability_omp_5_1(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_opt_mass_probability_omp_5_0(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_opt_mass_probability_omp_4_5(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_opt_mass_probability_omp_4_0(pheromon, kol_enter, norm_matrix_probability);
+#else  // OpenMP 2.0/3.0/3.1
+    go_opt_mass_probability_omp_2_0(pheromon, kol_enter, norm_matrix_probability);
+#endif
+}
+
+void go_mass_probability_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
     // Нормализация слоя с феромоном
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         double sumVector = 0;
@@ -906,7 +2118,7 @@ void go_mass_probability_non_cuda(double* pheromon, double* kol_enter, double* n
         }
     }
 }
-void go_mass_probability_non_cuda_not_f(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
+void go_mass_probability_non_cuda_not_f(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
     // Нормализация слоя с феромоном
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         double sumVector = 0;
@@ -935,7 +2147,7 @@ void go_mass_probability_non_cuda_not_f(double* pheromon, double* kol_enter, dou
         }
     }
 }
-void go_mass_probability_non_cuda_sort(double* pheromon, double* kol_enter, double* norm_matrix_probability, int* indices) {
+void go_mass_probability_non_cuda_sort(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability, int* __restrict indices) {
     // Нормализация слоя с феромоном
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         double sumVector = 0;
@@ -985,120 +2197,267 @@ void go_mass_probability_non_cuda_sort(double* pheromon, double* kol_enter, doub
 }
 
 // Функция для вычисления пути агентов на CPU с использованием OpenMP
-void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
-    // Генератор случайных чисел
+//Общие версии оптимизированные под любые версии OMP
+inline double unified_fast_random(uint64_t& seed) {  
+    // Xorshift64 - хороший баланс скорость/качество
+    seed ^= seed << 13;
+    seed ^= seed >> 7;
+    seed ^= seed << 17;
+    double result = (seed >> 11) / 9007199254740992.0;  // [0, 1)
+    return result;
+}
+void go_all_agent_omp(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
 
+    int local_kol_hash_fail = 0;
+    double local_totalHashTime = 0.0;
+    double local_totalOFTime = 0.0;
+
+    // Универсальная параллельная секция с условными директивами
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime) // if(ANT_SIZE > 100)
+#else
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime)
+#endif
     {
-        std::default_random_engine generator(123 + gpuTime); // Используем gpuTime и номер потока как начальное значение
-        std::uniform_real_distribution<double> distribution(0.0, 1.0);
-#pragma omp parallel
-#pragma omp for
-        for (int bx = 0; bx < ANT_SIZE; bx++) { // Проходим по всем агентам
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) { // Проходим по всем параметрам
-                double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
-                // Определение номера значения
+        uint64_t seed = 123 + gpuTime + omp_get_thread_num();
+
+        // Условное распределение работы в зависимости от версии OpenMP
+#if defined(__clang__)
+        // Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+        // Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for(int bx = 0; bx < ANT_SIZE; bx++) {
+            // Оптимизированная генерация пути с учетом малого MAX_VALUE_SIZE
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = unified_fast_random(seed);
+
+                // Линейный поиск с предположением о малом размере
                 int k = 0;
                 while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
                     k++;
                 }
-
-                // Запись подматрицы блока в глобальную память
                 agent_node[bx * PARAMETR_SIZE + tx] = k;
                 agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
             }
+
             auto start = std::chrono::high_resolution_clock::now();
-            // Проверка наличия решения в Хэш-таблице
-            double cachedResult = getCachedResultOptimized_omp(hashTable, agent_node, bx);
-            int nom_iteration = 0;
+            double cachedResult = -1.0;
+
+#pragma omp critical (hash_lookup)
+            {
+                cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
+            }
+
             if (cachedResult == -1.0) {
-                // Если значение не найдено в ХЭШ, то заносим новое значение
                 auto start_OF = std::chrono::high_resolution_clock::now();
                 OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
                 auto end_OF = std::chrono::high_resolution_clock::now();
-                totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
-                saveToCacheOptimized_omp(hashTable, agent_node, bx, OF[bx]);
+                local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+
+#pragma omp critical(hash_write)
+                {
+                    saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
+                }
             }
             else {
-                // Если значение в Хэш-найдено, то агент "нулевой"
-#pragma omp atomic
-                kol_hash_fail++;
+                local_kol_hash_fail++;
 
-                // Поиск алгоритма для нулевого агента
+                // Обработка в зависимости от типа алгоритма
                 switch (TYPE_ACO) {
                 case 0: // ACOCN
                     OF[bx] = cachedResult;
                     break;
+
                 case 1: // ACOCNI
                     OF[bx] = ZERO_HASH_RESULT;
                     break;
                 case 2: // ACOCCyN
-                    while ((cachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION)) {
-                        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) { // Проходим по всем параметрам
-                            double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
+                {
+                    int nom_iteration = 0;
+                    double currentCachedResult = cachedResult;
 
-                            // Определение номера значения
+                    // Пытаемся найти уникальный путь
+                    while (currentCachedResult != -1.0 && nom_iteration < ACOCCyN_KOL_ITERATION) {
+                        // Генерируем новый путь с тем же генератором
+                        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                            double randomValue = unified_fast_random(seed);
+
                             int k = 0;
                             while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
                                 k++;
                             }
-
-                            // Запись подматрицы блока в глобальную память
                             agent_node[bx * PARAMETR_SIZE + tx] = k;
                             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                         }
 
-                        // Проверка наличия решения в Хэш-таблице
-                        cachedResult = getCachedResultOptimized_omp(hashTable, agent_node, bx);
+#pragma omp critical (hash_lookup)
+                        {
+                            currentCachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
+                        }
                         nom_iteration++;
-                        kol_hash_fail++;
+                        local_kol_hash_fail++;
                     }
-                    OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
-                    saveToCacheOptimized_omp(hashTable, agent_node, bx, OF[bx]);
-                    break;
+
+                    // Если нашли уникальный путь или превысили лимит итераций
+                    if (currentCachedResult == -1.0) {
+                        auto start_OF = std::chrono::high_resolution_clock::now();
+                        OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
+                        auto end_OF = std::chrono::high_resolution_clock::now();
+                        local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+
+#pragma omp critical(hash_write)
+                        {
+                            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
+                        }
+                    }
+                    else {
+                        // Используем последнее найденное кэшированное значение
+                        OF[bx] = currentCachedResult;
+                    }
+                }
+                break;
+
                 default:
-                    OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
+                    OF[bx] = cachedResult;
                     break;
                 }
             }
 
             auto end = std::chrono::high_resolution_clock::now();
-#pragma omp atomic
-            totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
+            local_totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
         }
     }
+    // Обновление глобальных переменных
+    kol_hash_fail += local_kol_hash_fail;
+    totalHashTime += local_totalHashTime;
+    totalOFTime += local_totalOFTime;
 }
+void go_all_agent_omp_non_hash(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
 
-void go_all_agent_omp_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
-    // Генератор случайных чисел
+    double local_totalOFTime = 0.0;
 
+    // Условный параллелизм для OpenMP 4.5+
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel reduction(+:local_totalOFTime) // if(ANT_SIZE > 100)
+#else
+#pragma omp parallel reduction(+:local_totalOFTime)
+#endif
     {
-        std::default_random_engine generator(123 + gpuTime); // Используем gpuTime и номер потока как начальное значение
-        std::uniform_real_distribution<double> distribution(0.0, 1.0);
-#pragma omp parallel
-#pragma omp for
-        for (int bx = 0; bx < ANT_SIZE; bx++) { // Проходим по всем агентам
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) { // Проходим по всем параметрам
-                double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
-                // Определение номера значения
+        uint64_t seed = 123 + gpuTime + omp_get_thread_num();
+        if (seed == 0) seed = 1;
+
+        // Условное распределение работы в зависимости от версии OpenMP
+#if defined(__clang__)
+        // Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+        // Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for (int bx = 0; bx < ANT_SIZE; bx++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = unified_fast_random(seed);
+
                 int k = 0;
+                // Эффективный линейный поиск
                 while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
                     k++;
                 }
-
-                // Запись подматрицы блока в глобальную память
                 agent_node[bx * PARAMETR_SIZE + tx] = k;
                 agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
             }
+
             auto start_OF = std::chrono::high_resolution_clock::now();
             OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
             auto end_OF = std::chrono::high_resolution_clock::now();
-            totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+            local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
         }
     }
+    totalOFTime += local_totalOFTime;
+}
+void go_all_agent_omp_binary_non_hash_unified(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
+    double local_totalOFTime = 0.0;
+    // Условный параллелизм для OpenMP 4.5+
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel reduction(+:local_totalOFTime) // if(ANT_SIZE > 100)
+#else
+#pragma omp parallel reduction(+:local_totalOFTime)
+#endif
+    {
+        // Более эффективный генератор случайных чисел
+        std::mt19937_64 generator(123 + gpuTime + omp_get_thread_num());
+        std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
+        // Условное распределение работы в зависимости от версии OpenMP
+#if defined(__clang__)
+        // Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+        // Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for (int bx = 0; bx < ANT_SIZE; bx++) {
+            const int agent_base_idx = bx * PARAMETR_SIZE;
+            // Генерация пути агента с бинарным поиском
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = distribution(generator);
+                const int norm_base_idx = MAX_VALUE_SIZE * tx;
+                const int param_base_idx = tx * MAX_VALUE_SIZE;
+
+                // Бинарный поиск в cumulative distribution
+                int left = 0;
+                int right = MAX_VALUE_SIZE - 1;
+                int k = right; // По умолчанию последний элемент
+
+                while (left <= right) {
+                    int mid = left + (right - left) / 2;
+                    if (randomValue > norm_matrix_probability[norm_base_idx + mid]) {
+                        left = mid + 1;
+                    }
+                    else {
+                        k = mid;
+                        right = mid - 1;
+                    }
+                }
+
+                agent_node[agent_base_idx + tx] = k;
+                agent[agent_base_idx + tx] = parametr[param_base_idx + k];
+            }
+
+            // Измерение времени вычисления целевой функции
+            auto start_OF = std::chrono::high_resolution_clock::now();
+            OF[bx] = BenchShafferaFunction_omp(&agent[agent_base_idx]);
+            auto end_OF = std::chrono::high_resolution_clock::now();
+
+            local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+        }
+    }
+    totalOFTime += local_totalOFTime;
 }
 
 // Функция для вычисления пути агентов на CPU
-void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+void go_all_agent_non_cuda_time(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -1121,7 +2480,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
         SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
         auto start = std::chrono::high_resolution_clock::now();
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         auto end_OF = std::chrono::high_resolution_clock::now();
         HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
         /*
@@ -1137,7 +2496,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
             auto end_OF = std::chrono::high_resolution_clock::now();
             totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
             auto start_SaveHash = std::chrono::high_resolution_clock::now();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             auto end_SaveHash = std::chrono::high_resolution_clock::now();
             HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
         }
@@ -1176,7 +2535,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                     SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     // Проверка наличия решения в Хэш-таблице
                     start_OF_2 = std::chrono::high_resolution_clock::now();
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     nom_iteration = nom_iteration + 1;
@@ -1188,7 +2547,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 start_OF_2 = std::chrono::high_resolution_clock::now();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 break;
@@ -1205,9 +2564,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
         totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
     }
 }
-
-// Функция для вычисления пути агентов на CPU
-void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void go_all_agent_non_cuda(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -1226,12 +2583,12 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
         }
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         int nom_iteration = 0;
         if (cachedResult == -1.0) {
             // Если значение не найденов ХЭШ, то заносим новое значение
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
         }
         else {
             //Если значение в Хэш-найдено, то агент "нулевой"
@@ -1262,13 +2619,13 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                     }
                     // Проверка наличия решения в Хэш-таблице
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     nom_iteration = nom_iteration + 1;
                     kol_hash_fail = kol_hash_fail + 1;
                 }
 
                 OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 break;
             default:
                 OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -1282,7 +2639,7 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
     }
 }
 
-void process_agent(int bx, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void process_agent(int bx, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail) {
     std::default_random_engine generator(rand()); // Генератор случайных чисел
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
@@ -1300,13 +2657,13 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
     }
 
     // Проверка наличия решения в Хэш-таблице
-    double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+    double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
     int nom_iteration = 0;
 
     if (cachedResult == -1.0) {
         // Если значение не найдено в ХЭШ, то заносим новое значение
         OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-        saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+        saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
     }
     else {
         // Если значение в Хэш-найдено, то агент "нулевой"
@@ -1339,7 +2696,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
                     agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                 }
                 // Проверка наличия решения в Хэш-таблице
-                cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                 nom_iteration++;
                 mtx.lock();
                 kol_hash_fail++;
@@ -1347,7 +2704,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
             }
 
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             break;
         default:
             OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -1359,7 +2716,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
     }
 }
 
-void go_all_agent_non_cuda_thread(double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, int num_threads) {
+void go_all_agent_non_cuda_thread(double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, int num_threads) {
     std::vector<std::thread> threads;
 
     for (int bx = 0; bx < ANT_SIZE; bx++) {
@@ -1376,8 +2733,7 @@ void go_all_agent_non_cuda_thread(double* parametr, double* norm_matrix_probabil
         thread.join();
     }
 }
-
-void go_all_agent_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, int& kol_hash_fail, double& totalOFTime) {
+void go_all_agent_non_cuda_non_hash(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, int& kol_hash_fail, double& totalOFTime) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -1402,65 +2758,470 @@ void go_all_agent_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_
     }
 }
 
-void add_pheromon_iteration_omp(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
-    // Испарение весов-феромона
+// Базовая версия OpenMP 2.0/3.0/3.1 - с локальными буферами
+void add_pheromon_iteration_omp_2_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Phase 1: Evaporation
 #pragma omp parallel for
-    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-        for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-            pheromon[MAX_VALUE_SIZE * tx + i] *= PARAMETR_RO;
-        }
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
     }
 
-#pragma omp parallel for
-    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-        // Добавление весов-феромона
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = agent_node[i * PARAMETR_SIZE + tx];
-#pragma omp atomic
-            kol_enter[MAX_VALUE_SIZE * tx + k]++;
+    // Phase 2: Accumulation with thread-local buffers
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
 
-#if (OPTIMIZE_MIN_1)
-            if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
-                pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]);
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+            double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+            double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_node[i * PARAMETR_SIZE + tx];
+                int idx = MAX_VALUE_SIZE * tx + k;
+
+                local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                if (delta > 0) {
+                    local_pheromon_add[idx] += PARAMETR_Q * delta;
+                }
+#elif OPTIMIZE_MIN_2
+                local_pheromon_add[idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                local_pheromon_add[idx] += agent_of_scaled;
+#endif
             }
-#endif // (OPTIMIZE_MIN_1)
-#if (OPTIMIZE_MIN_2)
-            if (OF[i] == 0) { OF[i] = 0.0000001; }
-            pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q / OF[i];
-#endif // (OPTIMIZE_MIN_2)
-#if (OPTIMIZE_MAX)
-            pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q * OF[i];
-#endif // (OPTIMIZE_MAX)
         }
+
+        // Merge thread-local results
+#pragma omp critical
+        {
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
     }
 }
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void add_pheromon_iteration_omp_4_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
 
-// Обновление слоев графа
-void add_pheromon_iteration_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
-    // Испарение весов-феромона
-    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-        for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-            pheromon[MAX_VALUE_SIZE * tx + i] *= PARAMETR_RO;
-        }
+    // Phase 1: Evaporation with SIMD
+#pragma omp parallel for simd
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
     }
-    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-        // Добавление весов-феромона
+
+    // Phase 2: Accumulation with optimized thread-local buffers
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
+
+#pragma omp for nowait
         for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = agent_node[i * PARAMETR_SIZE + tx];
-            if (k >= 0 && k < MAX_VALUE_SIZE) { // Проверка на выход за пределы массива kol_enter
-                kol_enter[MAX_VALUE_SIZE * tx + k]++;
-#if (OPTIMIZE_MIN_1)
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
-                    pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]);
+            double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+            double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+            double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+            // Cache-friendly access pattern
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                int idx = MAX_VALUE_SIZE * tx + k;
+
+                local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                if (delta > 0) {
+                    local_pheromon_add[idx] += PARAMETR_Q * delta;
                 }
-#endif // (OPTIMIZE_MIN_1)
-#if (OPTIMIZE_MIN_2)
-                if (OF[i] == 0) { OF[i] = 0.0000001; }
-                pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q / OF[i];
-#endif // (OPTIMIZE_MIN_2)
-#if (OPTIMIZE_MAX)
-                pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q * OF[i];
-#endif // (OPTIMIZE_MAX)
+#elif OPTIMIZE_MIN_2
+                local_pheromon_add[idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                local_pheromon_add[idx] += agent_of_scaled;
+#endif
+            }
+        }
+
+        // Merge thread-local results with SIMD
+#pragma omp critical
+        {
+#pragma omp simd
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void add_pheromon_iteration_omp_4_5(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Phase 1: Evaporation with if clause
+#ifdef __clang__
+#pragma omp parallel for simd
+#else
+#pragma omp parallel for simd // if(TOTAL_CELLS > 1000)
+#endif
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Phase 2: Accumulation with improved scheduling
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+            double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+            double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+            // Optimized memory access
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                int idx = MAX_VALUE_SIZE * tx + k;
+
+                local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                if (delta > 0) {
+                    local_pheromon_add[idx] += PARAMETR_Q * delta;
+                }
+#elif OPTIMIZE_MIN_2
+                local_pheromon_add[idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                local_pheromon_add[idx] += agent_of_scaled;
+#endif
+            }
+        }
+
+        // Efficient merging
+#pragma omp critical
+        {
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+#pragma omp simd
+                for (int k = 0; k < MAX_VALUE_SIZE; ++k) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    kol_enter[idx] += local_kol_enter_add[idx];
+                    pheromon[idx] += local_pheromon_add[idx];
+                }
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void add_pheromon_iteration_omp_5_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Phase 1: Evaporation
+#pragma omp parallel for simd
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Phase 2: Accumulation with loop transformation hints
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
+
+        // Initialize buffers to zero (для безопасности)
+        for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+            local_pheromon_add[idx] = 0.0;
+            local_kol_enter_add[idx] = 0;
+        }
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+            double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+            double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+            // Cache-friendly access pattern
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                int idx = MAX_VALUE_SIZE * tx + k;
+
+                local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                if (delta > 0) {
+                    local_pheromon_add[idx] += PARAMETR_Q * delta;
+                }
+#elif OPTIMIZE_MIN_2
+                local_pheromon_add[idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                local_pheromon_add[idx] += agent_of_scaled;
+#endif
+            }
+        }
+
+        // Merge with efficient memory access
+#pragma omp critical
+        {
+#ifdef __clang__
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+#else
+#pragma omp simd
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+#endif
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void add_pheromon_iteration_omp_5_1(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Phase 1: Evaporation
+#pragma omp parallel for simd
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Phase 2: Accumulation with non-blocking operations
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
+
+        // Initialize to zero
+        for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+            local_pheromon_add[idx] = 0.0;
+            local_kol_enter_add[idx] = 0;
+        }
+
+#if defined(__clang__)
+        // Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+        // Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+            double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+            double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+            // Optimized memory access
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int matrix_idx = MAX_VALUE_SIZE * tx + agent_path[tx];
+
+                local_kol_enter_add[matrix_idx]++;
+
+#if OPTIMIZE_MIN_1
+                double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                if (delta > 0) {
+                    local_pheromon_add[matrix_idx] += PARAMETR_Q * delta;
+                }
+#elif OPTIMIZE_MIN_2
+                local_pheromon_add[matrix_idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                local_pheromon_add[matrix_idx] += agent_of_scaled;
+#endif
+            }
+        }
+
+        // Efficient reduction
+#pragma omp critical
+        {
+#pragma omp simd
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void add_pheromon_iteration_omp_5_2(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Phase 1: Evaporation
+#pragma omp parallel for simd
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Phase 2: Accumulation with latest optimizations
+#pragma omp parallel
+    {
+        // Thread-local accumulation buffers with explicit initialization
+        double* local_pheromon_add = static_cast<double*>(calloc(TOTAL_CELLS, sizeof(double)));
+        int* local_kol_enter_add = static_cast<int*>(calloc(TOTAL_CELLS, sizeof(int)));
+
+        // Ensure initialization to zero
+        if (local_pheromon_add && local_kol_enter_add) {
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                local_pheromon_add[idx] = 0.0;
+                local_kol_enter_add[idx] = 0;
+            }
+
+#pragma omp for nowait
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                double agent_of = OF[i];
+#if OPTIMIZE_MIN_2
+                double agent_of_reciprocal = (agent_of == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / agent_of);
+#elif OPTIMIZE_MAX
+                double agent_of_scaled = PARAMETR_Q * agent_of;
+#endif
+
+                for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                    int k = agent_node[i * PARAMETR_SIZE + tx];
+                    int idx = MAX_VALUE_SIZE * tx + k;
+
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+                    if (delta > 0) {
+                        local_pheromon_add[idx] += PARAMETR_Q * delta;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += agent_of_reciprocal;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += agent_of_scaled;
+#endif
+                }
+            }
+
+            // Merge results
+#pragma omp critical
+            {
+                for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                    kol_enter[idx] += local_kol_enter_add[idx];
+                    pheromon[idx] += local_pheromon_add[idx];
+                }
+            }
+        }
+
+        if (local_pheromon_add) free(local_pheromon_add);
+        if (local_kol_enter_add) free(local_kol_enter_add);
+    }
+}
+#endif
+void add_pheromon_iteration_omp(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    add_pheromon_iteration_omp_5_2(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    add_pheromon_iteration_omp_5_1(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    add_pheromon_iteration_omp_5_0(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    add_pheromon_iteration_omp_4_5(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    add_pheromon_iteration_omp_4_0(pheromon, kol_enter, agent_node, OF);
+#else  // OpenMP 2.0/3.0/3.1
+    add_pheromon_iteration_omp_2_0(pheromon, kol_enter, agent_node, OF);
+#endif
+}
+void add_pheromon_iteration_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение: последовательный доступ
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление: предварительные вычисления и кэш-дружественный доступ
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+
+        // Предварительные вычисления вне внутреннего цикла
+#if OPTIMIZE_MIN_1
+        const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ?
+            PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+        const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+        const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+            int k = agent_path[tx];
+            if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                int idx = MAX_VALUE_SIZE * tx + k;
+                kol_enter[idx]++;
+
+#if OPTIMIZE_MIN_1
+                if (min1_value > 0) {
+                    pheromon[idx] += min1_value;
+                }
+#elif OPTIMIZE_MIN_2
+                pheromon[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                pheromon[idx] += max_value;
+#endif
             }
         }
     }
@@ -1498,7 +3259,6 @@ bool load_matrix_non_cuda(const std::string& filename, double* parametr_value, d
     infile.close();
     return true;
 }
-
 bool load_matrix_transp_non_cuda(const std::string& filename, double* parametr_value, double* pheromon_value, double* kol_enter_value) {
     std::ifstream infile(filename);
     if (!infile) {
@@ -1531,60 +3291,424 @@ bool load_matrix_transp_non_cuda(const std::string& filename, double* parametr_v
     return true;
 }
 
-// Подготовка массива для вероятностного поиска
-void go_mass_probability_transp_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
-    //Сумма Тi для Tnorm
-    double sumVectorT[PARAMETR_SIZE] = { 0 };
-    double sumVectorZ[PARAMETR_SIZE] = { 0 };
+// Подготовка массива для вероятностного поиска (транспонированная версия)
+void go_mass_probability_transp_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    // Обрабатываем каждый параметр отдельно
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-        sumVectorT[tx] = 0.0;
-        sumVectorZ[tx] = 0.0;
-    }
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            sumVectorT[tx] += pheromon[tx + i * PARAMETR_SIZE];
+        double sumVectorT = 0.0;
+        // Суммируем значения феромонов для текущего параметра
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
         }
-    }
-    //Вычисление Tnorm
-    double* pheromon_norm = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            pheromon_norm[tx + i * PARAMETR_SIZE] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT[tx];
-        }
-    }
-    //Вычисление Z и P
-    double* svertka = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            if ((kol_enter[tx + i * PARAMETR_SIZE] != 0) && (pheromon_norm[tx + i * PARAMETR_SIZE] != 0)) {
-                svertka[tx + i * PARAMETR_SIZE] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[tx + i * PARAMETR_SIZE];
-            }
-            else
-            {
-                svertka[tx + i * PARAMETR_SIZE] = 0.0;
-            }
-            sumVectorZ[tx] += svertka[tx + i * PARAMETR_SIZE];
-        }
-    }
-    //Вычисление F
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        if (i == 0) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                norm_matrix_probability[tx + i * PARAMETR_SIZE] = (svertka[tx + i * PARAMETR_SIZE] / sumVectorZ[tx]);
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
             }
         }
-        else
-        {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                norm_matrix_probability[tx + i * PARAMETR_SIZE] = (svertka[tx + i * PARAMETR_SIZE] / sumVectorZ[tx]) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] = (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] = uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
             }
         }
     }
-    delete[] pheromon_norm;
-    delete[] svertka;
+}
+// Базовая версия OpenMP 2.0/3.0/3.1
+void go_mass_probability_transp_OMP_non_cuda_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVectorT = 0.0;
+
+        // Суммируем значения феромонов для текущего параметра
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
+        }
+
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
+            }
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+    }
+}
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_transp_OMP_non_cuda_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    // OpenMP 4.0: separate simd directive
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVectorT = 0.0;
+
+        // Суммируем значения феромонов с SIMD
+#pragma omp simd reduction(+:sumVectorT)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
+        }
+
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+#pragma omp simd
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
+            }
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+#pragma omp simd reduction(+:sumVectorZ)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_mass_probability_transp_OMP_non_cuda_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    // OpenMP 4.5: if clause для условного выполнения
+#if defined(__clang__)
+#pragma omp parallel for
+#else
+#pragma omp parallel for // if(PARAMETR_SIZE > 100)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVectorT = 0.0;
+
+        // Автоматическая векторизация внутренних циклов
+#pragma omp simd reduction(+:sumVectorT)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
+        }
+
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+#pragma omp simd
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
+            }
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+#pragma omp simd reduction(+:sumVectorZ)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_mass_probability_transp_OMP_non_cuda_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    // OpenMP 5.0: tile directive для оптимизации доступа к памяти
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVectorT = 0.0;
+
+        // OpenMP 5.0: scan directive для редукций (если поддерживается)
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVectorT)
+#else
+#pragma omp simd reduction(inscan,+:sumVectorT)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVectorT)
+#endif
+        }
+
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+#pragma omp simd
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
+            }
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+#ifdef __clang__
+#pragma omp simd reduction(+:sumVectorZ)
+#else
+#pragma omp simd reduction(inscan,+:sumVectorZ)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+#ifndef __clang__
+#pragma omp scan inclusive(sumVectorZ)
+#endif
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_mass_probability_transp_OMP_non_cuda_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    // OpenMP 5.1: error recovery and loop features
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVectorT = 0.0;
+
+        // OpenMP 5.1: неблокирующие редукции
+#pragma omp simd reduction(+:sumVectorT)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
+        }
+
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+#pragma omp simd
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
+            }
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+#pragma omp simd reduction(+:sumVectorZ)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_mass_probability_transp_OMP_non_cuda_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    // OpenMP 5.2: assume clauses для оптимизатора
+#pragma omp parallel for
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        double sumVectorT = 0.0;
+
+        // OpenMP 5.2: улучшенные редукции
+#pragma omp simd reduction(+:sumVectorT)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            sumVectorT += pheromon[tx + i * PARAMETR_SIZE];
+        }
+
+        // Нормализуем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        if (sumVectorT != 0.0) {
+#pragma omp simd
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                pheromon_norm[i] = pheromon[tx + i * PARAMETR_SIZE] / sumVectorT;
+            }
+        }
+
+        // Вычисляем svertka и их сумму
+        double sumVectorZ = 0.0;
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+
+#pragma omp simd reduction(+:sumVectorZ)
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[tx + i * PARAMETR_SIZE] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[tx + i * PARAMETR_SIZE] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+            sumVectorZ += svertka[i];
+        }
+
+        // Вычисляем кумулятивные вероятности
+        if (sumVectorZ != 0.0) {
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = svertka[0] / sumVectorZ;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    (svertka[i] / sumVectorZ) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+        else {
+            // Если сумма нулевая, устанавливаем равномерное распределение
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            norm_matrix_probability[tx + 0 * PARAMETR_SIZE] = uniform_prob;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                norm_matrix_probability[tx + i * PARAMETR_SIZE] =
+                    uniform_prob + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
+            }
+        }
+    }
+}
+#endif
+void go_mass_probability_transp_OMP_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_mass_probability_transp_OMP_non_cuda_5_2(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_mass_probability_transp_OMP_non_cuda_5_1(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_mass_probability_transp_OMP_non_cuda_5_0(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_mass_probability_transp_OMP_non_cuda_4_5(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_mass_probability_transp_OMP_non_cuda_4_0(pheromon, kol_enter, norm_matrix_probability);
+#else  // OpenMP 2.0/3.0/3.1
+    go_mass_probability_transp_OMP_non_cuda_2_0(pheromon, kol_enter, norm_matrix_probability);
+#endif
 }
 // Функция для вычисления пути агентов на CPU
-void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+void go_all_agent_transp_non_cuda_time(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -1603,11 +3727,12 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
             agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
         }
+    
         auto end_ant = std::chrono::high_resolution_clock::now();
         SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
         auto start = std::chrono::high_resolution_clock::now();
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         auto end_OF = std::chrono::high_resolution_clock::now();
         HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
         /*
@@ -1623,7 +3748,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
             auto end_OF = std::chrono::high_resolution_clock::now();
             totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
             auto start_SaveHash = std::chrono::high_resolution_clock::now();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             auto end_SaveHash = std::chrono::high_resolution_clock::now();
             HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
         }
@@ -1662,7 +3787,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
                     SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     // Проверка наличия решения в Хэш-таблице
                     start_OF_2 = std::chrono::high_resolution_clock::now();
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     nom_iteration = nom_iteration + 1;
@@ -1674,7 +3799,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 start_OF_2 = std::chrono::high_resolution_clock::now();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 break;
@@ -1691,7 +3816,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
         totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
     }
 }
-void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
+void go_all_agent_transp_non_cuda(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -1708,12 +3833,12 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
         }
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         int nom_iteration = 0;
         if (cachedResult == -1.0) {
             // Если значение не найденов ХЭШ, то заносим новое значение
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
         }
         else {
             //Если значение в Хэш-найдено, то агент "нулевой"
@@ -1742,12 +3867,12 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
                     }
                     // Проверка наличия решения в Хэш-таблице
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     nom_iteration = nom_iteration + 1;
                     kol_hash_fail = kol_hash_fail + 1;
                 }
                 OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 break;
             default:
                 OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -1758,7 +3883,7 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
         //std::cout << bx << "bx " << kol_hash_fail << " " << OF[bx] << " ";
     }
 }
-void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, int& kol_hash_fail, double& totalOFTime) {
+void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, int& kol_hash_fail, double& totalOFTime) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -1781,40 +3906,695 @@ void go_all_agent_transp_non_cuda_non_hash(int gpuTime, double* parametr, double
         totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
     }
 }
-// Обновление слоев графа
-void add_pheromon_iteration_transp_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
-    // Испарение весов-феромона
-    for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            pheromon[tx + i * PARAMETR_SIZE] *= PARAMETR_RO;
+void go_all_agent_transp_non_cuda_non_hash_OMP_optimized(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, int& kol_hash_fail, double& totalOFTime) {
+    //printf("Using OpenMP 2.0-3.1 version (CPU parallel for)\n");
+    std::default_random_engine generator(123 + gpuTime);
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    double local_totalOFTime = 0.0;
+
+    // Генерируем все случайные числа заранее
+    std::vector<double> randomValues(ANT_SIZE * PARAMETR_SIZE);
+    for (int i = 0; i < ANT_SIZE * PARAMETR_SIZE; i++) {
+        randomValues[i] = distribution(generator);
+    }
+
+    // Универсальная параллельная секция с условными директивами
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel reduction(+:local_totalOFTime) // if(ANT_SIZE > 100)
+#else
+#pragma omp parallel reduction(+:local_totalOFTime)
+#endif
+    {
+
+        // Условное распределение работы в зависимости от версии OpenMP
+#if defined(__clang__)
+// Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+// Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for (int bx = 0; bx < ANT_SIZE; bx++) {
+            double* current_agent = &agent[bx * PARAMETR_SIZE];
+            int* current_agent_node = &agent_node[bx * PARAMETR_SIZE];
+            double* current_random = &randomValues[bx * PARAMETR_SIZE];
+
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = current_random[tx];
+                int k = 0;
+                // Оптимизированный линейный поиск с предсказанием ветвления
+                for (; k < MAX_VALUE_SIZE - 4; k += 4) {
+                    if (randomValue <= norm_matrix_probability[tx + k * PARAMETR_SIZE]) break;
+                    if (randomValue <= norm_matrix_probability[tx + (k + 1) * PARAMETR_SIZE]) { k += 1; break; }
+                    if (randomValue <= norm_matrix_probability[tx + (k + 2) * PARAMETR_SIZE]) { k += 2; break; }
+                    if (randomValue <= norm_matrix_probability[tx + (k + 3) * PARAMETR_SIZE]) { k += 3; break; }
+                }
+                // Обработка оставшихся элементов
+                for (; k < MAX_VALUE_SIZE; k++) {
+                    if (randomValue <= norm_matrix_probability[tx + k * PARAMETR_SIZE]) {
+                        break;
+                    }
+                }
+
+                if (k >= MAX_VALUE_SIZE) k = MAX_VALUE_SIZE - 1;
+
+                current_agent_node[tx] = k;
+                current_agent[tx] = parametr[tx + k * PARAMETR_SIZE];
+            }
+            auto start_OF = std::chrono::high_resolution_clock::now();
+            OF[bx] = BenchShafferaFunction_non_cuda(current_agent);
+            auto end_OF = std::chrono::high_resolution_clock::now();
+            local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
         }
     }
+    totalOFTime += local_totalOFTime;
+}
+void go_all_agent_transp_OMP_non_cuda_time(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+    int local_kol_hash_fail = 0;
+    double local_totalHashTime = 0.0;
+    double local_totalOFTime = 0.0;
+    double local_HashTimeSave = 0.0;
+    double local_HashTimeSearch = 0.0;
+    double local_SumTimeSearch = 0.0;
+
+    // Универсальная параллельная секция с условными директивами
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime, local_HashTimeSave, local_HashTimeSearch, local_SumTimeSearch) // if(ANT_SIZE > 100)
+#else
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime, local_HashTimeSave, local_HashTimeSearch, local_SumTimeSearch)
+#endif
+    {
+        uint64_t seed = 123 + gpuTime + omp_get_thread_num();
+
+        // Условное распределение работы в зависимости от версии OpenMP
+#if defined(__clang__)
+// Clang - только базовые возможности
+#pragma omp for schedule(static)
+#else
+// Другие компиляторы - условные возможности  
+#if _OPENMP >= 201511
+#pragma omp for schedule(dynamic, 16)
+#elif _OPENMP >= 201307
+#pragma omp for schedule(guided)  
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for (int bx = 0; bx < ANT_SIZE; bx++) {
+            auto start_ant = std::chrono::high_resolution_clock::now();
+            // Генерация агента
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = unified_fast_random(seed);
+                int k = 0;
+                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[tx + k * PARAMETR_SIZE]) {
+                    k++;
+                }
+                agent_node[bx * PARAMETR_SIZE + tx] = k;
+                agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
+            }
+
+            auto end_ant = std::chrono::high_resolution_clock::now();
+            local_SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
+            auto start = std::chrono::high_resolution_clock::now();
+            double cachedResult = -1.0;
+
+#pragma omp critical(hash_table_read)
+            {
+                cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
+            }
+
+            auto end_OF = std::chrono::high_resolution_clock::now();
+            local_HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
+
+            int nom_iteration = 0;
+            if (cachedResult == -1.0) {
+                auto start_OF = std::chrono::high_resolution_clock::now();
+                OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
+                auto end_OF = std::chrono::high_resolution_clock::now();
+                local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
+
+                auto start_SaveHash = std::chrono::high_resolution_clock::now();
+#pragma omp critical(hash_table_write)
+                {
+                    saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
+                }
+                auto end_SaveHash = std::chrono::high_resolution_clock::now();
+                local_HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
+            }
+            else {
+                auto start_OF_2 = std::chrono::high_resolution_clock::now();
+                auto end_OF_2 = std::chrono::high_resolution_clock::now();
+
+                switch (TYPE_ACO) {
+                case 0: // ACOCN
+                    OF[bx] = cachedResult;
+                    local_kol_hash_fail++;
+                    break;
+                case 1: // ACOCNI
+                    OF[bx] = ZERO_HASH_RESULT;
+                    local_kol_hash_fail++;
+                    break;
+                case 2: // ACOCCyN
+                    while ((cachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION)) {
+                        start_OF_2 = std::chrono::high_resolution_clock::now();
+                        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                            double randomValue = unified_fast_random(seed);
+                            int k = 0;
+                            while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[tx + k * PARAMETR_SIZE]) {
+                                k++;
+                            }
+                            agent_node[bx * PARAMETR_SIZE + tx] = k;
+                            agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
+                        }
+
+                        end_OF_2 = std::chrono::high_resolution_clock::now();
+                        local_SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
+                        start_OF_2 = std::chrono::high_resolution_clock::now();
+#pragma omp critical(hash_table_read)
+                        {
+                            cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
+                        }
+                        end_OF_2 = std::chrono::high_resolution_clock::now();
+                        local_HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
+                        nom_iteration++;
+                        local_kol_hash_fail++;
+                    }
+
+                    start_OF_2 = std::chrono::high_resolution_clock::now();
+                    OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
+                    end_OF_2 = std::chrono::high_resolution_clock::now();
+                    local_totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
+
+                    start_OF_2 = std::chrono::high_resolution_clock::now();
+#pragma omp critical(hash_table_write)
+                    {
+                        saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
+                    }
+                    end_OF_2 = std::chrono::high_resolution_clock::now();
+                    local_HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
+                    break;
+                default:
+                    OF[bx] = cachedResult;
+                    local_kol_hash_fail++;
+                    break;
+                }
+            }
+
+            auto end = std::chrono::high_resolution_clock::now();
+            local_totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
+        }
+    }
+
+    kol_hash_fail += local_kol_hash_fail;
+    totalHashTime += local_totalHashTime;
+    totalOFTime += local_totalOFTime;
+    HashTimeSave += local_HashTimeSave;
+    HashTimeSearch += local_HashTimeSearch;
+    SumTimeSearch += local_SumTimeSearch;
+}
+// Обновление слоев графа
+void add_pheromon_iteration_transp_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    // Испарение весов-феромона
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с учетом транспонированного хранения
     for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+
+        // Предварительные вычисления вне внутреннего цикла
+#if OPTIMIZE_MIN_1
+        const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+        const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+        const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
         for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            int k = agent_node[tx + i * PARAMETR_SIZE];
-            kol_enter[tx + k * PARAMETR_SIZE]++;
-            //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * OF[i]; // MAX
-            //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q / OF[i]; // MIN
-            if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
-                pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]); // MIN
+            int k = agent_path[tx];
+            if (k >= 0 && k < MAX_VALUE_SIZE) {
+                // Транспонированный индекс: tx + k * PARAMETR_SIZE
+                int idx = tx + k * PARAMETR_SIZE;
+                kol_enter[idx]++;
+
+#if OPTIMIZE_MIN_1
+                if (min1_value > 0) {
+                    pheromon[idx] += min1_value;
+                }
+#elif OPTIMIZE_MIN_2
+                pheromon[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                pheromon[idx] += max_value;
+#endif
             }
         }
     }
+}
+// Базовая версия OpenMP 2.0/3.0/3.1
+void add_pheromon_iteration_transp_OMP_non_cuda_2_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение феромона
+#pragma omp parallel for schedule(static)
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с thread-local буферами
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(TOTAL_CELLS, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(TOTAL_CELLS, sizeof(int));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) {
+                        local_pheromon_add[idx] += min1_value;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+#pragma omp critical
+        {
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void add_pheromon_iteration_transp_OMP_non_cuda_4_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение феромона с SIMD
+#pragma omp parallel for simd schedule(static)
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с оптимизированными thread-local буферами
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(TOTAL_CELLS, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(TOTAL_CELLS, sizeof(int));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) {
+                        local_pheromon_add[idx] += min1_value;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // Слияние с SIMD
+#pragma omp critical
+        {
+#pragma omp simd
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void add_pheromon_iteration_transp_OMP_non_cuda_4_5(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение феромона с if clause
+#ifdef __clang__
+#pragma omp parallel for simd schedule(static)
+#else
+#pragma omp parallel for simd schedule(static) // if(TOTAL_CELLS > 1000)
+#endif
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с улучшенным планированием
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(TOTAL_CELLS, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(TOTAL_CELLS, sizeof(int));
+
+        // OpenMP 4.5: улучшенное планирование
+#pragma omp for schedule(static) nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) {
+                        local_pheromon_add[idx] += min1_value;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // Эффективное слияние
+#pragma omp critical
+        {
+            for (int k = 0; k < MAX_VALUE_SIZE; ++k) {
+#pragma omp simd
+                for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    kol_enter[idx] += local_kol_enter_add[idx];
+                    pheromon[idx] += local_pheromon_add[idx];
+                }
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void add_pheromon_iteration_transp_OMP_non_cuda_5_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение феромона с loop трансформацией
+#pragma omp parallel for simd schedule(static)
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с nonmonotonic scheduling
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(TOTAL_CELLS, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(TOTAL_CELLS, sizeof(int));
+
+        // OpenMP 5.0: nonmonotonic scheduling
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) {
+                        local_pheromon_add[idx] += min1_value;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // Слияние с улучшенной векторизацией
+#pragma omp critical
+        {
+#ifdef __clang__
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+#else
+#pragma omp simd
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+#endif
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void add_pheromon_iteration_transp_OMP_non_cuda_5_1(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение феромона с неблокирующими операциями
+#pragma omp parallel for simd schedule(static)
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с error recovery features
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(TOTAL_CELLS, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(TOTAL_CELLS, sizeof(int));
+
+        // OpenMP 5.1: улучшенное планирование
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) {
+                        local_pheromon_add[idx] += min1_value;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // Эффективное слияние с выравниванием памяти
+#pragma omp critical
+        {
+#pragma omp simd aligned(pheromon, kol_enter, local_pheromon_add, local_kol_enter_add:64)
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void add_pheromon_iteration_transp_OMP_non_cuda_5_2(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // Испарение феромона с assume clauses
+#pragma omp parallel for simd schedule(static)
+    for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+        pheromon[idx] *= PARAMETR_RO;
+    }
+
+    // Накопление с latest OpenMP 5.2 features
+#pragma omp parallel
+    {
+        // OpenMP 5.2: aligned allocation для лучшей векторизации
+        double* local_pheromon_add = (double*)ALIGNED_ALLOC(64, TOTAL_CELLS * sizeof(double));
+        int* local_kol_enter_add = (int*)ALIGNED_ALLOC(64, TOTAL_CELLS * sizeof(int));
+
+        // Инициализация буферов
+        for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+            local_pheromon_add[idx] = 0.0;
+            local_kol_enter_add[idx] = 0;
+        }
+
+        // OpenMP 5.2: assume clauses для оптимизатора
+#pragma omp for schedule(static) nowait
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of > 0) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 0.0000001 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            // OpenMP 5.2: assume для лучшей оптимизации
+#if !defined(__clang__)
+#pragma omp assume PARAMETR_SIZE <= 100
+#endif
+            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                int k = agent_path[tx];
+                if (static_cast<unsigned>(k) < static_cast<unsigned>(MAX_VALUE_SIZE)) {
+                    int idx = tx + k * PARAMETR_SIZE;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) {
+                        local_pheromon_add[idx] += min1_value;
+                    }
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // OpenMP 5.2: улучшенное слияние
+#pragma omp critical
+        {
+#pragma omp simd aligned(pheromon, kol_enter, local_pheromon_add, local_kol_enter_add:64)
+            for (int idx = 0; idx < TOTAL_CELLS; ++idx) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
+            }
+        }
+
+        ALIGNED_FREE(local_pheromon_add);
+        ALIGNED_FREE(local_kol_enter_add);
+    }
+}
+#endif
+void add_pheromon_iteration_transp_OMP_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    add_pheromon_iteration_transp_OMP_non_cuda_5_2(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    add_pheromon_iteration_transp_OMP_non_cuda_5_1(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    add_pheromon_iteration_transp_OMP_non_cuda_5_0(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    add_pheromon_iteration_transp_OMP_non_cuda_4_5(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    add_pheromon_iteration_transp_OMP_non_cuda_4_0(pheromon, kol_enter, agent_node, OF);
+#else  // OpenMP 2.0/3.0/3.1
+    add_pheromon_iteration_transp_OMP_non_cuda_2_0(pheromon, kol_enter, agent_node, OF);
+#endif
 }
 
 int start_omp() {
     auto start = std::chrono::high_resolution_clock::now();
     double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumgpuTime4 = 0.0f, SumgpuTime5 = 0.0f, SumgpuTime6 = 0.0f, SumgpuTime7 = 0.0f;
     double duration = 0.0f, duration_iteration = 0.0f;
-    int kol_shag_stat = KOL_ITERATION / KOL_STAT_LEVEL;
     int kol_hash_fail = 0;
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
+    const int kol_shag_stat = KOL_ITERATION / KOL_STAT_LEVEL;
+    const int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
+    const int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
 
     // Выделение памяти для хэш-таблицы на CPU
     HashEntry* hashTable = new HashEntry[HASH_TABLE_SIZE];
     // Вызов функции инициализации
-    initializeHashTable_omp(hashTable, HASH_TABLE_SIZE);
+    initializeHashTable_non_cuda(hashTable, HASH_TABLE_SIZE);
 
     double global_maxOf = -std::numeric_limits<double>::max();
     double global_minOf = std::numeric_limits<double>::max();
@@ -1829,7 +4609,10 @@ int start_omp() {
     double* antOF = new double[ANT_SIZE];
 
     // Загрузка матрицы из файла
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
+    if (!load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value)) {
+        std::cerr << "Failed to load matrix from file: " << NAME_FILE_GRAPH << std::endl;
+        return -1;
+    }
 
     auto start_iteration = std::chrono::high_resolution_clock::now();
 
@@ -1856,6 +4639,7 @@ int start_omp() {
         auto start2 = std::chrono::high_resolution_clock::now();
         auto end_temp = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> current_time = end_temp - start;
+        //std::cout << "go_all_agent_omp";
         go_all_agent_omp(int(current_time.count() * CONST_RANDOM), parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, hashTable, kol_hash_fail, SumgpuTime4, SumgpuTime5);
 
         if (PRINT_INFORMATION) {
@@ -1873,28 +4657,26 @@ int start_omp() {
         // Обновление весов-феромонов
         add_pheromon_iteration_omp(pheromon_value, kol_enter_value, ant_parametr, antOF);
 
-        // Поиск максимума и минимума
-        double maxOf = -std::numeric_limits<double>::max();
-        double minOf = std::numeric_limits<double>::max();
+        #pragma omp parallel 
+        {
+            // Поиск максимума и минимума
+            double maxOf = -std::numeric_limits<double>::max();
+            double minOf = std::numeric_limits<double>::max();
 
-#pragma omp parallel for reduction(max:maxOf) reduction(min:minOf)
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            if (antOF[i] != ZERO_HASH_RESULT) {
-                if (antOF[i] > maxOf) {
-                    maxOf = antOF[i];
-                }
-                if (antOF[i] < minOf) {
-                    minOf = antOF[i];
+            #pragma omp for
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                if (antOF[i] != ZERO_HASH_RESULT) {
+                    if (antOF[i] > maxOf) maxOf = antOF[i];
+                    if (antOF[i] < minOf) minOf = antOF[i];
                 }
             }
+            #pragma omp critical
+            {
+                if (maxOf > global_maxOf) global_maxOf = maxOf;
+                if (minOf < global_minOf) global_minOf = minOf;
+            }
         }
-
-        // Обновление глобальных максимумов и минимумов
-#pragma omp atomic
-        global_maxOf = std::max(global_maxOf, maxOf);
-#pragma omp atomic
-        global_minOf = std::min(global_minOf, minOf);
-
+   
         auto end_iter = std::chrono::high_resolution_clock::now();
         SumgpuTime1 += std::chrono::duration<double, std::milli>(end_iter - start1).count();
         SumgpuTime2 += std::chrono::duration<double, std::milli>(end_iter - start2).count();
@@ -1997,23 +4779,25 @@ int start_omp_non_hash() {
         double maxOf = -std::numeric_limits<double>::max();
         double minOf = std::numeric_limits<double>::max();
 
-#pragma omp parallel for reduction(max:maxOf) reduction(min:minOf)
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            if (antOF[i] != ZERO_HASH_RESULT) {
-                if (antOF[i] > maxOf) {
-                    maxOf = antOF[i];
-                }
-                if (antOF[i] < minOf) {
-                    minOf = antOF[i];
+#pragma omp parallel 
+        {
+            // Поиск максимума и минимума
+            double maxOf = -std::numeric_limits<double>::max();
+            double minOf = std::numeric_limits<double>::max();
+
+#pragma omp for
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                if (antOF[i] != ZERO_HASH_RESULT) {
+                    if (antOF[i] > maxOf) maxOf = antOF[i];
+                    if (antOF[i] < minOf) minOf = antOF[i];
                 }
             }
+#pragma omp critical
+            {
+                if (maxOf > global_maxOf) global_maxOf = maxOf;
+                if (minOf < global_minOf) global_minOf = minOf;
+            }
         }
-
-        // Обновление глобальных максимумов и минимумов
-#pragma omp atomic
-        global_maxOf = std::max(global_maxOf, maxOf);
-#pragma omp atomic
-        global_minOf = std::min(global_minOf, minOf);
 
         auto end_iter = std::chrono::high_resolution_clock::now();
         SumgpuTime1 += std::chrono::duration<double, std::milli>(end_iter - start1).count();
@@ -2671,6 +5455,128 @@ int start_NON_CUDA_transp() {
     return 0;
 }
 
+int start_NON_CUDA_transp_OMP_time() {
+    auto start = std::chrono::high_resolution_clock::now();
+    double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumTimeHashTotal = 0.0f, SumTimeOF = 0.0f, SumTimeHashSearch = 0.0f, SumTimeHashSave = 0.0f, SumTimeSearchAgent = 0.0f;
+    double duration = 0.0f, duration_iteration = 0.0f;
+    int kol_shag_stat = KOL_ITERATION / KOL_STAT_LEVEL;
+    int kol_hash_fail = 0;
+    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
+    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
+    // Выделение памяти для хэш-таблицы на CPU
+    HashEntry* hashTable = new HashEntry[HASH_TABLE_SIZE];
+    // Вызов функции инициализации
+    initializeHashTable_non_cuda(hashTable, HASH_TABLE_SIZE);
+
+    double global_maxOf = -std::numeric_limits<double>::max();
+    double global_minOf = std::numeric_limits<double>::max();
+
+    // Выделение памяти на хосте
+    double* parametr_value = new double[kolBytes_matrix_graph];
+    double* pheromon_value = new double[kolBytes_matrix_graph];
+    double* kol_enter_value = new double[kolBytes_matrix_graph];
+    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
+    double* ant = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
+    double* antOF = new double[ANT_SIZE];
+
+    // Загрузка матрицы из файла
+    load_matrix_transp_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
+
+    auto start_iteration = std::chrono::high_resolution_clock::now();
+    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
+        auto start1 = std::chrono::high_resolution_clock::now();
+        // Расчет нормализованной вероятности
+        go_mass_probability_transp_OMP_non_cuda(pheromon_value, kol_enter_value, norm_matrix_probability);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << std::endl;
+            for (int i = 0; i < PARAMETR_SIZE; ++i) {
+                for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
+                    std::cout << parametr_value[i + j * PARAMETR_SIZE] << "(" << pheromon_value[i + j * PARAMETR_SIZE] << ", " << kol_enter_value[i + j * PARAMETR_SIZE] << "-> " << norm_matrix_probability[i + j * PARAMETR_SIZE] << ") "; // Индексируем элементы
+                }
+                std::cout << std::endl; // Переход на новую строку
+            }
+        }
+
+        // Вычисление пути агентов
+
+        auto start2 = std::chrono::high_resolution_clock::now();
+        auto end_temp = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> current_time = end_temp - start;
+        go_all_agent_transp_OMP_non_cuda_time(int(current_time.count() * CONST_RANDOM), parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, hashTable, kol_hash_fail, SumTimeHashTotal, SumTimeOF, SumTimeHashSearch, SumTimeHashSave, SumTimeSearchAgent);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                for (int j = 0; j < PARAMETR_SIZE; ++j) {
+                    std::cout << ant[i * PARAMETR_SIZE + j] << " ";
+
+                }
+                std::cout << "-> " << antOF[i] << std::endl;
+
+            }
+        }
+
+        auto start3 = std::chrono::high_resolution_clock::now();
+        // Обновление весов-феромонов
+        add_pheromon_iteration_transp_OMP_non_cuda(pheromon_value, kol_enter_value, ant_parametr, antOF);
+
+        // Поиск максимума и минимума
+        double maxOf = -std::numeric_limits<double>::max();
+        double minOf = std::numeric_limits<double>::max();
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            if (antOF[i] != ZERO_HASH_RESULT) {
+                if (antOF[i] > maxOf) {
+                    maxOf = antOF[i];
+                }
+                if (antOF[i] < minOf) {
+                    minOf = antOF[i];
+                }
+            }
+        }
+
+        // Обновление глобальных максимумов и минимумов
+        if (minOf < global_minOf) {
+            global_minOf = minOf;
+        }
+        if (maxOf > global_maxOf) {
+            global_maxOf = maxOf;
+        }
+        auto end_iter = std::chrono::high_resolution_clock::now();
+        SumgpuTime1 += std::chrono::duration<double, std::milli>(end_iter - start1).count();
+        SumgpuTime2 += std::chrono::duration<double, std::milli>(end_iter - start2).count();
+        SumgpuTime3 += std::chrono::duration<double, std::milli>(end_iter - start3).count();
+        if (PRINT_INFORMATION) {
+            std::cout << nom_iter << "   MIN OF -> " << minOf << "  MAX OF -> " << maxOf << " GMIN OF -> " << global_minOf << "  GMAX OF -> " << global_maxOf << std::endl;
+        }
+        if ((nom_iter + 1) % kol_shag_stat == 0) {
+            int NomStatistics = nom_iter / kol_shag_stat;
+            if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
+            update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumTimeHashTotal, SumTimeOF, SumTimeHashSearch, SumTimeHashSave, SumTimeSearchAgent, global_minOf, global_maxOf, kol_hash_fail);
+        }
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    duration_iteration += std::chrono::duration<double, std::milli>(end - start_iteration).count();
+
+    // Освобождение памяти в конце программы
+    delete[] hashTable;               // Освобождение памяти для хэш-таблицы
+    delete[] parametr_value;          // Освобождение памяти для параметров
+    delete[] pheromon_value;          // Освобождение памяти для феромонов
+    delete[] kol_enter_value;         // Освобождение памяти для количества входов
+    delete[] norm_matrix_probability; // Освобождение памяти для нормализованной матрицы вероятностей
+    delete[] ant;                     // Освобождение памяти для муравьев
+    delete[] ant_parametr;            // Освобождение памяти для параметров муравьев
+    delete[] antOF;                   // Освобождение памяти для результата муравьев
+
+    auto end_all = std::chrono::high_resolution_clock::now();
+    duration += std::chrono::duration<double, std::milli>(end_all - start).count();
+    std::cout << "Time non CUDA_transp_OMP_time;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << SumTimeHashTotal << "; " << SumTimeOF << "; " << SumTimeHashSearch << "; " << SumTimeHashSave << "; " << SumTimeSearchAgent << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time non CUDA_transp_OMP_time;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumTimeHashTotal << "; " << SumTimeOF << "; " << SumTimeHashSearch << "; " << SumTimeHashSave << "; " << SumTimeSearchAgent << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+
+    return 0;
+}
+
 int start_NON_CUDA_transp_non_hash() {
     auto start = std::chrono::high_resolution_clock::now();
     double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumgpuTime5 = 0.0f, SumgpuTime6 = 0.0f, SumgpuTime7 = 0.0f;
@@ -2783,6 +5689,121 @@ int start_NON_CUDA_transp_non_hash() {
     duration += std::chrono::duration<double, std::milli>(end_all - start).count();
     std::cout << "Time non CUDA_transp non hash;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << "0" << "; " << SumgpuTime5 << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
     logFile << "Time non CUDA_transp non hash:;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << "0" << "; " << SumgpuTime5 << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    return 0;
+}
+
+int start_NON_CUDA_transp_non_hash_OMP_optimized() {
+    auto start = std::chrono::high_resolution_clock::now();
+    double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumgpuTime5 = 0.0f, SumgpuTime6 = 0.0f, SumgpuTime7 = 0.0f;
+    double duration = 0.0f, duration_iteration = 0.0f;
+    int kol_shag_stat = KOL_ITERATION / KOL_STAT_LEVEL;
+    int kol_hash_fail = 0;
+    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
+    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
+
+    double global_maxOf = -std::numeric_limits<double>::max();
+    double global_minOf = std::numeric_limits<double>::max();
+
+    // Выделение памяти на хосте
+    double* parametr_value = new double[kolBytes_matrix_graph];
+    double* pheromon_value = new double[kolBytes_matrix_graph];
+    double* kol_enter_value = new double[kolBytes_matrix_graph];
+    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
+    double* ant = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
+    double* antOF = new double[ANT_SIZE];
+
+    // Загрузка матрицы из файла
+    load_matrix_transp_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
+
+    auto start_iteration = std::chrono::high_resolution_clock::now();
+    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
+        auto start1 = std::chrono::high_resolution_clock::now();
+        // Расчет нормализованной вероятности
+        go_mass_probability_transp_OMP_non_cuda(pheromon_value, kol_enter_value, norm_matrix_probability);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << std::endl;
+            for (int i = 0; i < PARAMETR_SIZE; ++i) {
+                for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
+                    std::cout << parametr_value[i + j * PARAMETR_SIZE] << "(" << pheromon_value[i + j * PARAMETR_SIZE] << ", " << kol_enter_value[i + j * PARAMETR_SIZE] << "-> " << norm_matrix_probability[i + j * PARAMETR_SIZE] << ") "; // Индексируем элементы
+                }
+                std::cout << std::endl; // Переход на новую строку
+            }
+        }
+
+        // Вычисление пути агентов
+
+        auto start2 = std::chrono::high_resolution_clock::now();
+        auto end_temp = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> current_time = end_temp - start;
+        go_all_agent_transp_non_cuda_non_hash_OMP_optimized(int(current_time.count() * CONST_RANDOM), parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, kol_hash_fail, SumgpuTime5);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                for (int j = 0; j < PARAMETR_SIZE; ++j) {
+                    std::cout << ant[i * PARAMETR_SIZE + j] << " ";
+                    //std::cout << ant_parametr[i * PARAMETR_SIZE + j] << "(" << ant[i * PARAMETR_SIZE + j] << ") "; 
+                }
+                std::cout << "-> " << antOF[i] << std::endl;
+
+            }
+        }
+
+        auto start3 = std::chrono::high_resolution_clock::now();
+        // Обновление весов-феромонов
+        add_pheromon_iteration_transp_OMP_non_cuda(pheromon_value, kol_enter_value, ant_parametr, antOF);
+
+        // Поиск максимума и минимума
+        double maxOf = -std::numeric_limits<double>::max();
+        double minOf = std::numeric_limits<double>::max();
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            if (antOF[i] != ZERO_HASH_RESULT) {
+                if (antOF[i] > maxOf) {
+                    maxOf = antOF[i];
+                }
+                if (antOF[i] < minOf) {
+                    minOf = antOF[i];
+                }
+            }
+        }
+
+        // Обновление глобальных максимумов и минимумов
+        if (minOf < global_minOf) {
+            global_minOf = minOf;
+        }
+        if (maxOf > global_maxOf) {
+            global_maxOf = maxOf;
+        }
+        auto end_iter = std::chrono::high_resolution_clock::now();
+        SumgpuTime1 += std::chrono::duration<double, std::milli>(end_iter - start1).count();
+        SumgpuTime2 += std::chrono::duration<double, std::milli>(end_iter - start2).count();
+        SumgpuTime3 += std::chrono::duration<double, std::milli>(end_iter - start3).count();
+        if (PRINT_INFORMATION) {
+            std::cout << nom_iter << "   MIN OF -> " << minOf << "  MAX OF -> " << maxOf << " GMIN OF -> " << global_minOf << "  GMAX OF -> " << global_maxOf << std::endl;
+        }
+        if ((nom_iter + 1) % kol_shag_stat == 0) {
+            int NomStatistics = nom_iter / kol_shag_stat;
+            if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
+            update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, 0, SumgpuTime5, SumgpuTime6, SumgpuTime7, global_minOf, 0, global_maxOf, kol_hash_fail);
+        }
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    duration_iteration += std::chrono::duration<double, std::milli>(end - start_iteration).count();
+
+    // Освобождение памяти в конце программы
+    delete[] parametr_value;          // Освобождение памяти для параметров
+    delete[] pheromon_value;          // Освобождение памяти для феромонов
+    delete[] kol_enter_value;         // Освобождение памяти для количества входов
+    delete[] norm_matrix_probability; // Освобождение памяти для нормализованной матрицы вероятностей
+    delete[] ant;                     // Освобождение памяти для муравьев
+    delete[] ant_parametr;            // Освобождение памяти для параметров муравьев
+    delete[] antOF;                   // Освобождение памяти для результата муравьев
+    auto end_all = std::chrono::high_resolution_clock::now();
+    duration += std::chrono::duration<double, std::milli>(end_all - start).count();
+    std::cout << "Time non CUDA_transp non hash optimized;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << "0" << "; " << SumgpuTime5 << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time non CUDA_transp non hash optimized:;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << "0" << "; " << SumgpuTime5 << "; " << "0" << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
     return 0;
 }
 
@@ -3057,76 +6078,124 @@ private:
     }
 };
 
+// Структура для классической хэш-таблицы
 struct HashEntry_classic {
-    std::vector<int> key; // Ключ (вектор пути)
-    double value; // Значение
+    std::vector<int> key;
+    double value;
+
+    // Конструктор по умолчанию
+    HashEntry_classic() : value(0.0) {}
+
+    // Проверка на пустоту
+    bool isEmpty() const {
+        return key.empty();
+    }
+
+    // Проверка совпадения ключей
+    bool keyEquals(const std::vector<int>& other) const {
+        if (key.size() != other.size()) return false;
+        for (size_t i = 0; i < key.size(); ++i) {
+            if (key[i] != other[i]) return false;
+        }
+        return true;
+    }
 };
 
-// Функция инициализации хэш-таблицы
+// ----------------- Функция инициализации хэш-таблицы -----------------
 void initializeHashTable_classic(HashEntry_classic* hashTable, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         hashTable[i] = HashEntry_classic(); // Инициализируем каждый элемент
     }
+    //std::cout << "Classic hash table initialized with size: " << size << std::endl;
 }
 
-// ----------------- Key Generation Function -----------------
+// ----------------- Оптимизированная генерация ключа -----------------
 unsigned long long generateKey_classic(const std::vector<int>& path) {
     unsigned long long key = 0;
     unsigned long long factor = 1;
+
     for (int val : path) {
-        key += val * factor;
-        factor *= MAX_VALUE_SIZE; // MAX_VALUE_SIZE - максимальное значение, которое может принимать элемент пути
+        key += static_cast<unsigned long long>(val) * factor;
+
+        // Проверка переполнения
+        if (factor > ULLONG_MAX / MAX_VALUE_SIZE) {
+            // Используем хэширование при переполнении
+            key = key * 131 + val; // Простая хэш-функция
+            factor = 1;
+        }
+        else {
+            factor *= MAX_VALUE_SIZE;
+        }
     }
     return key;
 }
 
-// ----------------- Hash Function for Path -----------------
-unsigned long long hashFunction_classic(const std::vector<int>& path) {
-    unsigned long long key = generateKey_classic(path);
-    return betterHashFunction_non_cuda(key);
+// ----------------- Быстрая хэш-функция -----------------
+unsigned long long hashFunction_classic_fast(const std::vector<int>& path) {
+    // Полиномиальное хэширование для лучшего распределения
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long hash = 14695981039346656037ULL;
+
+    for (int val : path) {
+        hash ^= static_cast<unsigned long long>(val);
+        hash *= prime;
+    }
+
+    return hash % HASH_TABLE_SIZE;
 }
 
-double getCachedResultOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path) {
-    unsigned long long key = hashFunction_classic(path);
-    unsigned long long idx = key;
-    int i = 1;
+// ----------------- Альтернативная хэш-функция -----------------
+unsigned long long hashFunction_classic_simple(const std::vector<int>& path) {
+    unsigned long long hash = 0;
 
-    while (i <= MAX_PROBES) {
-        if (hashTable[idx].key == path) {
-            return hashTable[idx].value; // Найдено
+    for (int val : path) {
+        hash = hash * 31 + val; // Простая, но эффективная хэш-функция
+    }
+
+    return hash % HASH_TABLE_SIZE;
+}
+
+// ----------------- Оптимизированный поиск в хэш-таблице -----------------
+double getCachedResultOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path) {
+    unsigned long long key_hash = hashFunction_classic_fast(path);
+
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (key_hash + static_cast<unsigned long long>(i * i)) % HASH_TABLE_SIZE;
+
+        if (hashTable[new_idx].keyEquals(path)) {
+            return hashTable[new_idx].value; // Найдено
         }
-        if (hashTable[idx].key.empty()) {
+        if (hashTable[new_idx].isEmpty()) {
             return -1.0; // Не найдено и слот пуст
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        i++;
     }
     return -1.0; // Не найдено после максимального количества проб
 }
 
-void saveToCacheOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path, double value) {
-    unsigned long long key = hashFunction_classic(path);
-    unsigned long long idx = key;
-    int i = 1;
+// ----------------- Оптимизированное сохранение в хэш-таблицу -----------------
+bool saveToCacheOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path, double value) {
+    unsigned long long key_hash = hashFunction_classic_fast(path);
 
-    while (i <= MAX_PROBES) {
-        if (hashTable[idx].key.empty()) {
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (key_hash + static_cast<unsigned long long>(i * i)) % HASH_TABLE_SIZE;
+
+        if (hashTable[new_idx].isEmpty()) {
             // Успешно вставлено
-            hashTable[idx].key = path;
-            hashTable[idx].value = value;
-            return;
+            hashTable[new_idx].key = path;
+            hashTable[new_idx].value = value;
+            return true;
         }
-        else if (hashTable[idx].key == path) {
-            // Ключ уже существует
-            hashTable[idx].value = value; // Обновление значения
-            return;
+        else if (hashTable[new_idx].keyEquals(path)) {
+            // Ключ уже существует - обновление значения
+            hashTable[new_idx].value = value;
+            return true;
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        i++;
     }
-    // Если таблица полна, обработайте ошибку или проигнорируйте
-}
 
+    // Таблица переполнена
+    std::cerr << "Warning: Hash table full, could not insert path" << std::endl;
+    return false;
+}
 // Определение статических членов класса PG
 double PG::alf1 = 1;
 double PG::alf2 = 1;
@@ -3196,7 +6265,7 @@ void processAnt(int nom_ant, std::vector<Ant>& ants, PG& pg, double& maxOf, doub
     }
 }
 */
-void start_ant_classic() {
+static void start_ant_classic() {
     auto start = std::chrono::high_resolution_clock::now();
     double global_maxOf = -std::numeric_limits<double>::max();
     double global_minOf = std::numeric_limits<double>::max();
@@ -3342,7 +6411,7 @@ void start_ant_classic() {
 
 }
 
-void start_ant_classic_non_hash() {
+static void start_ant_classic_non_hash() {
     auto start = std::chrono::high_resolution_clock::now();
     double global_maxOf = -std::numeric_limits<double>::max();
     double global_minOf = std::numeric_limits<double>::max();
@@ -3441,131 +6510,961 @@ void start_ant_classic_non_hash() {
 
 }
 
+
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #include <immintrin.h> // Для AVX
+
 // Подготовка массива для вероятностного поиска
-void go_mass_probability_AVX_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
+void go_mass_probability_AVX_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-        // Вычисляем sumVector
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        // 1. Вычисляем sumVector для феромонов
         double sumVector = 0.0;
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+
+        // Векторизованное суммирование
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
         }
 
-        // Нормируем значения
-        double pheromon_norm[MAX_VALUE_SIZE] = { 0 }; // Инициализация массива
-        for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-            if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
-                __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[MAX_VALUE_SIZE * tx + i]);
-                __m256d normValues_AVX = _mm256_div_pd(pheromonValues_AVX, _mm256_set1_pd(sumVector));
-                _mm256_storeu_pd(&pheromon_norm[i], normValues_AVX);
-            }
-        }
-
-        // Вычисляем svertka и sumVector
-        sumVector = 0.0;
-        double svertka[MAX_VALUE_SIZE] = { 0 }; // Инициализация массива
-        __m256d sumVector_AVX = _mm256_setzero_pd();
-        for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-            if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
-                __m256d kolEnterValues_AVX = _mm256_loadu_pd(&kol_enter[MAX_VALUE_SIZE * tx + i]);
-                __m256d pheromonNormValues_AVX = _mm256_loadu_pd(&pheromon_norm[i]);
-                __m256d svertkaValues_AVX;
-
-                // Создаем маску для проверки условий
-                __m256d mask_AVX = _mm256_cmp_pd(kolEnterValues_AVX, _mm256_setzero_pd(), _CMP_NEQ_OQ);
-                mask_AVX = _mm256_and_pd(mask_AVX, _mm256_cmp_pd(pheromonNormValues_AVX, _mm256_setzero_pd(), _CMP_NEQ_OQ));
-
-                // Вычисляем svertka с учетом условий
-                __m256d oneOverKolEnter_AVX = _mm256_div_pd(_mm256_set1_pd(1.0), kolEnterValues_AVX);
-                svertkaValues_AVX = _mm256_add_pd(oneOverKolEnter_AVX, pheromonNormValues_AVX);
-                svertkaValues_AVX = _mm256_blendv_pd(_mm256_setzero_pd(), svertkaValues_AVX, mask_AVX);
-
-                // Сохраняем результат
-                _mm256_storeu_pd(&svertka[i], svertkaValues_AVX);
-                // Суммируем svertka
-                sumVector_AVX = _mm256_add_pd(sumVector_AVX, svertkaValues_AVX);
-            }
-        }
-        // Суммируем значения из вектора svertka
-        double temp[CONST_AVX] = { 0 };
-        _mm256_storeu_pd(temp, sumVector_AVX);
+        // Горизонтальное суммирование
+        double temp[CONST_AVX];
+        _mm256_storeu_pd(temp, sum_pheromon_AVX);
         for (int j = 0; j < CONST_AVX; j++) {
             sumVector += temp[j];
         }
 
-        // Заполняем norm_matrix_probability
-        if (sumVector != 0) { // Проверка на деление на ноль
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        // Остаточные элементы
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        // Обработка нулевой суммы
+        if (sumVector == 0.0) {
+            // Установка равномерного распределения
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
             for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
             }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        // 2. Нормируем значения феромонов
+        double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_storeu_pd(&pheromon_norm[i], normValues);
+        }
+
+        // Остаточные элементы для нормирования
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        // 3. Вычисляем svertka и их сумму
+        double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_loadu_pd(&pheromon_norm[i]);
+
+            // Проверка условий: kol_enter != 0 AND pheromon_norm != 0
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            // Вычисление: 1.0 / kol_enter + pheromon_norm
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+
+            // Применяем маску: если условие false -> 0.0
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_storeu_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        // Остаточные элементы для svertka
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        // Суммируем svertka
+        double sumSvertka = 0.0;
+        _mm256_storeu_pd(temp, sumSvertka_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        // Добавляем остаточные элементы к сумме
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        // 4. Вычисляем кумулятивные вероятности
+        if (sumSvertka == 0.0) {
+            // Равномерное распределение если все svertka нулевые
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            // Гарантируем, что последнее значение равно 1.0
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
         }
     }
 }
-void go_mass_probability_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
-#pragma omp parallel for
+// Базовая версия OpenMP 2.0/3.0/3.1 с AVX
+void go_mass_probability_AVX_OMP_non_cuda_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
+#pragma omp parallel for schedule(static)
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-        // Вычисляем sumVector
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        // 1. Вычисляем sumVector для феромонов
         double sumVector = 0.0;
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            sumVector += pheromon[MAX_VALUE_SIZE * tx + i];
+
+        // Векторизованное суммирование
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
         }
 
-        // Нормируем значения
-        double pheromon_norm[MAX_VALUE_SIZE] = { 0 }; // Инициализация массива
-#pragma omp parallel for
-        for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-            if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
-                __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[MAX_VALUE_SIZE * tx + i]);
-                __m256d normValues_AVX = _mm256_div_pd(pheromonValues_AVX, _mm256_set1_pd(sumVector));
-                _mm256_storeu_pd(&pheromon_norm[i], normValues_AVX);
-            }
-        }
-
-        // Вычисляем svertka и sumVector
-        sumVector = 0.0;
-        double svertka[MAX_VALUE_SIZE] = { 0 }; // Инициализация массива
-        __m256d sumVector_AVX = _mm256_setzero_pd();
-#pragma omp parallel for reduction(+:sumVector)
-        for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-            if (i + CONST_AVX <= MAX_VALUE_SIZE) { // Проверка границ
-                __m256d kolEnterValues_AVX = _mm256_loadu_pd(&kol_enter[MAX_VALUE_SIZE * tx + i]);
-                __m256d pheromonNormValues_AVX = _mm256_loadu_pd(&pheromon_norm[i]);
-                __m256d svertkaValues_AVX;
-
-                // Создаем маску для проверки условий
-                __m256d mask_AVX = _mm256_cmp_pd(kolEnterValues_AVX, _mm256_setzero_pd(), _CMP_NEQ_OQ);
-                mask_AVX = _mm256_and_pd(mask_AVX, _mm256_cmp_pd(pheromonNormValues_AVX, _mm256_setzero_pd(), _CMP_NEQ_OQ));
-
-                // Вычисляем svertka с учетом условий
-                __m256d oneOverKolEnter_AVX = _mm256_div_pd(_mm256_set1_pd(1.0), kolEnterValues_AVX);
-                svertkaValues_AVX = _mm256_add_pd(oneOverKolEnter_AVX, pheromonNormValues_AVX);
-                svertkaValues_AVX = _mm256_blendv_pd(_mm256_setzero_pd(), svertkaValues_AVX, mask_AVX);
-
-                // Сохраняем результат
-                _mm256_storeu_pd(&svertka[i], svertkaValues_AVX);
-                // Суммируем svertka
-                sumVector_AVX = _mm256_add_pd(sumVector_AVX, svertkaValues_AVX);
-            }
-        }
-        // Суммируем значения из вектора svertka
-        double temp[CONST_AVX] = { 0 };
-        _mm256_storeu_pd(temp, sumVector_AVX);
+        // Горизонтальное суммирование
+        alignas(32) double temp[CONST_AVX];
+        _mm256_store_pd(temp, sum_pheromon_AVX);
         for (int j = 0; j < CONST_AVX; j++) {
             sumVector += temp[j];
         }
 
-        // Заполняем norm_matrix_probability
-        if (sumVector != 0) { // Проверка на деление на ноль
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
+        // Остаточные элементы
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        // Обработка нулевой суммы
+        if (sumVector == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
             for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
             }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        // 2. Нормируем значения феромонов
+        alignas(32) double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_store_pd(&pheromon_norm[i], normValues);
+        }
+
+        // Остаточные элементы для нормирования
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        // 3. Вычисляем svertka и их сумму
+        alignas(32) double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_load_pd(&pheromon_norm[i]);
+
+            // Проверка условий: kol_enter != 0 AND pheromon_norm != 0
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            // Вычисление: 1.0 / kol_enter + pheromon_norm
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+
+            // Применяем маску: если условие false -> 0.0
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_store_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        // Остаточные элементы для svertka
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        // Суммируем svertka
+        double sumSvertka = 0.0;
+        _mm256_store_pd(temp, sumSvertka_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        // Добавляем остаточные элементы к сумме
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        // 4. Вычисляем кумулятивные вероятности
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
         }
     }
 }
-void go_mass_probability_AVX_non_cuda_4(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_AVX_OMP_non_cuda_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
+    // OpenMP 4.0: separate simd directive для внешнего цикла
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        // 1. Вычисляем sumVector для феромонов
+        double sumVector = 0.0;
+
+        // Векторизованное суммирование с выровненной памятью
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
+        }
+
+        // Горизонтальное суммирование
+        alignas(32) double temp[CONST_AVX];
+        _mm256_store_pd(temp, sum_pheromon_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumVector += temp[j];
+        }
+
+        // Остаточные элементы
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        if (sumVector == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        // 2. Нормируем значения феромонов
+        alignas(32) double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_store_pd(&pheromon_norm[i], normValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        // 3. Вычисляем svertka и их сумму
+        alignas(32) double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_load_pd(&pheromon_norm[i]);
+
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_store_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        double sumSvertka = 0.0;
+        _mm256_store_pd(temp, sumSvertka_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        // 4. Вычисляем кумулятивные вероятности
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_mass_probability_AVX_OMP_non_cuda_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
+    // OpenMP 4.5: if clause для условного выполнения
+#if defined(__clang__)
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for schedule(static) // if(PARAMETR_SIZE > 100)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumVector = 0.0;
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+
+        // Автоматическая векторизация внутренних циклов
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
+        }
+
+        alignas(32) double temp[CONST_AVX];
+        _mm256_store_pd(temp, sum_pheromon_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumVector += temp[j];
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        if (sumVector == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        alignas(32) double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_store_pd(&pheromon_norm[i], normValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        alignas(32) double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_load_pd(&pheromon_norm[i]);
+
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_store_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        double sumSvertka = 0.0;
+        _mm256_store_pd(temp, sumSvertka_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_mass_probability_AVX_OMP_non_cuda_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
+    // OpenMP 5.0: loop transformation hints
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumVector = 0.0;
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+
+        // OpenMP 5.0: оптимизированные циклы
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
+        }
+
+        alignas(32) double temp[CONST_AVX];
+        _mm256_store_pd(temp, sum_pheromon_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumVector += temp[j];
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        if (sumVector == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        alignas(32) double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_store_pd(&pheromon_norm[i], normValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        alignas(32) double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_load_pd(&pheromon_norm[i]);
+
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_store_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        double sumSvertka = 0.0;
+        _mm256_store_pd(temp, sumSvertka_AVX);
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_mass_probability_AVX_OMP_non_cuda_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
+    // OpenMP 5.1: error recovery и улучшенное управление памятью
+#pragma omp parallel for schedule(nonmonotonic:static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumVector = 0.0;
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+
+        // OpenMP 5.1: оптимизированные циклы с неблокирующими операциями
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
+        }
+
+        alignas(32) double temp[CONST_AVX];
+        _mm256_store_pd(temp, sum_pheromon_AVX);
+
+        // OpenMP 5.1: улучшенное скалярное суммирование
+#pragma omp simd reduction(+:sumVector)
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumVector += temp[j];
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        if (sumVector == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            // OpenMP 5.1: оптимизированный цикл для равномерного распределения
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        alignas(32) double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_store_pd(&pheromon_norm[i], normValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        alignas(32) double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_load_pd(&pheromon_norm[i]);
+
+            // OpenMP 5.1: оптимизированные маскированные операции
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_store_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        double sumSvertka = 0.0;
+        _mm256_store_pd(temp, sumSvertka_AVX);
+
+#pragma omp simd reduction(+:sumSvertka)
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            // OpenMP 5.1: оптимизированный цикл кумулятивных сумм
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_mass_probability_AVX_OMP_non_cuda_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int remainder = MAX_VALUE_SIZE % CONST_AVX;
+
+    // OpenMP 5.2: assume clauses и улучшенный контроль памяти
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        // OpenMP 5.2: assume clauses для оптимизатора
+#if !defined(__clang__)
+#pragma omp assume MAX_VALUE_SIZE % 4 == 0  // Предполагаем кратность 4 для AVX
+#pragma omp assume PARAMETR_SIZE <= 1024    // Предполагаем разумный размер
+#endif
+
+        const int base_idx = MAX_VALUE_SIZE * tx;
+
+        double sumVector = 0.0;
+        __m256d sum_pheromon_AVX = _mm256_setzero_pd();
+        int i = 0;
+
+        // OpenMP 5.2: оптимизированные AVX циклы с assume
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            sum_pheromon_AVX = _mm256_add_pd(sum_pheromon_AVX, pheromonValues);
+        }
+
+        alignas(32) double temp[CONST_AVX];
+        _mm256_store_pd(temp, sum_pheromon_AVX);
+
+        // OpenMP 5.2: улучшенное скалярное суммирование
+#if !defined(__clang__)
+#pragma omp assume CONST_AVX == 4  // Предполагаем размер AVX регистра
+#endif
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumVector += temp[j];
+        }
+
+        // Обработка остаточных элементов с assume
+#if !defined(__clang__)
+#pragma omp assume remainder < 4
+#endif
+        for (; i < MAX_VALUE_SIZE; i++) {
+            sumVector += pheromon[base_idx + i];
+        }
+
+        if (sumVector == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            // OpenMP 5.2: оптимизированный цикл с assume
+#if !defined(__clang__)
+#pragma omp assume MAX_VALUE_SIZE > 1
+#endif
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+            continue;
+        }
+
+        alignas(32) double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumVector_AVX = _mm256_set1_pd(sumVector);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d pheromonValues = _mm256_loadu_pd(&pheromon[base_idx + i]);
+            __m256d normValues = _mm256_div_pd(pheromonValues, sumVector_AVX);
+            _mm256_store_pd(&pheromon_norm[i], normValues);
+        }
+
+        for (; i < MAX_VALUE_SIZE; i++) {
+            pheromon_norm[i] = pheromon[base_idx + i] / sumVector;
+        }
+
+        alignas(32) double svertka[MAX_VALUE_SIZE] = { 0 };
+        __m256d sumSvertka_AVX = _mm256_setzero_pd();
+        __m256d zero_AVX = _mm256_setzero_pd();
+        __m256d one_AVX = _mm256_set1_pd(1.0);
+
+        i = 0;
+        for (; i <= MAX_VALUE_SIZE - CONST_AVX; i += CONST_AVX) {
+            __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter[base_idx + i]);
+            __m256d pheromonNormValues = _mm256_load_pd(&pheromon_norm[i]);
+
+            // OpenMP 5.2: оптимизированные сравнения с assume
+            __m256d kolNonZeroMask = _mm256_cmp_pd(kolEnterValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d pheromonNonZeroMask = _mm256_cmp_pd(pheromonNormValues, zero_AVX, _CMP_NEQ_OQ);
+            __m256d conditionMask = _mm256_and_pd(kolNonZeroMask, pheromonNonZeroMask);
+
+            __m256d invKolEnter = _mm256_div_pd(one_AVX, kolEnterValues);
+            __m256d svertkaValues = _mm256_add_pd(invKolEnter, pheromonNormValues);
+            svertkaValues = _mm256_blendv_pd(zero_AVX, svertkaValues, conditionMask);
+
+            _mm256_store_pd(&svertka[i], svertkaValues);
+            sumSvertka_AVX = _mm256_add_pd(sumSvertka_AVX, svertkaValues);
+        }
+
+        // Обработка остаточных элементов для svertka
+#if !defined(__clang__)
+#pragma omp assume remainder < 4
+#endif
+        for (; i < MAX_VALUE_SIZE; i++) {
+            if (kol_enter[base_idx + i] != 0.0 && pheromon_norm[i] != 0.0) {
+                svertka[i] = 1.0 / kol_enter[base_idx + i] + pheromon_norm[i];
+            }
+            else {
+                svertka[i] = 0.0;
+            }
+        }
+
+        double sumSvertka = 0.0;
+        _mm256_store_pd(temp, sumSvertka_AVX);
+
+#if !defined(__clang__)
+#pragma omp assume CONST_AVX == 4
+#endif
+        for (int j = 0; j < CONST_AVX; j++) {
+            sumSvertka += temp[j];
+        }
+
+        // Суммирование остаточных элементов
+#if !defined(__clang__)
+#pragma omp assume remainder < 4
+#endif
+        for (i = MAX_VALUE_SIZE - remainder; i < MAX_VALUE_SIZE; i++) {
+            sumSvertka += svertka[i];
+        }
+
+        if (sumSvertka == 0.0) {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = uniform_prob;
+            norm_matrix_probability[base_idx] = cumulative;
+#if !defined(__clang__)
+#pragma omp assume MAX_VALUE_SIZE > 1
+#endif
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += uniform_prob;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+        else {
+            double invSumSvertka = 1.0 / sumSvertka;
+            double cumulative = svertka[0] * invSumSvertka;
+            norm_matrix_probability[base_idx] = cumulative;
+
+            // OpenMP 5.2: оптимизированный цикл кумулятивных вероятностей
+#if !defined(__clang__)
+#pragma omp assume MAX_VALUE_SIZE > 1
+#endif
+            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
+                cumulative += svertka[i] * invSumSvertka;
+                norm_matrix_probability[base_idx + i] = cumulative;
+            }
+
+            norm_matrix_probability[base_idx + MAX_VALUE_SIZE - 1] = 1.0;
+        }
+    }
+}
+#endif
+void go_mass_probability_AVX_OMP_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_mass_probability_AVX_OMP_non_cuda_5_2(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_mass_probability_AVX_OMP_non_cuda_5_1(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_mass_probability_AVX_OMP_non_cuda_5_0(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_mass_probability_AVX_OMP_non_cuda_4_5(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_mass_probability_AVX_OMP_non_cuda_4_0(pheromon, kol_enter, norm_matrix_probability);
+#else  // OpenMP 2.0/3.0/3.1
+    go_mass_probability_AVX_OMP_non_cuda_2_0(pheromon, kol_enter, norm_matrix_probability);
+#endif
+}
+void go_mass_probability_AVX_non_cuda_4(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
     //MAX_VALUE_SIZE=4
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         //Загрузка данных в вектора
@@ -3595,7 +7494,75 @@ void go_mass_probability_AVX_non_cuda_4(double* pheromon, double* kol_enter, dou
         }
     }
 }
-void go_mass_probability_not_f_AVX_non_cuda_4(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
+void go_mass_probability_AVX_OMP_non_cuda_4( double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+
+    alignas(32) const double uniform_probs[4] = { 0.25, 0.5, 0.75, 1.0 };
+    const __m256d uniform_avx = _mm256_load_pd(uniform_probs);
+    const __m256d zero = _mm256_setzero_pd();
+    const __m256d one = _mm256_set1_pd(1.0);
+    const __m256d epsilon = _mm256_set1_pd(1e-12);
+
+    // Условный параллелизм только для OpenMP 4.5+
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel for schedule(static) // if(PARAMETR_SIZE > 100)
+#else
+#pragma omp parallel for schedule(static)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        const int base_idx = tx * 4; // MAX_VALUE_SIZE = 4
+
+        // 1. Загрузка данных
+        __m256d pheromon_vals = _mm256_loadu_pd(&pheromon[base_idx]);
+        __m256d kol_enter_vals = _mm256_loadu_pd(&kol_enter[base_idx]);
+
+        // 2. Суммирование феромонов (оптимальный способ для 4 элементов)
+        alignas(32) double temp[4];
+        _mm256_store_pd(temp, pheromon_vals);
+        double sum_pheromon = temp[0] + temp[1] + temp[2] + temp[3];
+
+        if (sum_pheromon < 1e-12) {
+            _mm256_storeu_pd(&norm_matrix_probability[base_idx], uniform_avx);
+            continue;
+        }
+
+        // 3. Нормализация феромонов
+        __m256d inv_sum_pheromon = _mm256_set1_pd(1.0 / sum_pheromon);
+        __m256d pheromon_norm = _mm256_mul_pd(pheromon_vals, inv_sum_pheromon);
+
+        // 4. Вычисление svertka с условиями
+        __m256d kol_non_zero = _mm256_cmp_pd(kol_enter_vals, epsilon, _CMP_GT_OQ);
+        __m256d pheromon_non_zero = _mm256_cmp_pd(pheromon_norm, epsilon, _CMP_GT_OQ);
+        __m256d mask = _mm256_and_pd(kol_non_zero, pheromon_non_zero);
+
+        __m256d safe_kol = _mm256_max_pd(kol_enter_vals, epsilon);
+        __m256d inv_kol = _mm256_div_pd(one, safe_kol);
+        __m256d svertka = _mm256_add_pd(inv_kol, pheromon_norm);
+        svertka = _mm256_blendv_pd(zero, svertka, mask);
+
+        // 5. Суммирование svertka
+        _mm256_store_pd(temp, svertka);
+        double sum_svertka = temp[0] + temp[1] + temp[2] + temp[3];
+
+        if (sum_svertka > 1e-12) {
+            // 6. Нормализация и кумулятивное суммирование
+            __m256d inv_sum_s = _mm256_set1_pd(1.0 / sum_svertka);
+            __m256d normalized = _mm256_mul_pd(svertka, inv_sum_s);
+
+            _mm256_store_pd(temp, normalized);
+
+            // Простое и эффективное кумулятивное суммирование
+            temp[1] += temp[0];
+            temp[2] += temp[1];
+            temp[3] = 1.0; // Гарантия точности
+
+            _mm256_storeu_pd(&norm_matrix_probability[base_idx], _mm256_load_pd(temp));
+        }
+        else {
+            _mm256_storeu_pd(&norm_matrix_probability[base_idx], uniform_avx);
+        }
+    }
+}
+void go_mass_probability_not_f_AVX_non_cuda_4(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
     //MAX_VALUE_SIZE=4
     for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
         //Загрузка данных в вектора
@@ -3621,8 +7588,84 @@ void go_mass_probability_not_f_AVX_non_cuda_4(double* pheromon, double* kol_ente
         _mm256_storeu_pd(&norm_matrix_probability[MAX_VALUE_SIZE * tx], normalizedResult_AVX);
     }
 }
+void go_mass_probability_not_f_AVX_OMP_non_cuda_4_fixed( double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+
+    alignas(32) static const __m256d zero = _mm256_setzero_pd();
+    alignas(32) static const __m256d one = _mm256_set1_pd(1.0);
+    alignas(32) static const __m256d uniform = _mm256_set_pd(0.75, 0.5, 0.25, 0.0); // Для cumulative
+    constexpr double epsilon = 1e-12;
+
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel // if(PARAMETR_SIZE > 100)
+#else
+#pragma omp parallel
+#endif
+    {
+        __m256d pheromon_vals, kol_enter_vals, pheromon_norm, mask, inv_kol, svertka;
+        __m256d sum_avx, normalized;
+        double sum_pheromon, sum_svertka;
+        alignas(32) double temp[4];
+
+#pragma omp for schedule(static) nowait
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            const int base_idx = 4 * tx; // MAX_VALUE_SIZE = 4
+
+            // Загрузка данных
+            pheromon_vals = _mm256_load_pd(&pheromon[base_idx]);
+            kol_enter_vals = _mm256_load_pd(&kol_enter[base_idx]);
+
+            // Суммирование феромонов
+            sum_avx = _mm256_hadd_pd(pheromon_vals, pheromon_vals);
+            sum_pheromon = ((double*)&sum_avx)[0] + ((double*)&sum_avx)[2];
+
+            if (sum_pheromon < epsilon) {
+                // Равномерное распределение с cumulative sum
+                _mm256_store_pd(&norm_matrix_probability[base_idx],
+                    _mm256_add_pd(uniform, _mm256_set1_pd(0.25)));
+                continue;
+            }
+
+            // Нормализация феромонов
+            pheromon_norm = _mm256_div_pd(pheromon_vals, _mm256_set1_pd(sum_pheromon));
+
+            // Условия с безопасными порогами
+            mask = _mm256_and_pd(
+                _mm256_cmp_pd(kol_enter_vals, _mm256_set1_pd(epsilon), _CMP_GT_OQ),
+                _mm256_cmp_pd(pheromon_norm, _mm256_set1_pd(epsilon), _CMP_GT_OQ)
+            );
+
+            // Безопасное вычисление svertka
+            __m256d safe_kol = _mm256_max_pd(kol_enter_vals, _mm256_set1_pd(epsilon));
+            inv_kol = _mm256_div_pd(one, safe_kol);
+            svertka = _mm256_add_pd(inv_kol, pheromon_norm);
+            svertka = _mm256_blendv_pd(zero, svertka, mask);
+
+            // Суммирование svertka
+            sum_avx = _mm256_hadd_pd(svertka, svertka);
+            sum_svertka = ((double*)&sum_avx)[0] + ((double*)&sum_avx)[2];
+
+            if (sum_svertka > epsilon) {
+                // Нормализация и cumulative sum
+                normalized = _mm256_div_pd(svertka, _mm256_set1_pd(sum_svertka));
+                _mm256_store_pd(temp, normalized);
+
+                // Кумулятивное суммирование
+                temp[1] += temp[0];
+                temp[2] += temp[1];
+                temp[3] = 1.0; // Гарантия
+
+                _mm256_store_pd(&norm_matrix_probability[base_idx], _mm256_load_pd(temp));
+            }
+            else {
+                // Равномерное распределение
+                _mm256_store_pd(&norm_matrix_probability[base_idx],
+                    _mm256_add_pd(uniform, _mm256_set1_pd(0.25)));
+            }
+        }
+    }
+}
 // Обновление слоев графа
-void add_pheromon_iteration_AVX_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
+void add_pheromon_iteration_AVX_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, int* __restrict agent_node, double* __restrict OF) {
     // Испарение весов-феромона
     __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
     for (int i = 0; i < PARAMETR_SIZE * MAX_VALUE_SIZE; i += CONST_AVX) {
@@ -3656,87 +7699,896 @@ void add_pheromon_iteration_AVX_non_cuda(double* pheromon, double* kol_enter, in
         }
     }
 }
-void add_pheromon_iteration_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
-    // Испарение весов-феромона
-    __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+// Базовая версия OpenMP 2.0/3.0/3.1
+void add_pheromon_iteration_AVX_OMP_non_cuda_2_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
 
-#pragma omp parallel for
-    for (int i = 0; i < PARAMETR_SIZE * MAX_VALUE_SIZE; i += CONST_AVX) {
-        if (i + CONST_AVX < PARAMETR_SIZE * MAX_VALUE_SIZE) { // Проверка на выход за пределы массива
-            __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]); // Загружаем 4 значения из pheromon
-            pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);  // Умножаем на PARAMETR_RO
-            _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX); // Сохраняем обратно в pheromon
+    // 1. Испарение феромонов - векторизованное
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues = _mm256_mul_pd(pheromonValues, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
         }
     }
 
-#pragma omp parallel for
-    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-        // Добавление весов-феромона
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = agent_node[i * PARAMETR_SIZE + tx];
-            if (k >= 0 && k < MAX_VALUE_SIZE) { // Проверка на выход за пределы массива kol_enter
-                // Используем атомарное обновление для kol_enter
-#pragma omp atomic
-                kol_enter[MAX_VALUE_SIZE * tx + k]++;
+    // 2. Добавление феромонов
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(total_size, sizeof(int));
 
-                // Проверяем условие и обновляем pheromon
-#if (OPTIMIZE_MIN_1)
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
-                    pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]);
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) local_pheromon_add[idx] += min1_value;
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
                 }
-#endif // (OPTIMIZE_MIN_1)
-#if (OPTIMIZE_MIN_2)
-                if (OF[i] == 0) { OF[i] = 0.0000001; }
-                pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q / OF[i];
-#endif // (OPTIMIZE_MIN_2)
-#if (OPTIMIZE_MAX)
-                pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q * OF[i];
-#endif // (OPTIMIZE_MAX)
             }
         }
-    }
-}
-void add_pheromon_iteration_AVX_OMP_non_cuda_4(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
-    // Испарение весов-феромона
-    __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
 
-#pragma omp parallel for
-    for (int i = 0; i < PARAMETR_SIZE * MAX_VALUE_SIZE; i += CONST_AVX) {
-        __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]); // Загружаем 4 значения из pheromon
-        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);  // Умножаем на PARAMETR_RO
-        _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX); // Сохраняем обратно в pheromon
-    }
-
-#pragma omp parallel for
-    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-        // Добавление весов-феромона
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            int k = agent_node[i * PARAMETR_SIZE + tx];
-            if (k >= 0 && k < MAX_VALUE_SIZE) { // Проверка на выход за пределы массива kol_enter
-                // Используем атомарное обновление для kol_enter
-#pragma omp atomic
-                kol_enter[MAX_VALUE_SIZE * tx + k]++;
-
-                // Проверяем условие и обновляем pheromon
-#if (OPTIMIZE_MIN_1)
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
-                    pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]);
-                }
-#endif // (OPTIMIZE_MIN_1)
-#if (OPTIMIZE_MIN_2)
-                if (OF[i] == 0) { OF[i] = 0.0000001; }
-                pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q / OF[i];
-#endif // (OPTIMIZE_MIN_2)
-#if (OPTIMIZE_MAX)
-                pheromon[MAX_VALUE_SIZE * tx + k] = pheromon[MAX_VALUE_SIZE * tx + k] + PARAMETR_Q * OF[i];
-#endif // (OPTIMIZE_MAX)
+#pragma omp critical
+        {
+            for (int idx = 0; idx < total_size; idx++) {
+                kol_enter[idx] += local_kol_enter_add[idx];
+                pheromon[idx] += local_pheromon_add[idx];
             }
         }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
     }
 }
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
 
+    // 1. Испарение феромонов с SIMD
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues = _mm256_mul_pd(pheromonValues, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues);
+    }
 
-int start_NON_CUDA_AVX_time() {
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с оптимизированными thread-local буферами
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(total_size, sizeof(int));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) local_pheromon_add[idx] += min1_value;
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // ВСЕ потоки работают параллельно
+#pragma omp parallel for
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter_add[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon_add[idx];
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_5(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+
+    // 1. Испарение феромонов с if clause
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel for simd schedule(static) if(total_size > 1000)
+#else
+#pragma omp parallel for simd schedule(static)
+#endif
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues = _mm256_mul_pd(pheromonValues, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel for schedule(static) if(remainder > 10)
+#else
+#pragma omp parallel for schedule(static)
+#endif
+
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с улучшенным планированием
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(total_size, sizeof(int));
+#if defined(__clang__)
+#pragma omp for schedule(static) nowait
+#else
+#pragma omp for schedule(static) nowait // if(ANT_SIZE > 100)
+#endif
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) local_pheromon_add[idx] += min1_value;
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // ВСЕ потоки работают параллельно
+#pragma omp parallel for
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter_add[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon_add[idx];
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void add_pheromon_iteration_AVX_OMP_non_cuda_5_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+
+    // 1. Испарение феромонов с loop трансформацией
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues = _mm256_mul_pd(pheromonValues, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с nonmonotonic scheduling
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(total_size, sizeof(int));
+
+        // Инициализация буферов
+        for (int idx = 0; idx < total_size; idx++) {
+            local_pheromon_add[idx] = 0.0;
+            local_kol_enter_add[idx] = 0;
+        }
+
+        // OpenMP 5.0: nonmonotonic scheduling
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) local_pheromon_add[idx] += min1_value;
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // ВСЕ потоки работают параллельно
+#pragma omp parallel for
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter_add[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon_add[idx];
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void add_pheromon_iteration_AVX_OMP_non_cuda_5_1(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+
+    // 1. Испарение феромонов с неблокирующими операциями
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues = _mm256_mul_pd(pheromonValues, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с error recovery features
+#pragma omp parallel
+    {
+        double* local_pheromon_add = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter_add = (int*)calloc(total_size, sizeof(int));
+
+        // Инициализация буферов
+        for (int idx = 0; idx < total_size; idx++) {
+            local_pheromon_add[idx] = 0.0;
+            local_kol_enter_add[idx] = 0;
+        }
+
+        // OpenMP 5.1: улучшенное планирование
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) local_pheromon_add[idx] += min1_value;
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // ВСЕ потоки работают параллельно
+#pragma omp parallel for
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter_add[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon_add[idx];
+        }
+
+        free(local_pheromon_add);
+        free(local_kol_enter_add);
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void add_pheromon_iteration_AVX_OMP_non_cuda_5_2(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+
+    // 1. Испарение феромонов с assume clauses
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+#if !defined(__clang__)
+#pragma omp assume aligned(pheromon:32)
+#endif
+        __m256d pheromonValues = _mm256_load_pd(&pheromon[i]);
+        pheromonValues = _mm256_mul_pd(pheromonValues, parametRovector_AVX);
+        _mm256_store_pd(&pheromon[i], pheromonValues);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#if !defined(__clang__)
+#pragma omp assume (remainder < CONST_AVX)
+#endif
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с latest OpenMP 5.2 features
+#pragma omp parallel
+    {
+        // OpenMP 5.2: aligned allocation
+        double* local_pheromon_add = (double*)ALIGNED_ALLOC(32, total_size * sizeof(double));
+        int* local_kol_enter_add = (int*)ALIGNED_ALLOC(32, total_size * sizeof(int));
+
+        // Инициализация буферов
+#if !defined(__clang__)
+#pragma omp assume (total_size > 0)
+#endif
+        for (int idx = 0; idx < total_size; idx++) {
+            local_pheromon_add[idx] = 0.0;
+            local_kol_enter_add[idx] = 0;
+        }
+
+        // OpenMP 5.2: assume clauses для оптимизатора
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE > 0)
+#pragma omp assume (PARAMETR_SIZE > 0)
+#endif
+#pragma omp for schedule(static) nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            const double min1_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            const double min2_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            const double max_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            // OpenMP 5.2: assume для лучшей оптимизации
+#if !defined(__clang__)
+#pragma omp assume (PARAMETR_SIZE <= 1000)
+#endif
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter_add[idx]++;
+
+#if OPTIMIZE_MIN_1
+                    if (min1_value > 0) local_pheromon_add[idx] += min1_value;
+#elif OPTIMIZE_MIN_2
+                    local_pheromon_add[idx] += min2_value;
+#elif OPTIMIZE_MAX
+                    local_pheromon_add[idx] += max_value;
+#endif
+                }
+            }
+        }
+
+        // ВСЕ потоки работают параллельно
+#pragma omp parallel for
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter_add[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon_add[idx];
+        }
+
+        ALIGNED_FREE(local_pheromon_add);
+        ALIGNED_FREE(local_kol_enter_add);
+    }
+}
+#endif
+void add_pheromon_iteration_AVX_OMP_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    add_pheromon_iteration_AVX_OMP_non_cuda_5_2(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    add_pheromon_iteration_AVX_OMP_non_cuda_5_1(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    add_pheromon_iteration_AVX_OMP_non_cuda_5_0(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_5(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_0(pheromon, kol_enter, agent_node, OF);
+#else  // OpenMP 2.0/3.0/3.1
+    add_pheromon_iteration_AVX_OMP_non_cuda_2_0(pheromon, kol_enter, agent_node, OF);
+#endif
+}
+// Базовая версия OpenMP 2.0/3.0/3.1
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_2_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Испарение феромонов
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < total_size; i += CONST_AVX) {
+        __m256d pheromon_vec = _mm256_loadu_pd(&pheromon[i]);
+        _mm256_storeu_pd(&pheromon[i], _mm256_mul_pd(pheromon_vec, _mm256_set1_pd(PARAMETR_RO)));
+    }
+
+    // 2. Fallback для старых версий OpenMP
+#pragma omp parallel
+    {
+        double* local_pheromon = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter = (int*)calloc(total_size, sizeof(int));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            double add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            double add_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            double add_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter[idx]++;
+#if OPTIMIZE_MIN_1
+                    if (add_value > 0) local_pheromon[idx] += add_value;
+#else
+                    local_pheromon[idx] += add_value;
+#endif
+                }
+            }
+        }
+
+#pragma omp critical
+        {
+            for (int idx = 0; idx < total_size; idx++) {
+                kol_enter[idx] += local_kol_enter[idx];
+                pheromon[idx] += local_pheromon[idx];
+            }
+        }
+
+        free(local_pheromon);
+        free(local_kol_enter);
+    }
+}
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_4_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Испарение феромонов с SIMD
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size; i += CONST_AVX) {
+        __m256d pheromon_vec = _mm256_loadu_pd(&pheromon[i]);
+        _mm256_storeu_pd(&pheromon[i], _mm256_mul_pd(pheromon_vec, _mm256_set1_pd(PARAMETR_RO)));
+    }
+
+    // 2. Thread-local буферы с оптимизациями OpenMP 4.0
+#pragma omp parallel
+    {
+        double* local_pheromon = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter = (int*)calloc(total_size, sizeof(int));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            double add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            double add_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            double add_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter[idx]++;
+#if OPTIMIZE_MIN_1
+                    if (add_value > 0) local_pheromon[idx] += add_value;
+#else
+                    local_pheromon[idx] += add_value;
+#endif
+                }
+            }
+        }
+
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon[idx];
+        }
+
+        free(local_pheromon);
+        free(local_kol_enter);
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_4_5(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Испарение феромонов с if clause
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel for simd schedule(static) if(total_size > 1000)
+#else
+#pragma omp parallel for simd schedule(static)
+#endif
+    for (int i = 0; i < total_size; i += CONST_AVX) {
+        __m256d pheromon_vec = _mm256_loadu_pd(&pheromon[i]);
+        _mm256_storeu_pd(&pheromon[i], _mm256_mul_pd(pheromon_vec, _mm256_set1_pd(PARAMETR_RO)));
+    }
+
+    // 2. Thread-local буферы с улучшенным планированием
+#pragma omp parallel
+    {
+        double* local_pheromon = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter = (int*)calloc(total_size, sizeof(int));
+
+#if defined(__clang__)
+#pragma omp for schedule(static) nowait
+#else
+#pragma omp for schedule(static) nowait // if(ANT_SIZE > 100)
+#endif
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            double add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            double add_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            double add_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter[idx]++;
+#if OPTIMIZE_MIN_1
+                    if (add_value > 0) local_pheromon[idx] += add_value;
+#else
+                    local_pheromon[idx] += add_value;
+#endif
+                }
+            }
+        }
+
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter[idx];
+#pragma omp atomic  
+            pheromon[idx] += local_pheromon[idx];
+        }
+
+        free(local_pheromon);
+        free(local_kol_enter);
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_5_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Испарение феромонов
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size; i += CONST_AVX) {
+        __m256d pheromon_vec = _mm256_loadu_pd(&pheromon[i]);
+        _mm256_storeu_pd(&pheromon[i], _mm256_mul_pd(pheromon_vec, _mm256_set1_pd(PARAMETR_RO)));
+    }
+
+    // 2. Array reduction (OpenMP 5.0+)
+    // Исправлено: правильное использование array reduction
+#pragma omp parallel
+    {
+        // Локальные массивы для каждого потока
+        double* local_pheromon = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter = (int*)calloc(total_size, sizeof(int));
+
+#pragma omp for nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            double add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            double add_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            double add_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter[idx]++;
+#if OPTIMIZE_MIN_1
+                    if (add_value > 0) local_pheromon[idx] += add_value;
+#else
+                    local_pheromon[idx] += add_value;
+#endif
+                }
+            }
+        }
+
+        // Исправлено: использование array reduction для объединения результатов
+#pragma omp for simd
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter[idx];
+#pragma omp atomic
+            pheromon[idx] += local_pheromon[idx];
+        }
+
+        free(local_pheromon);
+        free(local_kol_enter);
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_5_1(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Испарение феромонов
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size; i += CONST_AVX) {
+        __m256d pheromon_vec = _mm256_loadu_pd(&pheromon[i]);
+        _mm256_storeu_pd(&pheromon[i], _mm256_mul_pd(pheromon_vec, _mm256_set1_pd(PARAMETR_RO)));
+    }
+
+    // 2. Улучшенная версия с nonmonotonic scheduling (OpenMP 5.1+)
+#pragma omp parallel
+    {
+        double* local_pheromon = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter = (int*)calloc(total_size, sizeof(int));
+
+#if defined(__clang__)
+#pragma omp for schedule(static) nowait
+#elif
+#pragma omp for schedule(nonmonotonic: static) nowait
+#endif
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            double add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            double add_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            double add_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter[idx]++;
+#if OPTIMIZE_MIN_1
+                    if (add_value > 0) local_pheromon[idx] += add_value;
+#else
+                    local_pheromon[idx] += add_value;
+#endif
+                }
+            }
+        }
+
+        // Исправлено: эффективное объединение результатов
+#pragma omp for simd
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter[idx];
+#pragma omp atomic
+            pheromon[idx] += local_pheromon[idx];
+        }
+
+        free(local_pheromon);
+        free(local_kol_enter);
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void add_pheromon_iteration_AVX_OMP_non_cuda_4_5_2(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const size_t total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Испарение феромонов с assume clauses
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size; i += CONST_AVX) {
+#if !defined(__clang__) && defined(__INTEL_COMPILER)
+        // assume aligned только для компиляторов, которые это поддерживают
+#pragma omp assume aligned(pheromon:32)
+        __m256d pheromon_vec = _mm256_load_pd(&pheromon[i]);
+#else
+        __m256d pheromon_vec = _mm256_loadu_pd(&pheromon[i]);
+#endif
+        _mm256_storeu_pd(&pheromon[i], _mm256_mul_pd(pheromon_vec, _mm256_set1_pd(PARAMETR_RO)));
+    }
+
+    // 2. Оптимизированная версия с assume для OpenMP 5.2
+#pragma omp parallel
+    {
+        double* local_pheromon = (double*)calloc(total_size, sizeof(double));
+        int* local_kol_enter = (int*)calloc(total_size, sizeof(int));
+
+#if !defined(__clang__) && defined(__INTEL_COMPILER)
+#pragma omp assume (MAX_VALUE_SIZE == 4)
+#pragma omp assume (total_size % 4 == 0)
+#endif
+
+#pragma omp for schedule(static) nowait
+        for (int i = 0; i < ANT_SIZE; i++) {
+            const double agent_of = OF[i];
+
+#if OPTIMIZE_MIN_1
+            double add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > agent_of) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of) : 0.0;
+#elif OPTIMIZE_MIN_2
+            double add_value = PARAMETR_Q / ((agent_of == 0) ? 1e-7 : agent_of);
+#elif OPTIMIZE_MAX
+            double add_value = PARAMETR_Q * agent_of;
+#endif
+
+            const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+            // OpenMP 5.2: assume для лучшей оптимизации
+#if !defined(__clang__) && defined(__INTEL_COMPILER)
+#pragma omp assume PARAMETR_SIZE <= 100
+#endif
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int k = agent_path[tx];
+                if (k >= 0 && k < MAX_VALUE_SIZE) {
+                    int idx = MAX_VALUE_SIZE * tx + k;
+                    local_kol_enter[idx]++;
+#if OPTIMIZE_MIN_1
+                    if (add_value > 0) local_pheromon[idx] += add_value;
+#else
+                    local_pheromon[idx] += add_value;
+#endif
+                }
+            }
+        }
+
+        // Исправлено: эффективное объединение с SIMD
+#pragma omp for simd
+        for (int idx = 0; idx < total_size; idx++) {
+#pragma omp atomic
+            kol_enter[idx] += local_kol_enter[idx];
+#pragma omp atomic
+            pheromon[idx] += local_pheromon[idx];
+        }
+
+        free(local_pheromon);
+        free(local_kol_enter);
+    }
+}
+#endif
+// Универсальная функция с автоматическим выбором версии
+void add_pheromon_iteration_AVX_OMP_non_cuda_4(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_5_2(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_5_1(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_5_0(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_4_5(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_4_0(pheromon, kol_enter, agent_node, OF);
+#else  // OpenMP 2.0/3.0/3.1
+    add_pheromon_iteration_AVX_OMP_non_cuda_4_2_0(pheromon, kol_enter, agent_node, OF);
+#endif
+}int start_NON_CUDA_AVX_time() {
     auto start = std::chrono::high_resolution_clock::now();
     double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumTimeHashTotal = 0.0f, SumTimeOF = 0.0f, SumTimeHashSearch = 0.0f, SumTimeHashSave = 0.0f, SumTimeSearchAgent = 0.0f;
     double duration = 0.0f, duration_iteration = 0.0f;
@@ -4365,7 +9217,7 @@ int start_NON_CUDA_AVX_OMP_non_hash() {
     return 0;
 }
 
-void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+void go_all_agent_non_cuda_time_4(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
     // Генератор случайных чисел
     std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
     std::uniform_real_distribution<double> distribution(0.0, 1.0);
@@ -4374,11 +9226,13 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
         auto start_ant = std::chrono::high_resolution_clock::now();
         bool go_4 = true;
         for (int tx = 0; tx < PARAMETR_SIZE; tx++) { // Проходим по всем параметрам
-            double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
-            // Определение номера значения
             int k = 0;
-            while (go_4 && k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                k++;
+            if (go_4) {
+                double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
+                // Определение номера значения
+                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
+                    k++;
+                }
             }
             // Запись подматрицы блока в глобальную память
             agent_node[bx * PARAMETR_SIZE + tx] = k;
@@ -4389,7 +9243,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
         SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
         auto start = std::chrono::high_resolution_clock::now();
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         auto end_OF = std::chrono::high_resolution_clock::now();
         HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
         /*
@@ -4405,7 +9259,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
             auto end_OF = std::chrono::high_resolution_clock::now();
             totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
             auto start_SaveHash = std::chrono::high_resolution_clock::now();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             auto end_SaveHash = std::chrono::high_resolution_clock::now();
             HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
         }
@@ -4444,7 +9298,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
                     SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     // Проверка наличия решения в Хэш-таблице
                     start_OF_2 = std::chrono::high_resolution_clock::now();
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     nom_iteration = nom_iteration + 1;
@@ -4456,7 +9310,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 start_OF_2 = std::chrono::high_resolution_clock::now();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 break;
@@ -4472,6 +9326,188 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
         auto end = std::chrono::high_resolution_clock::now();
         totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
     }
+}
+void go_all_agent_OMP_non_cuda_time_4(int gpuTime, double* __restrict parametr, double* __restrict norm_matrix_probability, double* __restrict agent, int* __restrict agent_node, double* __restrict OF, HashEntry* __restrict hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime, double& HashTimeSave, double& HashTimeSearch, double& SumTimeSearch) {
+    int local_kol_hash_fail = 0;
+    double local_totalHashTime = 0.0;
+    double local_totalOFTime = 0.0;
+    double local_HashTimeSave = 0.0;
+    double local_HashTimeSearch = 0.0;
+    double local_SumTimeSearch = 0.0;
+
+    // Выбор директивы parallel в зависимости от версии OpenMP
+#if _OPENMP >= 201511  // OpenMP 4.5+
+#if defined(__clang__)
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime, local_HashTimeSave, local_HashTimeSearch, local_SumTimeSearch)
+#else
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime, local_HashTimeSave, local_HashTimeSearch, local_SumTimeSearch) // if(ANT_SIZE > 100)
+#endif
+#else
+#pragma omp parallel reduction(+:local_kol_hash_fail, local_totalHashTime, local_totalOFTime, local_HashTimeSave, local_HashTimeSearch, local_SumTimeSearch)
+#endif
+    {
+        uint64_t seed = 123 + gpuTime + omp_get_thread_num();
+
+        // Выбор директивы for в зависимости от версии OpenMP
+#if _OPENMP >= 201811 && !defined(__clang__) // OpenMP 5.0+
+#pragma omp for schedule(nonmonotonic:static)
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+#if defined(__clang__)
+#pragma omp for schedule(static)
+#else
+#pragma omp for schedule(static) // if(ANT_SIZE > 100)
+#endif
+#else
+#pragma omp for schedule(static)
+#endif
+        for (int bx = 0; bx < ANT_SIZE; bx++) {
+            // OpenMP 5.2: assume clauses для оптимизатора
+#if _OPENMP >= 202111 && !defined(__clang__)  // OpenMP 5.2+
+#pragma omp assume (MAX_VALUE_SIZE == 4)
+#pragma omp assume (PARAMETR_SIZE <= 100)
+#endif
+
+            const int agent_base = bx * PARAMETR_SIZE;
+            int* current_agent_node = &agent_node[agent_base];
+            double* current_agent = &agent[agent_base];
+
+            auto start_ant = std::chrono::high_resolution_clock::now();
+
+            // Упрощенная генерация пути (MAX_VALUE_SIZE = 4)
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                double randomValue = unified_fast_random(seed);
+                const double* probs = &norm_matrix_probability[4 * tx];
+
+                // Развернутый цикл для MAX_VALUE_SIZE = 4
+                int k = 0;
+                if (randomValue > probs[0]) k = 1;
+                if (randomValue > probs[1]) k = 2;
+                if (randomValue > probs[2]) k = 3;
+                if (randomValue > probs[3]) k = 4;
+
+                // Корректируем k если он вышел за границы
+                if (k >= 4) k = 3;
+
+                current_agent_node[tx] = k;
+                current_agent[tx] = parametr[tx * 4 + k];
+            }
+
+            auto end_ant = std::chrono::high_resolution_clock::now();
+            local_SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
+
+            auto start_hash = std::chrono::high_resolution_clock::now();
+
+            double cachedResult = -1.0;
+
+            // Критическая секция для поиска в хеш-таблице
+#pragma omp critical(hash_lookup)
+            {
+                cachedResult = getCachedResultOptimized_non_cuda(hashTable, current_agent_node, bx);
+            }
+
+            auto end_hash = std::chrono::high_resolution_clock::now();
+            local_HashTimeSearch += std::chrono::duration<double, std::milli>(end_hash - start_hash).count();
+
+            if (cachedResult == -1.0) {
+                auto start_of = std::chrono::high_resolution_clock::now();
+                OF[bx] = BenchShafferaFunction_non_cuda(current_agent);
+                auto end_of = std::chrono::high_resolution_clock::now();
+                local_totalOFTime += std::chrono::duration<double, std::milli>(end_of - start_of).count();
+
+                auto start_save = std::chrono::high_resolution_clock::now();
+#pragma omp critical(hash_save)
+                {
+                    saveToCacheOptimized_non_cuda(hashTable, current_agent_node, bx, OF[bx]);
+                }
+                auto end_save = std::chrono::high_resolution_clock::now();
+                local_HashTimeSave += std::chrono::duration<double, std::milli>(end_save - start_save).count();
+            }
+            else {
+                local_kol_hash_fail++;
+
+                switch (TYPE_ACO) {
+                case 0: // ACOCN
+                    OF[bx] = cachedResult;
+                    break;
+
+                case 1: // ACOCNI
+                    OF[bx] = ZERO_HASH_RESULT;
+                    break;
+
+                case 2: // ACOCCyN
+                {
+                    double currentCachedResult = cachedResult;
+                    int nom_iteration = 0;
+
+                    while ((currentCachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION)) {
+                        auto start_cycle = std::chrono::high_resolution_clock::now();
+
+                        // Упрощенная регенерация пути
+#if _OPENMP >= 202111 && !defined(__clang__)  // OpenMP 5.2+
+#pragma omp assume (PARAMETR_SIZE <= 100)
+#endif
+                        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+                            double randomValue = unified_fast_random(seed);
+                            const double* probs = &norm_matrix_probability[4 * tx];
+
+                            int k = 0;
+                            if (randomValue > probs[0]) k = 1;
+                            if (randomValue > probs[1]) k = 2;
+                            if (randomValue > probs[2]) k = 3;
+                            if (randomValue > probs[3]) k = 4;
+                            if (k >= 4) k = 3;
+
+                            current_agent_node[tx] = k;
+                            current_agent[tx] = parametr[tx * 4 + k];
+                        }
+
+                        auto end_cycle = std::chrono::high_resolution_clock::now();
+                        local_SumTimeSearch += std::chrono::duration<double, std::milli>(end_cycle - start_cycle).count();
+
+                        auto start_hash_cycle = std::chrono::high_resolution_clock::now();
+#pragma omp critical(hash_lookup)
+                        {
+                            currentCachedResult = getCachedResultOptimized_non_cuda(hashTable, current_agent_node, bx);
+                        }
+                        auto end_hash_cycle = std::chrono::high_resolution_clock::now();
+                        local_HashTimeSearch += std::chrono::duration<double, std::milli>(end_hash_cycle - start_hash_cycle).count();
+
+                        nom_iteration++;
+                        local_kol_hash_fail++;
+                    }
+
+                    auto start_of_cycle = std::chrono::high_resolution_clock::now();
+                    OF[bx] = BenchShafferaFunction_non_cuda(current_agent);
+                    auto end_of_cycle = std::chrono::high_resolution_clock::now();
+                    local_totalOFTime += std::chrono::duration<double, std::milli>(end_of_cycle - start_of_cycle).count();
+
+                    auto start_save_cycle = std::chrono::high_resolution_clock::now();
+#pragma omp critical(hash_save)
+                    {
+                        saveToCacheOptimized_non_cuda(hashTable, current_agent_node, bx, OF[bx]);
+                    }
+                    auto end_save_cycle = std::chrono::high_resolution_clock::now();
+                    local_HashTimeSave += std::chrono::duration<double, std::milli>(end_save_cycle - start_save_cycle).count();
+                }
+                break;
+
+                default:
+                    OF[bx] = cachedResult;
+                    break;
+                }
+            }
+
+            auto end_total = std::chrono::high_resolution_clock::now();
+            local_totalHashTime += std::chrono::duration<double, std::milli>(end_total - start_hash).count();
+        }
+    }
+
+    kol_hash_fail += local_kol_hash_fail;
+    totalHashTime += local_totalHashTime;
+    totalOFTime += local_totalOFTime;
+    HashTimeSave += local_HashTimeSave;
+    HashTimeSearch += local_HashTimeSearch;
+    SumTimeSearch += local_SumTimeSearch;
 }
 int start_NON_CUDA_AVX4_time() {
     auto start = std::chrono::high_resolution_clock::now();
@@ -4594,6 +9630,128 @@ int start_NON_CUDA_AVX4_time() {
 
     return 0;
 }
+int start_NON_CUDA_AVX4_OMP_time() {
+    auto start = std::chrono::high_resolution_clock::now();
+    double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumTimeHashTotal = 0.0f, SumTimeOF = 0.0f, SumTimeHashSearch = 0.0f, SumTimeHashSave = 0.0f, SumTimeSearchAgent = 0.0f;
+    double duration = 0.0f, duration_iteration = 0.0f;
+    int kol_hash_fail = 0;
+    const int kol_shag_stat = KOL_ITERATION / KOL_STAT_LEVEL;
+
+    const int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
+    const int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
+    // Выделение памяти для хэш-таблицы на CPU
+    HashEntry* hashTable = new HashEntry[HASH_TABLE_SIZE];
+    // Вызов функции инициализации
+    initializeHashTable_non_cuda(hashTable, HASH_TABLE_SIZE);
+
+    double global_maxOf = -std::numeric_limits<double>::max();
+    double global_minOf = std::numeric_limits<double>::max();
+
+    // Выделение памяти на хосте
+    double* parametr_value = new double[kolBytes_matrix_graph];
+    double* pheromon_value = new double[kolBytes_matrix_graph];
+    double* kol_enter_value = new double[kolBytes_matrix_graph];
+    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
+    double* ant = new double[kolBytes_matrix_ant];
+    int* ant_parametr = new int[kolBytes_matrix_ant];
+    double* antOF = new double[ANT_SIZE];
+
+    // Загрузка матрицы из файла
+    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
+
+    auto start_iteration = std::chrono::high_resolution_clock::now();
+    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
+        auto start1 = std::chrono::high_resolution_clock::now();
+        // Расчет нормализованной вероятности
+        go_mass_probability_AVX_OMP_non_cuda_4(pheromon_value, kol_enter_value, norm_matrix_probability);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << std::endl;
+            for (int i = 0; i < PARAMETR_SIZE; ++i) {
+                for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
+                    std::cout << parametr_value[i * MAX_VALUE_SIZE + j] << "(" << pheromon_value[i * MAX_VALUE_SIZE + j] << ", " << kol_enter_value[i * MAX_VALUE_SIZE + j] << "-> " << norm_matrix_probability[i * MAX_VALUE_SIZE + j] << ") "; // Индексируем элементы
+                }
+                std::cout << std::endl; // Переход на новую строку
+            }
+        }
+
+        // Вычисление пути агентов
+
+        auto start2 = std::chrono::high_resolution_clock::now();
+        auto end_temp = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> current_time = end_temp - start;
+        go_all_agent_OMP_non_cuda_time_4(int(current_time.count() * CONST_RANDOM), parametr_value, norm_matrix_probability, ant, ant_parametr, antOF, hashTable, kol_hash_fail, SumTimeHashTotal, SumTimeOF, SumTimeHashSearch, SumTimeHashSave, SumTimeSearchAgent);
+
+        if (PRINT_INFORMATION) {
+            std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
+            for (int i = 0; i < ANT_SIZE; ++i) {
+                for (int j = 0; j < PARAMETR_SIZE; ++j) {
+                    std::cout << ant[i * PARAMETR_SIZE + j] << " ";
+
+                }
+                std::cout << "-> " << antOF[i] << std::endl;
+
+            }
+        }
+
+        auto start3 = std::chrono::high_resolution_clock::now();
+        // Обновление весов-феромонов
+        add_pheromon_iteration_AVX_OMP_non_cuda_4(pheromon_value, kol_enter_value, ant_parametr, antOF);
+
+        // Поиск максимума и минимума
+        double maxOf = -std::numeric_limits<double>::max();
+        double minOf = std::numeric_limits<double>::max();
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            if (antOF[i] != ZERO_HASH_RESULT) {
+                if (antOF[i] > maxOf) {
+                    maxOf = antOF[i];
+                }
+                if (antOF[i] < minOf) {
+                    minOf = antOF[i];
+                }
+            }
+        }
+
+        // Обновление глобальных максимумов и минимумов
+        if (minOf < global_minOf) {
+            global_minOf = minOf;
+        }
+        if (maxOf > global_maxOf) {
+            global_maxOf = maxOf;
+        }
+        auto end_iter = std::chrono::high_resolution_clock::now();
+        SumgpuTime1 += std::chrono::duration<double, std::milli>(end_iter - start1).count();
+        SumgpuTime2 += std::chrono::duration<double, std::milli>(end_iter - start2).count();
+        SumgpuTime3 += std::chrono::duration<double, std::milli>(end_iter - start3).count();
+        if (PRINT_INFORMATION) {
+            std::cout << nom_iter << "   MIN OF -> " << minOf << "  MAX OF -> " << maxOf << " GMIN OF -> " << global_minOf << "  GMAX OF -> " << global_maxOf << std::endl;
+        }
+        if ((nom_iter + 1) % kol_shag_stat == 0) {
+            int NomStatistics = nom_iter / kol_shag_stat;
+            if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
+            update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumTimeHashTotal, SumTimeOF, SumTimeHashSearch, SumTimeHashSave, SumTimeSearchAgent, global_minOf, global_maxOf, kol_hash_fail);
+        }
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    duration_iteration += std::chrono::duration<double, std::milli>(end - start_iteration).count();
+
+    // Освобождение памяти в конце программы
+    delete[] hashTable;               // Освобождение памяти для хэш-таблицы
+    delete[] parametr_value;          // Освобождение памяти для параметров
+    delete[] pheromon_value;          // Освобождение памяти для феромонов
+    delete[] kol_enter_value;         // Освобождение памяти для количества входов
+    delete[] norm_matrix_probability; // Освобождение памяти для нормализованной матрицы вероятностей
+    delete[] ant;                     // Освобождение памяти для муравьев
+    delete[] ant_parametr;            // Освобождение памяти для параметров муравьев
+    delete[] antOF;                   // Освобождение памяти для результата муравьев
+
+    auto end_all = std::chrono::high_resolution_clock::now();
+    duration += std::chrono::duration<double, std::milli>(end_all - start).count();
+    std::cout << "Time non CUDA_AVX_OMP_time_4;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << "; " << SumTimeHashTotal << "; " << SumTimeOF << "; " << SumTimeHashSearch << "; " << SumTimeHashSave << "; " << SumTimeSearchAgent << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+    logFile << "Time non CUDA_AVX_OMP_time_4;" << duration << "; " << duration_iteration << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumTimeHashTotal << "; " << SumTimeOF << "; " << SumTimeHashSearch << "; " << SumTimeHashSave << "; " << SumTimeSearchAgent << "; " << global_minOf << "; " << global_maxOf << "; " << kol_hash_fail << "; " << std::endl;
+
+    return 0;
+}
 
 // Подготовка массива для вероятностного поиска
 void go_mass_probability_transp_AVX_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
@@ -4673,94 +9831,796 @@ void go_mass_probability_transp_AVX_non_cuda(double* pheromon, double* kol_enter
     delete[] pheromon_norm;
     delete[] svertka;
 }
-void go_mass_probability_transp_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
-    // Сумма T_i для Tnorm
-    double sumVectorT[PARAMETR_SIZE] = { 0.0 };
-    double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
+// Базовая версия OpenMP 2.0/3.0/3.1
+void go_mass_probability_transp_AVX_OMP_non_cuda_2_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int total_cells = MAX_VALUE_SIZE * PARAMETR_SIZE;
 
-#pragma omp parallel for
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-#pragma omp atomic
-            sumVectorT[tx] += pheromon[tx + i * PARAMETR_SIZE];
-        }
+    // Выделяем память с выравниванием
+    double* pheromon_norm = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+    double* svertka = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+
+    // Инициализация массивов
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < total_cells; i++) {
+        pheromon_norm[i] = 0.0;
+        svertka[i] = 0.0;
     }
 
-    // Вычисление Tnorm
-    double* pheromon_norm = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
-#pragma omp parallel for
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-            // Загружаем значения из pheromon_value и sumVectorT
-            __m256d pheromon_values_AVX = _mm256_loadu_pd(&pheromon[tx + i * PARAMETR_SIZE]);
-            __m256d sum_vector_AVX = _mm256_loadu_pd(&sumVectorT[tx]);
+    alignas(32) double sumVectorT[PARAMETR_SIZE] = { 0.0 };
+    alignas(32) double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
 
-            // Выполняем деление
-            __m256d pheromon_norm_values_AVX = _mm256_div_pd(pheromon_values_AVX, sum_vector_AVX);
-            _mm256_storeu_pd(&pheromon_norm[tx + i * PARAMETR_SIZE], pheromon_norm_values_AVX);
-        }
-    }
+    // 1. Вычисление сумм T_i
+#pragma omp parallel
+    {
+        alignas(32) double local_sumT[PARAMETR_SIZE] = { 0.0 };
 
-    // Вычисление Z и P
-    double* svertka = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
-#pragma omp parallel for
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-            // Загружаем значения из kol_enter_value и pheromon_norm
-            __m256d kol_enter_values_AVX = _mm256_loadu_pd(&kol_enter[tx + i * PARAMETR_SIZE]);
-            __m256d pheromon_norm_values_AVX = _mm256_loadu_pd(&pheromon_norm[tx + i * PARAMETR_SIZE]);
-
-            // Создаем маску для проверки условий
-            __m256d zero_vector_AVX = _mm256_setzero_pd();
-            __m256d condition_mask_AVX = _mm256_and_pd(
-                _mm256_cmp_pd(kol_enter_values_AVX, zero_vector_AVX, _CMP_NEQ_OQ),
-                _mm256_cmp_pd(pheromon_norm_values_AVX, zero_vector_AVX, _CMP_NEQ_OQ)
-            );
-
-            // Вычисляем svertka
-            __m256d one_vector_AVX = _mm256_set1_pd(1.0);
-            __m256d svertka_values_AVX = _mm256_blendv_pd(
-                zero_vector_AVX,
-                _mm256_add_pd(_mm256_div_pd(one_vector_AVX, kol_enter_values_AVX), pheromon_norm_values_AVX),
-                condition_mask_AVX
-            );
-
-            // Сохраняем значения в svertka
-            _mm256_storeu_pd(&svertka[tx + i * PARAMETR_SIZE], svertka_values_AVX);
-        }
-    }
-
-#pragma omp parallel for
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-#pragma omp atomic
-            sumVectorZ[tx] += svertka[tx + i * PARAMETR_SIZE];
-        }
-    }
-
-    // Вычисление F
-#pragma omp parallel for
-    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-            __m256d svertka_values_AVX = _mm256_loadu_pd(&svertka[tx + i * PARAMETR_SIZE]);
-            __m256d sum_vector_z_AVX = _mm256_loadu_pd(&sumVectorZ[tx]);
-            __m256d norm_matrix_probability_AVX = _mm256_div_pd(svertka_values_AVX, sum_vector_z_AVX);
-
-            if (i == 0) {
-                // Нормализация для первой строки
-                _mm256_storeu_pd(&norm_matrix_probability[tx + i * PARAMETR_SIZE], norm_matrix_probability_AVX);
+#pragma omp for nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                local_sumT[tx] += pheromon[tx + i * PARAMETR_SIZE];
             }
-            else {
-                // Нормализация для остальных строк
-                __m256d previous_norm_values_AVX = _mm256_loadu_pd(&norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE]);
-                __m256d norm_matrix_probability_values_AVX = _mm256_add_pd(norm_matrix_probability_AVX, previous_norm_values_AVX);
-                _mm256_storeu_pd(&norm_matrix_probability[tx + i * PARAMETR_SIZE], norm_matrix_probability_values_AVX);
+        }
+
+#pragma omp critical
+        {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
             }
         }
     }
 
-    delete[] pheromon_norm;
-    delete[] svertka;
+    // 2. Вычисление Tnorm
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            int idx = tx + i * PARAMETR_SIZE;
+            pheromon_norm[idx] = (sumVectorT[tx] != 0.0) ?
+                pheromon[idx] / sumVectorT[tx] : 0.0;
+        }
+    }
+
+    // 3. Вычисление svertka и сумм Z
+#pragma omp parallel
+    {
+        alignas(32) double local_sumZ[PARAMETR_SIZE] = { 0.0 };
+
+#pragma omp for nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double val = 0.0;
+                if (kol_enter[idx] != 0.0 && pheromon_norm[idx] != 0.0) {
+                    val = 1.0 / kol_enter[idx] + pheromon_norm[idx];
+                }
+                svertka[idx] = val;
+                local_sumZ[tx] += val;
+            }
+        }
+
+#pragma omp critical
+        {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+        }
+    }
+
+    // 4. Вычисление кумулятивных вероятностей
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        if (sumVectorZ[tx] != 0.0) {
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double prob = svertka[idx] / sumVectorZ[tx];
+                cumulative += prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            // Гарантируем, что последнее значение равно 1.0
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+        else {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                cumulative += uniform_prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+    }
+
+    _mm_free(pheromon_norm);
+    _mm_free(svertka);
+}
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void go_mass_probability_transp_AVX_OMP_non_cuda_4_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int total_cells = MAX_VALUE_SIZE * PARAMETR_SIZE;
+
+    double* pheromon_norm = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+    double* svertka = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+
+    // Инициализация с SIMD
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_cells; i++) {
+        pheromon_norm[i] = 0.0;
+        svertka[i] = 0.0;
+    }
+
+    alignas(32) double sumVectorT[PARAMETR_SIZE] = { 0.0 };
+    alignas(32) double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
+
+    // 1. Вычисление сумм T_i с оптимизациями OpenMP 4.0
+#pragma omp parallel
+    {
+        alignas(32) double local_sumT[PARAMETR_SIZE] = { 0.0 };
+
+#pragma omp for nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                local_sumT[tx] += pheromon[tx + i * PARAMETR_SIZE];
+            }
+        }
+
+#pragma omp critical
+        {
+#pragma omp simd
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
+            }
+        }
+    }
+
+    // 2. Вычисление Tnorm с SIMD
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            int idx = tx + i * PARAMETR_SIZE;
+            pheromon_norm[idx] = (sumVectorT[tx] != 0.0) ?
+                pheromon[idx] / sumVectorT[tx] : 0.0;
+        }
+    }
+
+    // 3. Вычисление svertka и сумм Z
+#pragma omp parallel
+    {
+        alignas(32) double local_sumZ[PARAMETR_SIZE] = { 0.0 };
+
+#pragma omp for nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double val = 0.0;
+                if (kol_enter[idx] != 0.0 && pheromon_norm[idx] != 0.0) {
+                    val = 1.0 / kol_enter[idx] + pheromon_norm[idx];
+                }
+                svertka[idx] = val;
+                local_sumZ[tx] += val;
+            }
+        }
+
+#pragma omp critical
+        {
+#pragma omp simd
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+        }
+    }
+
+    // 4. Вычисление кумулятивных вероятностей
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        if (sumVectorZ[tx] != 0.0) {
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double prob = svertka[idx] / sumVectorZ[tx];
+                cumulative += prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+        else {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                cumulative += uniform_prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+    }
+
+    _mm_free(pheromon_norm);
+    _mm_free(svertka);
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void go_mass_probability_transp_AVX_OMP_non_cuda_4_5(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int total_cells = MAX_VALUE_SIZE * PARAMETR_SIZE;
+
+    double* pheromon_norm = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+    double* svertka = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+
+    // Инициализация с if clause
+#ifdef __clang__
+#pragma omp parallel for simd schedule(static)
+#else
+#pragma omp parallel for simd schedule(static) // if(TOTAL_CELLS > 1000)
+#endif
+    for (int i = 0; i < total_cells; i++) {
+        pheromon_norm[i] = 0.0;
+        svertka[i] = 0.0;
+    }
+
+    alignas(32) double sumVectorT[PARAMETR_SIZE] = { 0.0 };
+    alignas(32) double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
+
+    // 1. Вычисление сумм T_i с улучшенным планированием
+#pragma omp parallel
+    {
+        alignas(32) double local_sumT[PARAMETR_SIZE] = { 0.0 };
+
+        // Clang-compatible: убираем if clause или используем условную компиляцию
+#if defined(__clang__)
+#pragma omp for schedule(static) nowait
+#else
+#pragma omp for schedule(static) nowait // if(MAX_VALUE_SIZE > 100)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                local_sumT[tx] += pheromon[tx + i * PARAMETR_SIZE];
+            }
+        }
+
+#pragma omp critical
+        {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
+            }
+        }
+    }
+
+    // 2. Вычисление Tnorm
+#if defined(__clang__)
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for schedule(static) // if(MAX_VALUE_SIZE > 100)
+#endif
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            int idx = tx + i * PARAMETR_SIZE;
+            pheromon_norm[idx] = (sumVectorT[tx] != 0.0) ? pheromon[idx] / sumVectorT[tx] : 0.0;
+        }
+    }
+
+    // 3. Вычисление svertka и сумм Z
+#pragma omp parallel
+    {
+        alignas(32) double local_sumZ[PARAMETR_SIZE] = { 0.0 };
+
+#if defined(__clang__)
+#pragma omp for schedule(static) nowait
+#else
+#pragma omp for schedule(static) nowait // if(MAX_VALUE_SIZE > 100)
+#endif
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double val = 0.0;
+                if (kol_enter[idx] != 0.0 && pheromon_norm[idx] != 0.0) {
+                    val = 1.0 / kol_enter[idx] + pheromon_norm[idx];
+                }
+                svertka[idx] = val;
+                local_sumZ[tx] += val;
+            }
+        }
+
+#pragma omp critical
+        {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+        }
+    }
+
+    // 4. Вычисление кумулятивных вероятностей
+        // Clang-compatible: убираем if clause или используем условную компиляцию
+#if defined(__clang__)
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for schedule(static) // if(PARAMETR_SIZE > 100)
+#endif
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        if (sumVectorZ[tx] != 0.0) {
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double prob = svertka[idx] / sumVectorZ[tx];
+                cumulative += prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+        else {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                cumulative += uniform_prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+    }
+
+    _mm_free(pheromon_norm);
+    _mm_free(svertka);
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void go_mass_probability_transp_AVX_OMP_non_cuda_5_0(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int total_cells = MAX_VALUE_SIZE * PARAMETR_SIZE;
+
+    double* pheromon_norm = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+    double* svertka = (double*)_mm_malloc(total_cells * sizeof(double), 32);
+
+    // OpenMP 5.0: loop transformation hints
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_cells; i++) {
+        pheromon_norm[i] = 0.0;
+        svertka[i] = 0.0;
+    }
+
+    alignas(32) double sumVectorT[PARAMETR_SIZE] = { 0.0 };
+    alignas(32) double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
+
+    // 1. Вычисление сумм T_i с nonmonotonic scheduling
+#pragma omp parallel
+    {
+        alignas(32) double local_sumT[PARAMETR_SIZE] = { 0.0 };
+
+        // OpenMP 5.0: nonmonotonic scheduling
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                local_sumT[tx] += pheromon[tx + i * PARAMETR_SIZE];
+            }
+        }
+
+#pragma omp critical
+        {
+#ifdef __clang__
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
+            }
+#else
+#pragma omp simd
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
+            }
+#endif
+        }
+    }
+
+    // 2. Вычисление Tnorm с улучшенной векторизацией
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            int idx = tx + i * PARAMETR_SIZE;
+            pheromon_norm[idx] = (sumVectorT[tx] != 0.0) ?
+                pheromon[idx] / sumVectorT[tx] : 0.0;
+        }
+    }
+
+    // 3. Вычисление svertka и сумм Z с nonmonotonic scheduling
+#pragma omp parallel
+    {
+        alignas(32) double local_sumZ[PARAMETR_SIZE] = { 0.0 };
+
+        // OpenMP 5.0: nonmonotonic scheduling
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double val = 0.0;
+                if (kol_enter[idx] != 0.0 && pheromon_norm[idx] != 0.0) {
+                    val = 1.0 / kol_enter[idx] + pheromon_norm[idx];
+                }
+                svertka[idx] = val;
+                local_sumZ[tx] += val;
+            }
+        }
+
+#pragma omp critical
+        {
+#ifdef __clang__
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+#else
+#pragma omp simd
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+#endif
+        }
+    }
+
+    // 4. Вычисление кумулятивных вероятностей с loop трансформацией
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        if (sumVectorZ[tx] != 0.0) {
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double prob = svertka[idx] / sumVectorZ[tx];
+                cumulative += prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+        else {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                cumulative += uniform_prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+    }
+
+    _mm_free(pheromon_norm);
+    _mm_free(svertka);
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void go_mass_probability_transp_AVX_OMP_non_cuda_5_1(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int total_cells = MAX_VALUE_SIZE * PARAMETR_SIZE;
+
+    // OpenMP 5.1: aligned allocation с error recovery
+    double* pheromon_norm = (double*)ALIGNED_ALLOC(32, total_cells * sizeof(double));
+    double* svertka = (double*)ALIGNED_ALLOC(32, total_cells * sizeof(double));
+
+    if (!pheromon_norm || !svertka) {
+        // Error recovery: fallback to standard allocation
+        if (pheromon_norm) free(pheromon_norm);
+        if (svertka) free(svertka);
+        pheromon_norm = (double*)malloc(total_cells * sizeof(double));
+        svertka = (double*)malloc(total_cells * sizeof(double));
+    }
+
+    // OpenMP 5.1: неблокирующие операции
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_cells; i++) {
+        pheromon_norm[i] = 0.0;
+        svertka[i] = 0.0;
+    }
+
+    alignas(32) double sumVectorT[PARAMETR_SIZE] = { 0.0 };
+    alignas(32) double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
+
+    // 1. Вычисление сумм T_i с error recovery features
+#pragma omp parallel
+    {
+        alignas(32) double local_sumT[PARAMETR_SIZE] = { 0.0 };
+
+        // OpenMP 5.1: улучшенное планирование
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                local_sumT[tx] += pheromon[tx + i * PARAMETR_SIZE];
+            }
+        }
+
+#pragma omp critical
+        {
+            // OpenMP 5.1: выравнивание памяти для векторизации
+#pragma omp simd aligned(sumVectorT, local_sumT:32)
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
+            }
+        }
+    }
+
+    // 2. Вычисление Tnorm с улучшенным управлением памятью
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            int idx = tx + i * PARAMETR_SIZE;
+            pheromon_norm[idx] = (sumVectorT[tx] != 0.0) ?
+                pheromon[idx] / sumVectorT[tx] : 0.0;
+        }
+    }
+
+    // 3. Вычисление svertka и сумм Z с error recovery
+#pragma omp parallel
+    {
+        alignas(32) double local_sumZ[PARAMETR_SIZE] = { 0.0 };
+
+#pragma omp for //schedule(nonmonotonic:static) nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double val = 0.0;
+                if (kol_enter[idx] != 0.0 && pheromon_norm[idx] != 0.0) {
+                    val = 1.0 / kol_enter[idx] + pheromon_norm[idx];
+                }
+                svertka[idx] = val;
+                local_sumZ[tx] += val;
+            }
+        }
+
+#pragma omp critical
+        {
+#pragma omp simd aligned(sumVectorZ, local_sumZ:32)
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+        }
+    }
+
+    // 4. Вычисление кумулятивных вероятностей с улучшенным управлением ошибками
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+        if (sumVectorZ[tx] != 0.0) {
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                double prob = svertka[idx] / sumVectorZ[tx];
+                cumulative += prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            // OpenMP 5.1: гарантия численной стабильности
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+        else {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = 0.0;
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+                int idx = tx + i * PARAMETR_SIZE;
+                cumulative += uniform_prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+    }
+
+    // OpenMP 5.1: безопасное освобождение памяти
+    if (pheromon_norm) ALIGNED_FREE(pheromon_norm);
+    if (svertka) ALIGNED_FREE(svertka);
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void go_mass_probability_transp_AVX_OMP_non_cuda_5_2(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+    const int total_cells = MAX_VALUE_SIZE * PARAMETR_SIZE;
+
+    // OpenMP 5.2: assume clauses для оптимизатора
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE > 0)
+#pragma omp assume (PARAMETR_SIZE > 0)
+#pragma omp assume (total_cells > 0)
+#endif
+
+// OpenMP 5.2: aligned allocation с assume
+    double* pheromon_norm = (double*)ALIGNED_ALLOC(32, total_cells * sizeof(double));
+    double* svertka = (double*)ALIGNED_ALLOC(32, total_cells * sizeof(double));
+#if !defined(__clang__)
+#pragma omp assume aligned(pheromon_norm, svertka:32)
+#endif
+    // Инициализация с assume clauses
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_cells; i++) {
+#if !defined(__clang__)
+#pragma omp assume (i < total_cells)
+#endif
+        pheromon_norm[i] = 0.0;
+        svertka[i] = 0.0;
+    }
+
+    alignas(32) double sumVectorT[PARAMETR_SIZE] = { 0.0 };
+    alignas(32) double sumVectorZ[PARAMETR_SIZE] = { 0.0 };
+
+    // 1. Вычисление сумм T_i с assume clauses
+#pragma omp parallel
+    {
+        alignas(32) double local_sumT[PARAMETR_SIZE] = { 0.0 };
+
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE <= 10000)
+#endif
+#pragma omp for schedule(static) nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+#if !defined(__clang__)
+#pragma omp assume (i < MAX_VALUE_SIZE)
+#endif
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+#if !defined(__clang__)
+#pragma omp assume (tx < PARAMETR_SIZE)
+#endif
+                local_sumT[tx] += pheromon[tx + i * PARAMETR_SIZE];
+            }
+        }
+
+#pragma omp critical
+        {
+#if !defined(__clang__)
+#pragma omp assume aligned(sumVectorT, local_sumT:32)
+#endif
+#pragma omp simd
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorT[tx] += local_sumT[tx];
+            }
+        }
+    }
+
+    // 2. Вычисление Tnorm с assume для численной стабильности
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+#if !defined(__clang__)
+#pragma omp assume (i < MAX_VALUE_SIZE)
+#endif
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+#if !defined(__clang__)
+#pragma omp assume (tx < PARAMETR_SIZE)
+#endif
+            int idx = tx + i * PARAMETR_SIZE;
+#if !defined(__clang__)
+#pragma omp assume (idx < total_cells)
+
+            // OpenMP 5.2: assume для ветвления
+#pragma omp assume (sumVectorT[tx] >= 0.0)
+#endif
+            pheromon_norm[idx] = (sumVectorT[tx] != 0.0) ?
+                pheromon[idx] / sumVectorT[tx] : 0.0;
+        }
+    }
+
+    // 3. Вычисление svertka и сумм Z с assume
+#pragma omp parallel
+    {
+        alignas(32) double local_sumZ[PARAMETR_SIZE] = { 0.0 };
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE <= 10000)
+#endif
+#pragma omp for schedule(static) nowait
+        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+#if !defined(__clang__)
+#pragma omp assume (i < MAX_VALUE_SIZE)
+#endif
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+#if !defined(__clang__)
+#pragma omp assume (tx < PARAMETR_SIZE)
+#endif
+                int idx = tx + i * PARAMETR_SIZE;
+#if !defined(__clang__)
+#pragma omp assume (idx < total_cells)
+#endif
+
+                double val = 0.0;
+                // OpenMP 5.2: assume для условий
+#if !defined(__clang__)
+#pragma omp assume noalias(kol_enter, pheromon_norm)
+#endif
+                if (kol_enter[idx] != 0.0 && pheromon_norm[idx] != 0.0) {
+                    val = 1.0 / kol_enter[idx] + pheromon_norm[idx];
+                }
+                svertka[idx] = val;
+                local_sumZ[tx] += val;
+            }
+        }
+
+#pragma omp critical
+        {
+#if !defined(__clang__)
+#pragma omp assume aligned(sumVectorZ, local_sumZ:32)
+#endif
+#pragma omp simd
+            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+                sumVectorZ[tx] += local_sumZ[tx];
+            }
+        }
+    }
+
+    // 4. Вычисление кумулятивных вероятностей с assume clauses
+#pragma omp parallel for schedule(static)
+    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+#if !defined(__clang__)
+#pragma omp assume (tx < PARAMETR_SIZE)
+#endif
+
+        // OpenMP 5.2: assume для численной стабильности
+#if !defined(__clang__)
+#pragma omp assume (sumVectorZ[tx] >= 0.0)
+#endif
+        if (sumVectorZ[tx] != 0.0) {
+            double cumulative = 0.0;
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE > 0)
+#endif
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+#if !defined(__clang__)
+#pragma omp assume (i < MAX_VALUE_SIZE)
+#endif
+                int idx = tx + i * PARAMETR_SIZE;
+#if !defined(__clang__)
+#pragma omp assume (idx < total_cells)
+#endif
+                double prob = svertka[idx] / sumVectorZ[tx];
+                cumulative += prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+        else {
+            double uniform_prob = 1.0 / MAX_VALUE_SIZE;
+            double cumulative = 0.0;
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE > 0)
+#endif
+            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+#if !defined(__clang__)
+#pragma omp assume (i < MAX_VALUE_SIZE)
+#endif
+                int idx = tx + i * PARAMETR_SIZE;
+#if !defined(__clang__)
+#pragma omp assume (idx < total_cells)
+#endif
+
+                cumulative += uniform_prob;
+                norm_matrix_probability[idx] = cumulative;
+            }
+            if (MAX_VALUE_SIZE > 0) {
+                norm_matrix_probability[tx + (MAX_VALUE_SIZE - 1) * PARAMETR_SIZE] = 1.0;
+            }
+        }
+    }
+
+    ALIGNED_FREE(pheromon_norm);
+    ALIGNED_FREE(svertka);
+}
+#endif
+void go_mass_probability_transp_AVX_OMP_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    go_mass_probability_transp_AVX_OMP_non_cuda_5_2(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    go_mass_probability_transp_AVX_OMP_non_cuda_5_1(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    go_mass_probability_transp_AVX_OMP_non_cuda_5_0(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    go_mass_probability_transp_AVX_OMP_non_cuda_4_5(pheromon, kol_enter, norm_matrix_probability);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    go_mass_probability_transp_AVX_OMP_non_cuda_4_0(pheromon, kol_enter, norm_matrix_probability);
+#else  // OpenMP 2.0/3.0/3.1
+    go_mass_probability_transp_AVX_OMP_non_cuda_2_0(pheromon, kol_enter, norm_matrix_probability);
+#endif
 }
 // Обновление слоев графа
 void add_pheromon_iteration_transp_AVX_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
@@ -4786,35 +10646,337 @@ void add_pheromon_iteration_transp_AVX_non_cuda(double* pheromon, double* kol_en
         }
     }
 }
-void add_pheromon_iteration_transp_AVX_OMP_non_cuda(double* pheromon, double* kol_enter, int* agent_node, double* OF) {
-    // Испарение весов-феромона
-    __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
-#pragma omp parallel for
-    for (int i = 0; i < PARAMETR_SIZE * MAX_VALUE_SIZE; i += CONST_AVX) {
-        if (i + CONST_AVX < PARAMETR_SIZE * MAX_VALUE_SIZE) { // Проверка на выход за пределы массива
-            __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]); // Загружаем 4 значения из pheromon
-            pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);  // Умножаем на PARAMETR_RO
-            _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX); // Сохраняем обратно в pheromon
+// Базовая версия OpenMP 2.0/3.0/3.1
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda_2_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+
+    // 1. Испарение феромонов - векторизованное
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
         }
     }
-#pragma omp parallel for
+
+    // 2. Добавление феромонов с atomic операциями
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+        const double add_value = (delta > 0) ? PARAMETR_Q * delta : 0.0;
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
         for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            int k = agent_node[tx + i * PARAMETR_SIZE];
+            int k = agent_path[tx];
             if ((k >= 0) && (k < MAX_VALUE_SIZE)) {
-                // Обновление kol_enter, используя атомарное обновление
+                int idx = tx + k * PARAMETR_SIZE;
 #pragma omp atomic
-                kol_enter[tx + k * PARAMETR_SIZE]++;
-                // Обновление pheromon с учетом условий
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i] > 0) {
+                kol_enter[idx]++;
+
+                if (add_value > 0) {
 #pragma omp atomic
-                    pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - OF[i]); // MIN
+                    pheromon[idx] += add_value;
                 }
             }
         }
     }
 }
+#if _OPENMP >= 201307  // OpenMP 4.0+
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda_4_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
 
+    // 1. Испарение феромонов с SIMD
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с оптимизированными atomic операциями
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+        const double add_value = (delta > 0) ? PARAMETR_Q * delta : 0.0;
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+            int k = agent_path[tx];
+            if ((k >= 0) && (k < MAX_VALUE_SIZE)) {
+                int idx = tx + k * PARAMETR_SIZE;
+#pragma omp atomic update
+                kol_enter[idx]++;
+
+                if (add_value > 0) {
+#pragma omp atomic update
+                    pheromon[idx] += add_value;
+                }
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201511  // OpenMP 4.5+
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda_4_5(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+
+    // 1. Испарение феромонов с if clause
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel for simd schedule(static) if(total_size > 1000)
+#else
+#pragma omp parallel for simd schedule(static)
+#endif
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#if _OPENMP >= 201511 && !defined(__clang__)
+#pragma omp parallel for schedule(static) if(remainder > 10)
+#else
+#pragma omp parallel for schedule(static)
+#endif
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с улучшенным планированием
+            // Clang-compatible: убираем if clause или используем условную компиляцию
+#if defined(__clang__)
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for schedule(static) // if(ANT_SIZE > 100)
+#endif
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+        const double add_value = (delta > 0) ? PARAMETR_Q * delta : 0.0;
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+            int k = agent_path[tx];
+            if ((k >= 0) && (k < MAX_VALUE_SIZE)) {
+                int idx = tx + k * PARAMETR_SIZE;
+#pragma omp atomic update
+                kol_enter[idx]++;
+
+                if (add_value > 0) {
+#pragma omp atomic update
+                    pheromon[idx] += add_value;
+                }
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 201811  // OpenMP 5.0+
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda_5_0(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+
+    // 1. Испарение феромонов с loop трансформацией
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с nonmonotonic scheduling
+#pragma omp parallel for schedule(nonmonotonic:static)
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+        const double add_value = (delta > 0) ? PARAMETR_Q * delta : 0.0;
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+            int k = agent_path[tx];
+            if ((k >= 0) && (k < MAX_VALUE_SIZE)) {
+                int idx = tx + k * PARAMETR_SIZE;
+#pragma omp atomic update
+                kol_enter[idx]++;
+
+                if (add_value > 0) {
+#pragma omp atomic update
+                    pheromon[idx] += add_value;
+                }
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202011  // OpenMP 5.1+
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda_5_1(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+
+    // 1. Испарение феромонов с неблокирующими операциями
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+        __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon[i]);
+        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
+        _mm256_storeu_pd(&pheromon[i], pheromonValues_AVX);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с error recovery features
+#pragma omp parallel for schedule(nonmonotonic:static)
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+        const double add_value = (delta > 0) ? PARAMETR_Q * delta : 0.0;
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+            int k = agent_path[tx];
+            if ((k >= 0) && (k < MAX_VALUE_SIZE)) {
+                int idx = tx + k * PARAMETR_SIZE;
+                // OpenMP 5.1: улучшенные atomic операции
+#pragma omp atomic update
+                kol_enter[idx]++;
+
+                if (add_value > 0) {
+#pragma omp atomic update
+                    pheromon[idx] += add_value;
+                }
+            }
+        }
+    }
+}
+#endif
+#if _OPENMP >= 202111  // OpenMP 5.2+
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda_5_2(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int remainder = total_size % CONST_AVX;
+    const __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
+
+    // OpenMP 5.2: assume clauses для оптимизатора
+#if !defined(__clang__)
+#pragma omp assume (MAX_VALUE_SIZE > 0)
+#pragma omp assume (PARAMETR_SIZE > 0)
+#pragma omp assume (total_size > 0)
+#endif
+
+// 1. Испарение феромонов с assume clauses
+#pragma omp parallel for simd schedule(static)
+    for (int i = 0; i < total_size - remainder; i += CONST_AVX) {
+#if !defined(__clang__)
+#pragma omp assume aligned(pheromon:32)
+#endif
+        __m256d pheromonValues_AVX = _mm256_load_pd(&pheromon[i]);
+        pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
+        _mm256_store_pd(&pheromon[i], pheromonValues_AVX);
+    }
+
+    // Обработка остаточных элементов
+    if (remainder > 0) {
+#if !defined(__clang__)
+#pragma omp assume (remainder < CONST_AVX)
+#endif
+#pragma omp parallel for schedule(static)
+        for (int i = total_size - remainder; i < total_size; i++) {
+            pheromon[i] *= PARAMETR_RO;
+        }
+    }
+
+    // 2. Добавление феромонов с latest OpenMP 5.2 features
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        const double agent_of = OF[i];
+
+        // OpenMP 5.2: assume для численной стабильности
+#if !defined(__clang__)
+#pragma omp assume (MAX_PARAMETR_VALUE_TO_MIN_OPT >= 0.0)
+#pragma omp assume (agent_of >= 0.0)
+#endif
+
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - agent_of;
+        const double add_value = (delta > 0) ? PARAMETR_Q * delta : 0.0;
+
+        const int* agent_path = &agent_node[i * PARAMETR_SIZE];
+
+        // OpenMP 5.2: assume для лучшей оптимизации
+#if !defined(__clang__)
+#pragma omp assume (PARAMETR_SIZE <= 1000)
+#endif
+        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
+            int k = agent_path[tx];
+            if ((k >= 0) && (k < MAX_VALUE_SIZE)) {
+                int idx = tx + k * PARAMETR_SIZE;
+
+                // OpenMP 5.2: улучшенные atomic операции
+#pragma omp atomic update
+                kol_enter[idx]++;
+
+                if (add_value > 0) {
+#pragma omp atomic update
+                    pheromon[idx] += add_value;
+                }
+            }
+        }
+    }
+}
+#endif
+void add_pheromon_iteration_transp_AVX_OMP_non_cuda(double* __restrict pheromon, double* __restrict kol_enter, const int* __restrict agent_node, const double* __restrict OF) {
+#if _OPENMP >= 202111  // OpenMP 5.2+
+    add_pheromon_iteration_transp_AVX_OMP_non_cuda_5_2(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 202011  // OpenMP 5.1+
+    add_pheromon_iteration_transp_AVX_OMP_non_cuda_5_1(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201811  // OpenMP 5.0+
+    add_pheromon_iteration_transp_AVX_OMP_non_cuda_5_0(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201511  // OpenMP 4.5+
+    add_pheromon_iteration_transp_AVX_OMP_non_cuda_4_5(pheromon, kol_enter, agent_node, OF);
+#elif _OPENMP >= 201307  // OpenMP 4.0+
+    add_pheromon_iteration_transp_AVX_OMP_non_cuda_4_0(pheromon, kol_enter, agent_node, OF);
+#else  // OpenMP 2.0/3.0/3.1
+    add_pheromon_iteration_transp_AVX_OMP_non_cuda_2_0(pheromon, kol_enter, agent_node, OF);
+#endif
+}
 int start_NON_CUDA_transp_AVX_time() {
     auto start = std::chrono::high_resolution_clock::now();
     double SumgpuTime1 = 0.0f, SumgpuTime2 = 0.0f, SumgpuTime3 = 0.0f, SumTimeHashTotal = 0.0f, SumTimeOF = 0.0f, SumTimeHashSearch = 0.0f, SumTimeHashSave = 0.0f, SumTimeSearchAgent = 0.0f;
@@ -5439,1158 +11601,6 @@ int start_NON_CUDA_transp_AVX_OMP_non_hash() {
     return 0;
 }
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//Eigen/Dense
-/*
-#include <Eigen/Dense>
-
-void load_matrix_non_cuda(const std::string& filename, Eigen::VectorXd& parametr_value,
-    Eigen::VectorXd& pheromon_value, Eigen::VectorXd& kol_enter_value) {
-    // Реализуйте вашу функцию загрузки данных здесь
-}
-
-double BenchShafferaFunction_non_cuda(const Eigen::VectorXd& agent) {
-    // Реализуйте вашу функцию оценки здесь
-    return 0.0; // Замените на реальную реализацию
-}
-
-void matrix_ACO_non_hash() {
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-
-    Eigen::VectorXd parametr_value(kolBytes_matrix_graph);
-    Eigen::VectorXd pheromon_value(kolBytes_matrix_graph);
-    Eigen::VectorXd kol_enter_value(kolBytes_matrix_graph);
-    Eigen::VectorXd norm_matrix_probability(kolBytes_matrix_graph);
-    Eigen::VectorXd ant(kolBytes_matrix_ant);
-    Eigen::VectorXi ant_parametr(kolBytes_matrix_ant);
-    Eigen::VectorXd antOF(ANT_SIZE);
-    Eigen::VectorXd agent(PARAMETR_SIZE);
-
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = pheromon_value.segment(MAX_VALUE_SIZE * tx, MAX_VALUE_SIZE).sum();
-            Eigen::VectorXd pheromon_norm = pheromon_value.segment(MAX_VALUE_SIZE * tx, MAX_VALUE_SIZE) / sumVector;
-
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-            sumVector = 0;
-
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if (kol_enter_value(MAX_VALUE_SIZE * tx + i) != 0 && pheromon_norm(i) != 0) {
-                    svertka[i] = 1.0 / kol_enter_value(MAX_VALUE_SIZE * tx + i) + pheromon_norm(i);
-                }
-                else {
-                    svertka[i] = 0.0;
-                }
-                sumVector += svertka[i];
-            }
-
-            norm_matrix_probability(MAX_VALUE_SIZE * tx) = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability(MAX_VALUE_SIZE * tx + i) = (svertka[i] / sumVector) + norm_matrix_probability(MAX_VALUE_SIZE * tx + i - 1);
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability(MAX_VALUE_SIZE * tx + k)) {
-                    k++;
-                }
-                ant_parametr(bx * PARAMETR_SIZE + tx) = k;
-                agent(tx) = parametr_value(tx * MAX_VALUE_SIZE + k);
-            }
-            antOF(bx) = BenchShafferaFunction_non_cuda(agent);
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            pheromon_value.segment(MAX_VALUE_SIZE * tx, MAX_VALUE_SIZE) *= PARAMETR_RO;
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = ant_parametr(i * PARAMETR_SIZE + tx);
-                kol_enter_value(MAX_VALUE_SIZE * tx + k)++;
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF(i) > 0) {
-                    pheromon_value(MAX_VALUE_SIZE * tx + k) += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF(i)); // MIN
-                }
-            }
-        }
-    }
-}
-*/
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//armadillo
-/*
-#include <armadillo>
-#include <iostream>
-#include <random>
-
-void load_matrix_non_cuda(const std::string& filename, arma::vec& parametr_value,
-    arma::vec& pheromon_value, arma::vec& kol_enter_value) {
-    // Реализуйте вашу функцию загрузки данных здесь
-}
-
-double BenchShafferaFunction_non_cuda(const arma::vec& agent) {
-    // Реализуйте вашу функцию оценки здесь
-    return 0.0; // Замените на реальную реализацию
-}
-
-void matrix_ACO_non_hash() {
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-
-    arma::vec parametr_value(kolBytes_matrix_graph);
-    arma::vec pheromon_value(kolBytes_matrix_graph);
-    arma::vec kol_enter_value(kolBytes_matrix_graph);
-    arma::vec norm_matrix_probability(kolBytes_matrix_graph);
-    arma::vec ant(kolBytes_matrix_ant);
-    arma::uvec ant_parametr(kolBytes_matrix_ant); // Используем uvec для индексов
-    arma::vec antOF(ANT_SIZE);
-    arma::vec agent(PARAMETR_SIZE);
-
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = arma::sum(pheromon_value.subvec(MAX_VALUE_SIZE * tx, MAX_VALUE_SIZE * (tx + 1) - 1));
-            arma::vec pheromon_norm = pheromon_value.subvec(MAX_VALUE_SIZE * tx, MAX_VALUE_SIZE * (tx + 1) - 1) / sumVector;
-
-            arma::vec svertka(MAX_VALUE_SIZE);
-            sumVector = 0;
-
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if (kol_enter_value(MAX_VALUE_SIZE * tx + i) != 0 && pheromon_norm(i) != 0) {
-                    svertka(i) = 1.0 / kol_enter_value(MAX_VALUE_SIZE * tx + i) + pheromon_norm(i);
-                }
-                else {
-                    svertka(i) = 0.0;
-                }
-                sumVector += svertka(i);
-            }
-
-            norm_matrix_probability(MAX_VALUE_SIZE * tx) = svertka(0) / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability(MAX_VALUE_SIZE * tx + i) = (svertka(i) / sumVector) + norm_matrix_probability(MAX_VALUE_SIZE * tx + i - 1);
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability(MAX_VALUE_SIZE * tx + k)) {
-                    k++;
-                }
-                ant_parametr(bx * PARAMETR_SIZE + tx) = k;
-                agent(tx) = parametr_value(tx * MAX_VALUE_SIZE + k);
-            }
-            antOF(bx) = BenchShafferaFunction_non_cuda(agent);
-        }
-
-        pheromon_value *= PARAMETR_RO; // Умножаем всю матрицу феромонов на коэффициент
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = ant_parametr(i * PARAMETR_SIZE + tx);
-                kol_enter_value(MAX_VALUE_SIZE * tx + k)++;
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF(i) > 0) {
-                    pheromon_value(MAX_VALUE_SIZE * tx + k) += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF(i)); // MIN
-                }
-            }
-        }
-    }
-}
-*/
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Intel MKL
-/*
-#include <iostream>
-#include <vector>
-#include <random>
-#include <mkl.h> // Подключаем Intel MKL
-#include <cmath>
-
-void matrix_ACO_non_hash() {
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-
-    double* parametr_value = new double[kolBytes_matrix_graph];
-    double* pheromon_value = new double[kolBytes_matrix_graph];
-    double* kol_enter_value = new double[kolBytes_matrix_graph];
-    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
-    int* ant_parametr = new int[kolBytes_matrix_ant];
-    double* antOF = new double[ANT_SIZE];
-    double* agent = new double[PARAMETR_SIZE];
-
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = cblas_dasum(MAX_VALUE_SIZE, pheromon_value + MAX_VALUE_SIZE * tx, 1);
-            cblas_dscal(MAX_VALUE_SIZE, 1.0 / sumVector, pheromon_value + MAX_VALUE_SIZE * tx, 1);
-
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if (kol_enter_value[MAX_VALUE_SIZE * tx + i] != 0 && pheromon_value[MAX_VALUE_SIZE * tx + i] != 0) {
-                    svertka[i] = 1.0 / kol_enter_value[MAX_VALUE_SIZE * tx + i] + pheromon_value[MAX_VALUE_SIZE * tx + i];
-                }
-                else {
-                    svertka[i] = 0.0;
-                }
-            }
-
-            sumVector = cblas_dasum(MAX_VALUE_SIZE, svertka, 1);
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                    k++;
-                }
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            cblas_dscal(MAX_VALUE_SIZE, PARAMETR_RO, pheromon_value + MAX_VALUE_SIZE * tx, 1);
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = ant_parametr[i * PARAMETR_SIZE + tx];
-                kol_enter_value[MAX_VALUE_SIZE * tx + k]++;
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]);
-                }
-            }
-        }
-    }
-
-    delete[] parametr_value;
-    delete[] pheromon_value;
-    delete[] kol_enter_value;
-    delete[] norm_matrix_probability;
-    delete[] ant_parametr;
-    delete[] antOF;
-    delete[] agent;
-}
-*/
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//Blaze
-/*
-#include <blaze/Blaze.h>
-
-// Прототипы ваших функций
-void load_matrix_non_cuda(const std::string& filename, blaze::DynamicMatrix<double>& parametr_value,
-    blaze::DynamicMatrix<double>& pheromon_value, blaze::DynamicMatrix<double>& kol_enter_value);
-double BenchShafferaFunction_non_cuda(const blaze::DynamicVector<double>& agent);
-
-void matrix_ACO_non_hash() {
-    // Создаем матрицы и векторы с помощью Blaze
-    blaze::DynamicMatrix<double> parametr_value(MAX_VALUE_SIZE, PARAMETR_SIZE);
-    blaze::DynamicMatrix<double> pheromon_value(MAX_VALUE_SIZE, PARAMETR_SIZE);
-    blaze::DynamicMatrix<double> kol_enter_value(MAX_VALUE_SIZE, PARAMETR_SIZE);
-    blaze::DynamicMatrix<double> norm_matrix_probability(MAX_VALUE_SIZE, PARAMETR_SIZE);
-    blaze::DynamicMatrix<double> ant(ANT_SIZE, PARAMETR_SIZE);
-    blaze::DynamicVector<int> ant_parametr(ANT_SIZE * PARAMETR_SIZE);
-    blaze::DynamicVector<double> antOF(ANT_SIZE);
-    blaze::DynamicVector<double> agent(PARAMETR_SIZE);
-
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = 0;
-            blaze::DynamicVector<double> pheromon_norm(MAX_VALUE_SIZE);
-
-            // Суммируем феромоны
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                sumVector += pheromon_value(i, tx);
-            }
-
-            // Нормируем феромоны
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                pheromon_norm[i] = pheromon_value(i, tx) / sumVector;
-            }
-
-            sumVector = 0;
-            blaze::DynamicVector<double> svertka(MAX_VALUE_SIZE);
-
-            // Считаем свертку
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if ((kol_enter_value(i, tx) != 0) && (pheromon_norm[i] != 0)) {
-                    svertka[i] = 1.0 / kol_enter_value(i, tx) + pheromon_norm[i];
-                }
-                else {
-                    svertka[i] = 0.0;
-                }
-                sumVector += svertka[i];
-            }
-
-            norm_matrix_probability(0, tx) = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability(i, tx) = (svertka[i] / sumVector) + norm_matrix_probability(i - 1, tx);
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability(k, tx)) {
-                    k++;
-                }
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value(k, tx);
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-
-        // Обновление феромонов
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-                pheromon_value(i, tx) *= PARAMETR_RO;
-            }
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = ant_parametr[i * PARAMETR_SIZE + tx];
-                kol_enter_value(k, tx)++;
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value(k, tx) += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-    }
-}
-
-*/
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Ceres Solver
-/*
-#include <ceres/ceres.h>
-
-struct PheromoneCostFunction {
-    PheromoneCostFunction(double target_value) : target_value(target_value) {}
-
-    template <typename T>
-    bool operator()(const T* const pheromone, T* residual) const {
-        // Целевая функция: минимизируем разницу между феромоном и целевым значением
-        residual[0] = pheromone[0] - T(target_value);
-        return true;
-    }
-
-    double target_value;
-};
-
-void matrix_ACO_non_hash() {
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-    double* parametr_value = new double[kolBytes_matrix_graph];
-    double* pheromon_value = new double[kolBytes_matrix_graph];
-    double* kol_enter_value = new double[kolBytes_matrix_graph];
-    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
-    double* ant = new double[kolBytes_matrix_ant];
-    int* ant_parametr = new int[kolBytes_matrix_ant];
-    double* antOF = new double[ANT_SIZE];
-    double* agent = new double[PARAMETR_SIZE];
-
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = 0;
-            double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
-
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                sumVector += pheromon_value[MAX_VALUE_SIZE * tx + i];
-            }
-
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                pheromon_norm[i] = pheromon_value[MAX_VALUE_SIZE * tx + i] / sumVector;
-            }
-
-            sumVector = 0;
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if ((kol_enter_value[MAX_VALUE_SIZE * tx + i] != 0) && (pheromon_norm[i] != 0)) {
-                    svertka[i] = 1.0 / kol_enter_value[MAX_VALUE_SIZE * tx + i] + pheromon_norm[i];
-                }
-                else {
-                    svertka[i] = 0.0;
-                }
-                sumVector += svertka[i];
-            }
-
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                    k++;
-                }
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-
-        // Обновление феромонов с использованием Ceres Solver
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            ceres::Problem problem;
-
-            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-                // Создаем новую переменную для феромона
-                double* pheromone_param = &pheromon_value[MAX_VALUE_SIZE * tx + i];
-
-                // Создаем стоимость для оптимизации
-                problem.AddResidualBlock(
-                    new ceres::AutoDiffCostFunction<PheromoneCostFunction, 1, 1>(
-                        new PheromoneCostFunction(MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i])
-                    ),
-                    nullptr,
-                    pheromone_param
-                );
-            }
-
-            ceres::Solver::Options options;
-            options.linear_solver_type = ceres::DENSE_QR;
-            options.minimizer_progress_to_stdout = true;
-
-            ceres::Solver::Summary summary;
-            ceres::Solve(options, &problem, &summary);
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-                kol_enter_value[MAX_VALUE_SIZE * tx + i]++;
-            }
-        }
-    }
-
-    delete[] parametr_value;
-    delete[] pheromon_value;
-    delete[] kol_enter_value;
-    delete[] norm_matrix_probability;
-    delete[] ant;
-    delete[] ant_parametr;
-    delete[] antOF;
-    delete[] agent;
-}
-*/
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Windows Proc
-/*
-// Структура для передачи параметров в поток
-#include <windows.h>
-struct TaskParams {
-    double* parametr;
-    double* norm_matrix_probability;
-    double* agent;
-    int* agent_node;
-    double* OF;
-    HashEntry* hashTable;
-    int bx;
-    int& kol_hash_fail; // Ссылка на переменную для подсчета хэш-неудач
-};
-
-DWORD WINAPI WorkerThread(LPVOID lpParam) {
-    TaskParams* params = reinterpret_cast<TaskParams*>(lpParam);
-
-    std::default_random_engine generator(rand()); // Генератор случайных чисел для каждого потока
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    double* agent = params->agent;
-    int* agent_node = params->agent_node;
-    double* OF = params->OF;
-    HashEntry* hashTable = params->hashTable;
-    int bx = params->bx;
-    int& kol_hash_fail = params->kol_hash_fail;
-
-    for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-        double randomValue = distribution(generator);
-        int k = 0;
-
-        while (k < MAX_VALUE_SIZE && randomValue > params->norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-            k++;
-        }
-
-        agent_node[bx * PARAMETR_SIZE + tx] = k;
-        agent[bx * PARAMETR_SIZE + tx] = params->parametr[tx * MAX_VALUE_SIZE + k];
-    }
-
-    double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
-    int nom_iteration = 0;
-
-    if (cachedResult == -1.0) {
-        OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-        saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
-    }
-    else {
-        switch (TYPE_ACO) {
-        case 0: // ACOCN
-            OF[bx] = cachedResult;
-            kol_hash_fail++;
-            break;
-        case 1: // ACOCNI
-            OF[bx] = ZERO_HASH_RESULT;
-            kol_hash_fail++;
-            break;
-        case 2: // ACOCCyN
-            while ((cachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION)) {
-                for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-                    double randomValue = distribution(generator);
-                    int k = 0;
-
-                    while (k < MAX_VALUE_SIZE && randomValue > params->norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                        k++;
-                    }
-
-                    agent_node[bx * PARAMETR_SIZE + tx] = k;
-                    agent[bx * PARAMETR_SIZE + tx] = params->parametr[tx * MAX_VALUE_SIZE + k];
-                }
-                cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
-                nom_iteration++;
-                kol_hash_fail++;
-            }
-
-            OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
-            break;
-        default:
-            OF[bx] = cachedResult;
-            kol_hash_fail++;
-            break;
-        }
-    }
-
-    return 0;
-}
-
-void go_all_agent_non_cuda(double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail) {
-    HANDLE threads[ANT_SIZE];
-    TaskParams taskParams[ANT_SIZE];
-
-    for (int bx = 0; bx < ANT_SIZE; bx++) {
-        taskParams[bx] = { parametr, norm_matrix_probability, agent, agent_node, OF, hashTable, bx, kol_hash_fail };
-
-        threads[bx] = CreateThread(nullptr, 0, WorkerThread, &taskParams[bx], 0, nullptr);
-        if (threads[bx] == nullptr) {
-            std::cerr << "Error creating thread: " << GetLastError() << std::endl;
-            return;
-        }
-    }
-
-    WaitForMultipleObjects(ANT_SIZE, threads, TRUE, INFINITE);
-
-    for (int bx = 0; bx < ANT_SIZE; bx++) {
-        CloseHandle(threads[bx]);
-    }
-
-    std::cout << "All tasks are completed." << std::endl;
-}
-
-void go_all_agent_MPI(int rank_MSI, int size_MSI, int gpuTime, double* parametr, double* norm_matrix_probability, double* agent, int* agent_node, double* OF, HashEntry* hashTable, int& kol_hash_fail, double& totalHashTime, double& totalOFTime) {
-    // Генератор случайных чисел
-    std::default_random_engine generator(123 + gpuTime); // Используем gpuTime как начальное значение
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    for (int bx = rank_MSI; bx < ANT_SIZE; bx+=size_MSI) { // Проходим по всем агентам
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) { // Проходим по всем параметрам
-            double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
-            // Определение номера значения
-            int k = 0;
-            while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                k++;
-            }
-
-            // Запись подматрицы блока в глобальную память
-            agent_node[bx * PARAMETR_SIZE + tx] = k;
-            agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
-        }
-
-        auto start = std::chrono::high_resolution_clock::now();
-        // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
-
-        int nom_iteration = 0;
-        if (cachedResult == -1.0) {
-            // Если значение не найденов ХЭШ, то заносим новое значение
-            auto start_OF = std::chrono::high_resolution_clock::now();
-            OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            auto end_OF = std::chrono::high_resolution_clock::now();
-            totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
-        }
-        else {
-            //Если значение в Хэш-найдено, то агент "нулевой"
-
-            //Поиск алгоритма для нулевого агента
-            switch (TYPE_ACO) {
-            case 0: // ACOCN
-                OF[bx] = cachedResult;
-                kol_hash_fail = kol_hash_fail + 1;
-                break;
-            case 1: // ACOCNI
-                OF[bx] = ZERO_HASH_RESULT;
-                kol_hash_fail = kol_hash_fail + 1;
-                break;
-            case 2: // ACOCCyN
-                while ((cachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION))
-                {
-                    for (int tx = 0; tx < PARAMETR_SIZE; ++tx) { // Проходим по всем параметрам
-                        double randomValue = distribution(generator); // Генерация случайного числа в диапазоне [0, 1]
-
-                        // Определение номера значения
-                        int k = 0;
-                        while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                            k++;
-                        }
-
-                        // Запись подматрицы блока в глобальную память
-                        agent_node[bx * PARAMETR_SIZE + tx] = k;
-                        agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
-                    }
-
-                    // Проверка наличия решения в Хэш-таблице
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
-                    nom_iteration = nom_iteration + 1;
-                    kol_hash_fail = kol_hash_fail + 1;
-                }
-
-                //auto start_OF_2 = std::chrono::high_resolution_clock::now();
-                OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-                //auto end_OF_2 = std::chrono::high_resolution_clock::now();
-                //totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
-                break;
-            default:
-                OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
-                kol_hash_fail = kol_hash_fail + 1;
-                break;
-            }
-
-
-        }
-        //std::cout << bx << "bx " << kol_hash_fail << " " << OF[bx] << " ";
-        auto end = std::chrono::high_resolution_clock::now();
-        totalHashTime += std::chrono::duration<double, std::milli>(end - start).count();
-    }
-}
-*/
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-void matrix_ACO2_non_hash() {
-    double SumTime1 = 0.0, SumTime2 = 0.0;
-
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-    double* parametr_value = new double[kolBytes_matrix_graph];
-    double* pheromon_value = new double[kolBytes_matrix_graph];
-    double* kol_enter_value = new double[kolBytes_matrix_graph];
-    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
-    double* ant = new double[kolBytes_matrix_ant];
-    int* ant_parametr = new int[kolBytes_matrix_ant];
-    double* antOF = new double[ANT_SIZE];
-    double* agent = new double[PARAMETR_SIZE];
-    std::default_random_engine generator(123);
-    std::default_random_engine generator1(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        load_matrix_transp_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-        auto start1 = std::chrono::high_resolution_clock::now();
-        //Сумма Тi для Tnorm
-        double sumVectorT[PARAMETR_SIZE] = { 0 };
-        double sumVectorZ[PARAMETR_SIZE] = { 0 };
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            sumVectorT[tx] = 0.0;
-            sumVectorZ[tx] = 0.0;
-        }
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                sumVectorT[tx] += pheromon_value[tx + i * PARAMETR_SIZE];
-            }
-        }
-        //Вычисление Tnorm
-        double* pheromon_norm = new double[kolBytes_matrix_graph];
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                pheromon_norm[tx + i * PARAMETR_SIZE] = pheromon_value[tx + i * PARAMETR_SIZE] / sumVectorT[tx];
-            }
-        }
-        //Вычисление Z и P
-        double* svertka = new double[kolBytes_matrix_graph];
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                if ((kol_enter_value[tx + i * PARAMETR_SIZE] != 0) && (pheromon_norm[tx + i * PARAMETR_SIZE] != 0)) {
-                    svertka[tx + i * PARAMETR_SIZE] = 1.0 / kol_enter_value[tx + i * PARAMETR_SIZE] + pheromon_norm[tx + i * PARAMETR_SIZE];
-                }
-                else
-                {
-                    svertka[tx + i * PARAMETR_SIZE] = 0.0;
-                }
-                sumVectorZ[tx] += svertka[tx + i * PARAMETR_SIZE];
-            }
-        }
-        //Вычисление F
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            if (i == 0) {
-                for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                    norm_matrix_probability[tx + i * PARAMETR_SIZE] = (svertka[tx + i * PARAMETR_SIZE] / sumVectorZ[tx]);
-                }
-            }
-            else
-            {
-                for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                    norm_matrix_probability[tx + i * PARAMETR_SIZE] = (svertka[tx + i * PARAMETR_SIZE] / sumVectorZ[tx]) + norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE];
-                }
-            }
-        }
-        auto end1 = std::chrono::high_resolution_clock::now();
-        SumTime1 = std::chrono::duration<float, std::milli>(end1 - start1).count();
-        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime1 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i + j * PARAMETR_SIZE] << "(" << pheromon_value[i + j * PARAMETR_SIZE] << ", " << kol_enter_value[i + j * PARAMETR_SIZE] << "-> " << pheromon_norm[i + j * PARAMETR_SIZE] << "+" << svertka[i + j * PARAMETR_SIZE] << ";" << norm_matrix_probability[i + j * PARAMETR_SIZE] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-
-        start1 = std::chrono::high_resolution_clock::now();
-        //Сумма Тi для Tnorm
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            sumVectorT[tx] = 0.0;
-            sumVectorZ[tx] = 0.0;
-        }
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                sumVectorT[tx] += pheromon_value[tx + i * PARAMETR_SIZE];
-            }
-        }
-        //Вычисление Tnorm
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-                // Загружаем значения из pheromon_value и sumVectorT
-                __m256d pheromon_values_AVX = _mm256_loadu_pd(&pheromon_value[tx + i * PARAMETR_SIZE]);
-                __m256d sum_vector_AVX = _mm256_loadu_pd(&sumVectorT[tx]);
-
-                // Выполняем деление
-                __m256d pheromon_norm_values_AVX = _mm256_div_pd(pheromon_values_AVX, sum_vector_AVX);
-                _mm256_storeu_pd(&pheromon_norm[tx + i * PARAMETR_SIZE], pheromon_norm_values_AVX);
-            }
-        }
-        // Вычисление Z и P
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-                // Загружаем значения из kol_enter_value и pheromon_norm
-                __m256d kol_enter_values_AVX = _mm256_loadu_pd(&kol_enter_value[tx + i * PARAMETR_SIZE]);
-                __m256d pheromon_norm_values_AVX = _mm256_loadu_pd(&pheromon_norm[tx + i * PARAMETR_SIZE]);
-
-                // Создаем маску для проверки условий
-                //(kol_enter_value[tx + i * PARAMETR_SIZE] != 0) && (pheromon_norm[tx + i * PARAMETR_SIZE] != 0)
-                __m256d zero_vector_AVX = _mm256_setzero_pd();
-                __m256d condition_mask_AVX = _mm256_and_pd(
-                    _mm256_cmp_pd(kol_enter_values_AVX, zero_vector_AVX, _CMP_NEQ_OQ),
-                    _mm256_cmp_pd(pheromon_norm_values_AVX, zero_vector_AVX, _CMP_NEQ_OQ)
-                );
-
-                // Вычисляем svertka
-                __m256d one_vector_AVX = _mm256_set1_pd(1.0);
-                __m256d svertka_values_AVX = _mm256_blendv_pd(
-                    zero_vector_AVX, _mm256_add_pd(_mm256_div_pd(one_vector_AVX, kol_enter_values_AVX), pheromon_norm_values_AVX),
-
-                    condition_mask_AVX
-                );
-
-                //__m256d svertka_values_AVX = _mm256_add_pd(_mm256_div_pd(one_vector_AVX, kol_enter_values_AVX), pheromon_norm_values_AVX);
-                // Сохраняем значения в svertka
-                _mm256_storeu_pd(&svertka[tx + i * PARAMETR_SIZE], svertka_values_AVX);
-            }
-        }
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                sumVectorZ[tx] += svertka[tx + i * PARAMETR_SIZE];
-            }
-        }
-        // Вычисление F
-        for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-                __m256d svertka_values_AVX = _mm256_loadu_pd(&svertka[tx + i * PARAMETR_SIZE]);
-                __m256d sum_vector_z_AVX = _mm256_loadu_pd(&sumVectorZ[tx]);
-                __m256d norm_matrix_probability_AVX = _mm256_div_pd(svertka_values_AVX, sum_vector_z_AVX);
-                if (i == 0) {
-                    // Нормализация для первой строки
-                    _mm256_storeu_pd(&norm_matrix_probability[tx + i * PARAMETR_SIZE], norm_matrix_probability_AVX);
-                }
-                else {
-                    // Нормализация для остальных строк
-                    __m256d previous_norm_values_AVX = _mm256_loadu_pd(&norm_matrix_probability[tx + (i - 1) * PARAMETR_SIZE]);
-                    __m256d norm_matrix_probability_values_AVX = _mm256_add_pd(norm_matrix_probability_AVX, previous_norm_values_AVX);
-                    _mm256_storeu_pd(&norm_matrix_probability[tx + i * PARAMETR_SIZE], norm_matrix_probability_values_AVX);
-                }
-            }
-        }
-        end1 = std::chrono::high_resolution_clock::now();
-        SumTime1 = std::chrono::duration<float, std::milli>(end1 - start1).count();
-        std::cout << "?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????" << std::endl;
-        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime1 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i + j * PARAMETR_SIZE] << "(" << pheromon_value[i + j * PARAMETR_SIZE] << ", " << kol_enter_value[i + j * PARAMETR_SIZE] << "-> " << pheromon_norm[i + j * PARAMETR_SIZE] << "+" << svertka[i + j * PARAMETR_SIZE] << ";" << norm_matrix_probability[i + j * PARAMETR_SIZE] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[tx + k * PARAMETR_SIZE]) {
-                    k++;
-                }
-                std::cout << randomValue << "; " << k << ")";
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value[tx + k * PARAMETR_SIZE];
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-        std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            for (int j = 0; j < PARAMETR_SIZE; ++j) {
-                std::cout << ant_parametr[i * PARAMETR_SIZE + j] << " ";
-
-            }
-            std::cout << "-> " << antOF[i] << std::endl;
-
-        }
-        /*
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-                __m256d randomValues_AVX = _mm256_set_pd(distribution(generator), distribution(generator),
-                    distribution(generator), distribution(generator));
-                __m256d k_AVX = _mm256_setzero_pd(); // Для хранения значений k
-                __m256d indices_AVX = _mm256_set_pd(3.0, 2.0, 1.0, 0.0); // Индексы для доступа к norm_matrix_probability
-                for (int kIndex = 0; kIndex < MAX_VALUE_SIZE; ++kIndex) {
-                    // Загружаем значения из norm_matrix_probability
-                    __m256d norm_matrix_probability_AVX = _mm256_loadu_pd(&norm_matrix_probability[tx + kIndex * PARAMETR_SIZE]);
-                    // Сравниваем randomValues с norm_matrix_probability
-                    __m256d cmpResult = _mm256_cmp_pd(randomValues_AVX, norm_matrix_probability_AVX, _CMP_GT_OS);
-                    // Увеличиваем k для тех, кто меньше
-                    k_AVX = _mm256_add_pd(k_AVX, _mm256_and_pd(cmpResult, indices_AVX));
-                }
-
-
-                // Сохраняем k в ant_parametr
-                _mm256_storeu_pd(&ant_parametr[bx * PARAMETR_SIZE + tx], k_AVX);
-
-                // Получаем значения agent на основе k
-                for (int i = 0; i < 4; ++i) {
-                    int index = static_cast<int>(_mm256_extract_epi64(k_AVX, i)); // Извлекаем значение k
-                    agent[tx + i] = parametr_value[tx + index * PARAMETR_SIZE];
-                }
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-        std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            for (int j = 0; j < PARAMETR_SIZE; ++j) {
-                std::cout << ant_parametr[i * PARAMETR_SIZE + j] << " ";
-
-            }
-            std::cout << "-> " << antOF[i] << std::endl;
-
-        }*/
-        for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-                pheromon_value[tx + i * PARAMETR_SIZE] *= PARAMETR_RO;
-            }
-        }
-
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-                int k = int(ant_parametr[tx + i * PARAMETR_SIZE]);
-                kol_enter_value[tx + k * PARAMETR_SIZE]++;
-                //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * OF[i]; // MAX
-                //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q / OF[i]; // MIN
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[tx + k * PARAMETR_SIZE] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        std::cout << "Matrix1 (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime1 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i + j * PARAMETR_SIZE] << "(" << pheromon_value[i + j * PARAMETR_SIZE] << ", " << kol_enter_value[i + j * PARAMETR_SIZE] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-        __m256d parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
-        for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx += CONST_AVX) {
-                //pheromon_value[tx + i * PARAMETR_SIZE] *= PARAMETR_RO;
-                // Загружаем 4 значения из pheromon_value
-                __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon_value[tx + i * PARAMETR_SIZE]);
-                // Умножаем на PARAMETR_RO
-                pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
-                // Сохраняем обратно в pheromon_value
-                _mm256_storeu_pd(&pheromon_value[tx + i * PARAMETR_SIZE], pheromonValues_AVX);
-            }
-        }
-
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-                int k = int(ant_parametr[tx + i * PARAMETR_SIZE]);
-                kol_enter_value[tx + k * PARAMETR_SIZE]++;
-                //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q * OF[i]; // MAX
-                //            pheromon[tx + k * PARAMETR_SIZE] += PARAMETR_Q / OF[i]; // MIN
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[tx + k * PARAMETR_SIZE] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        std::cout << "Matrix2 (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime1 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i + j * PARAMETR_SIZE] << "(" << pheromon_value[i + j * PARAMETR_SIZE] << ", " << kol_enter_value[i + j * PARAMETR_SIZE] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-        load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-        start1 = std::chrono::high_resolution_clock::now();
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = 0;
-            double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                sumVector += pheromon_value[MAX_VALUE_SIZE * tx + i];
-            }
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                pheromon_norm[i] = pheromon_value[MAX_VALUE_SIZE * tx + i] / sumVector;
-            }
-            sumVector = 0;
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if ((kol_enter_value[MAX_VALUE_SIZE * tx + i] != 0) && (pheromon_norm[i] != 0)) {
-                    svertka[i] = 1.0 / kol_enter_value[MAX_VALUE_SIZE * tx + i] + pheromon_norm[i];
-                }
-                else
-                {
-                    svertka[i] = 0.0;
-                }
-                sumVector += svertka[i];
-            }
-
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
-        }
-        end1 = std::chrono::high_resolution_clock::now();
-        SumTime2 = std::chrono::duration<float, std::milli>(end1 - start1).count();
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime2 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i * MAX_VALUE_SIZE + j] << "(" << pheromon_value[i * MAX_VALUE_SIZE + j] << ", " << kol_enter_value[i * MAX_VALUE_SIZE + j] << "+ " << svertka[i * MAX_VALUE_SIZE + j] << "-> " << norm_matrix_probability[i * MAX_VALUE_SIZE + j] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-        start1 = std::chrono::high_resolution_clock::now();
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            // Вычисляем sumVector
-            double sumVector = 0.0;
-            __m256d sumVectorAVX = _mm256_setzero_pd();
-            for (int i = 0; i < MAX_VALUE_SIZE; i += 4) {
-                __m256d pheromonValues = _mm256_loadu_pd(&pheromon_value[MAX_VALUE_SIZE * tx + i]);
-                sumVectorAVX = _mm256_add_pd(sumVectorAVX, pheromonValues);
-            }
-            // Суммируем значения из вектора
-            double temp[4];
-            _mm256_storeu_pd(temp, sumVectorAVX);
-            for (int j = 0; j < 4; j++) {
-                sumVector += temp[j];
-            }
-            // Нормируем значения
-            double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i += 4) {
-                __m256d pheromonValues = _mm256_loadu_pd(&pheromon_value[MAX_VALUE_SIZE * tx + i]);
-                __m256d normValues = _mm256_div_pd(pheromonValues, _mm256_set1_pd(sumVector));
-                _mm256_storeu_pd(&pheromon_norm[i], normValues);
-            }
-            // Вычисляем svertka и sumVector
-            sumVector = 0.0;
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-            sumVectorAVX = _mm256_setzero_pd();
-            for (int i = 0; i < MAX_VALUE_SIZE; i += 4) {
-                __m256d kolEnterValues = _mm256_loadu_pd(&kol_enter_value[MAX_VALUE_SIZE * tx + i]);
-                __m256d pheromonNormValues = _mm256_loadu_pd(&pheromon_norm[i]);
-                __m256d svertkaValues;
-                // Создаем маску для проверки условий
-                __m256d mask = _mm256_cmp_pd(kolEnterValues, _mm256_setzero_pd(), _CMP_NEQ_OQ);
-                mask = _mm256_and_pd(mask, _mm256_cmp_pd(pheromonNormValues, _mm256_setzero_pd(), _CMP_NEQ_OQ));
-                // Вычисляем svertka с учетом условий
-                __m256d oneOverKolEnter = _mm256_div_pd(_mm256_set1_pd(1.0), kolEnterValues);
-                svertkaValues = _mm256_add_pd(oneOverKolEnter, pheromonNormValues);
-                svertkaValues = _mm256_blendv_pd(_mm256_setzero_pd(), svertkaValues, mask);
-                // Сохраняем результат
-                _mm256_storeu_pd(&svertka[i], svertkaValues);
-                // Суммируем svertka
-                sumVectorAVX = _mm256_add_pd(sumVectorAVX, svertkaValues);
-            }
-            // Суммируем значения из вектора svertka
-            _mm256_storeu_pd(temp, sumVectorAVX);
-            for (int j = 0; j < 4; j++) {
-                sumVector += temp[j];
-            }
-            // Заполняем norm_matrix_probability
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
-        }
-        end1 = std::chrono::high_resolution_clock::now();
-        SumTime2 = std::chrono::duration<float, std::milli>(end1 - start1).count();
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime2 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i * MAX_VALUE_SIZE + j] << "(" << pheromon_value[i * MAX_VALUE_SIZE + j] << ", " << kol_enter_value[i * MAX_VALUE_SIZE + j] << "+ " << svertka[i * MAX_VALUE_SIZE + j] << "-> " << norm_matrix_probability[i * MAX_VALUE_SIZE + j] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator1);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                    k++;
-                }
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-        std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
-        for (int i = 0; i < ANT_SIZE; ++i) {
-            for (int j = 0; j < PARAMETR_SIZE; ++j) {
-                std::cout << ant_parametr[i * PARAMETR_SIZE + j] << " ";
-
-            }
-            std::cout << "-> " << antOF[i] << std::endl;
-
-        }
-        /*
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-                pheromon_value[MAX_VALUE_SIZE * tx + i] *= PARAMETR_RO;
-            }
-        }
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = int(ant_parametr[i * PARAMETR_SIZE + tx]);
-                kol_enter_value[MAX_VALUE_SIZE * tx + k]++;
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * OF[i]; // MAX
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q / OF[i]; // MIN
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime2 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i * MAX_VALUE_SIZE + j] << "(" << pheromon_value[i * MAX_VALUE_SIZE + j] << ", " << kol_enter_value[i * MAX_VALUE_SIZE + j] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-        */
-        // Умножение pheromon_value на PARAMETR_RO
-        parametRovector_AVX = _mm256_set1_pd(PARAMETR_RO);
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < MAX_VALUE_SIZE; i += CONST_AVX) {
-                // Загружаем 4 значения из pheromon_value
-                __m256d pheromonValues_AVX = _mm256_loadu_pd(&pheromon_value[MAX_VALUE_SIZE * tx + i]);
-                // Умножаем на PARAMETR_RO
-                pheromonValues_AVX = _mm256_mul_pd(pheromonValues_AVX, parametRovector_AVX);
-                // Сохраняем обратно в pheromon_value
-                _mm256_storeu_pd(&pheromon_value[MAX_VALUE_SIZE * tx + i], pheromonValues_AVX);
-            }
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = int(ant_parametr[i * PARAMETR_SIZE + tx]);
-                kol_enter_value[MAX_VALUE_SIZE * tx + k]++;
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * OF[i]; // MAX
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q / OF[i]; // MIN
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-        std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << SumTime2 << std::endl;
-        for (int i = 0; i < PARAMETR_SIZE; ++i) {
-            for (int j = 0; j < MAX_VALUE_SIZE; ++j) {
-                std::cout << parametr_value[i * MAX_VALUE_SIZE + j] << "(" << pheromon_value[i * MAX_VALUE_SIZE + j] << ", " << kol_enter_value[i * MAX_VALUE_SIZE + j] << ") "; // Индексируем элементы
-            }
-            std::cout << std::endl; // Переход на новую строку
-        }
-
-    }
-    delete[] parametr_value;
-    delete[] pheromon_value;
-    delete[] kol_enter_value;
-    delete[] norm_matrix_probability;
-    delete[] ant;
-    delete[] ant_parametr;
-    delete[] antOF;
-    delete[] agent;
-}
-
 int main(int argc, char* argv[]) {
     // Открытие лог-файла
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -6600,7 +11610,60 @@ int main(int argc, char* argv[]) {
         std::cerr << "Ошибка открытия лог-файла!" << std::endl;
         return 1; // Возврат с ошибкой
     }
-
+    std::cout << "Max threads OMP : " << omp_get_max_threads() << " ";
+    std::cout << "OpenMP version: " << _OPENMP << " :";
+#if _OPENMP >= 202411 
+    std::cout << "OpenMP 6.0 (2026) plane" << std::endl;
+#elif _OPENMP >= 202111 
+    std::cout << "OpenMP 5.2 (2023) active" << std::endl;
+#elif _OPENMP >= 202011 
+    std::cout << "OpenMP 5.1 (2021) active" << std::endl;
+#elif _OPENMP >= 201811 
+    std::cout << "OpenMP 5.0 (2018) active" << std::endl;
+#elif _OPENMP >= 201511 
+    std::cout << "OpenMP 4.5 (2015) optimal" << std::endl;
+#elif _OPENMP >= 201307 
+    std::cout << "OpenMP 4.0 (2013) active" << std::endl;
+#elif _OPENMP >= 201107 
+    std::cout << "OpenMP 3.1 (2011) supported" << std::endl;
+#elif _OPENMP >= 200805 
+    std::cout << "OpenMP 3.0 (2008) supported" << std::endl;
+#elif _OPENMP >= 200505 
+    std::cout << "OpenMP 2.5 (2005) outdated" << std::endl;
+#elif _OPENMP >= 200203 
+    std::cout << "OpenMP 2.0 (2002) outdated" << std::endl;
+#elif _OPENMP >= 199710 
+    std::cout << "OpenMP 1.0 (1999) outdated" << std::endl;
+#else 
+    std::cout << "Older OpenMP version" << std::endl;
+#endif
+    logFile << "Max threads OMP : " << omp_get_max_threads() << " ";
+    logFile << "OpenMP version: " << _OPENMP << " :";
+#if _OPENMP >= 202611 
+    logFile << "OpenMP 6.0 (2026) plane" << std::endl;
+#elif _OPENMP >= 202311 
+    logFile << "OpenMP 5.2 (2023) active" << std::endl;
+#elif _OPENMP >= 202111 
+    logFile << "OpenMP 5.1 (2021) active" << std::endl;
+#elif _OPENMP >= 201811 
+    logFile << "OpenMP 5.0 (2018) active" << std::endl;
+#elif _OPENMP >= 201511 
+    logFile << "OpenMP 4.5 (2015) optimal" << std::endl;
+#elif _OPENMP >= 201307 
+    logFile << "OpenMP 4.0 (2013) active" << std::endl;
+#elif _OPENMP >= 201107 
+    logFile << "OpenMP 3.1 (2011) supported" << std::endl;
+#elif _OPENMP >= 200805 
+    logFile << "OpenMP 3.0 (2008) supported" << std::endl;
+#elif _OPENMP >= 200505 
+    logFile << "OpenMP 2.5 (2005) outdated" << std::endl;
+#elif _OPENMP >= 200203 
+    logFile << "OpenMP 2.0 (2002) outdated" << std::endl;
+#elif _OPENMP >= 199910 
+    logFile << "OpenMP 1.0 (1999) outdated" << std::endl;
+#else 
+    logFile << "Older OpenMP version" << std::endl;
+#endif
     std::cout << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
         << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
@@ -6902,6 +11965,33 @@ int main(int argc, char* argv[]) {
         logFile << message << std::endl; // Запись в лог-файл
         save_all_stat_text_file("non CUDA transp");
     }
+    if (GO_NON_CUDA_TRANSP_OMP_TIME) {
+        int j = 0;
+        while (j < KOL_PROGREV)
+        {
+            std::cout << "PROGREV " << j << " ";
+            start_NON_CUDA_transp_OMP_time();
+            j = j + 1;
+        }
+        // Запуск таймера
+        clear_all_stat();
+        auto start2 = std::chrono::high_resolution_clock::now();
+        int i = 0;
+        while (i < KOL_PROGON_STATISTICS)
+        {
+            std::cout << i << " ";
+            start_NON_CUDA_transp_OMP_time();
+            i = i + 1;
+        }
+        // Остановка таймера
+        auto end2 = std::chrono::high_resolution_clock::now();
+        // Вычисление времени выполнения
+        std::chrono::duration<double, std::milli> duration = end2 - start2;
+        std::string message = "Time non CUDA_transp_OMP_time:;" + std::to_string(duration.count()) + ";sec";
+        std::cout << message << std::endl;
+        logFile << message << std::endl; // Запись в лог-файл
+        save_all_stat_text_file("non CUDA transp OMP Time");
+    }
     if (GO_NON_CUDA_TRANSP_NON_HASH) {
         int j = 0;
         while (j < KOL_PROGREV)
@@ -6928,6 +12018,33 @@ int main(int argc, char* argv[]) {
         std::cout << message << std::endl;
         logFile << message << std::endl; // Запись в лог-файл
         save_all_stat_text_file("non CUDA transp non hash");
+    }
+    if (GO_NON_CUDA_TRANSP_NON_HASH_OMP_OPT) {
+        int j = 0;
+        while (j < KOL_PROGREV)
+        {
+            std::cout << "PROGREV " << j << " ";
+            start_NON_CUDA_transp_non_hash_OMP_optimized();
+            j = j + 1;
+        }
+        // Запуск таймера
+        clear_all_stat();
+        auto start2 = std::chrono::high_resolution_clock::now();
+        int i = 0;
+        while (i < KOL_PROGON_STATISTICS)
+        {
+            std::cout << i << " ";
+            start_NON_CUDA_transp_non_hash_OMP_optimized();
+            i = i + 1;
+        }
+        // Остановка таймера
+        auto end2 = std::chrono::high_resolution_clock::now();
+        // Вычисление времени выполнения
+        std::chrono::duration<double, std::milli> duration = end2 - start2;
+        std::string message = "Time non CUDA transp non hash OMP Optimized:;" + std::to_string(duration.count()) + ";sec";
+        std::cout << message << std::endl;
+        logFile << message << std::endl; // Запись в лог-файл
+        save_all_stat_text_file("non CUDA transp non hash OMP Optimized");
     }
     if (MAX_VALUE_SIZE % CONST_AVX == 0) {
         if (GO_NON_CUDA_AVX_TIME) {
@@ -7287,438 +12404,36 @@ int main(int argc, char* argv[]) {
             logFile << message << std::endl; // Запись в лог-файл
             save_all_stat_text_file("Time non CUDA AVX time 4");
         }
+        if (GO_NON_CUDA_AVX_OMP_TIME_4) {
+            int j = 0;
+            while (j < KOL_PROGREV)
+            {
+                std::cout << "PROGREV " << j << " ";
+                start_NON_CUDA_AVX4_OMP_time();
+                j = j + 1;
+            }
+            // Запуск таймера
+            clear_all_stat();
+            auto start1 = std::chrono::high_resolution_clock::now();
+            int i = 0;
+            while (i < KOL_PROGON_STATISTICS)
+            {
+                std::cout << i << " ";
+                start_NON_CUDA_AVX4_OMP_time();
+                i = i + 1;
+            }
+            // Остановка таймера
+            auto end1 = std::chrono::high_resolution_clock::now();
+            // Вычисление времени выполнения
+            std::chrono::duration<double, std::milli> duration = end1 - start1;
+            // Вывод информации на экран и в лог-файл
+            std::string message = "Time non CUDA AVX OMP time 4:;" + std::to_string(duration.count()) + ";sec";
+            std::cout << message << std::endl;
+            logFile << message << std::endl; // Запись в лог-файл
+            save_all_stat_text_file("Time non CUDA AVX OMP time 4");
+        }
     }
     // Закрытие лог-файла
     logFile.close();
     outfile.close();
 }
-
-
-//код без лишнего для матричного ACO
-void matrix_ACO() {
-    int kol_hash_fail = 0;
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-    HashEntry* hashTable = new HashEntry[HASH_TABLE_SIZE];
-    initializeHashTable_non_cuda(hashTable, HASH_TABLE_SIZE);
-    double* parametr_value = new double[kolBytes_matrix_graph];
-    double* pheromon_value = new double[kolBytes_matrix_graph];
-    double* kol_enter_value = new double[kolBytes_matrix_graph];
-    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
-    double* ant = new double[kolBytes_matrix_ant];
-    int* ant_parametr = new int[kolBytes_matrix_ant];
-    double* antOF = new double[ANT_SIZE];
-    double* agent = new double[PARAMETR_SIZE];
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = 0;
-            double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                sumVector += pheromon_value[MAX_VALUE_SIZE * tx + i];
-            }
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                pheromon_norm[i] = pheromon_value[MAX_VALUE_SIZE * tx + i] / sumVector;
-            }
-            sumVector = 0;
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if ((kol_enter_value[MAX_VALUE_SIZE * tx + i] != 0) && (pheromon_norm[i] != 0)) {
-                    svertka[i] = 1.0 / kol_enter_value[MAX_VALUE_SIZE * tx + i] + pheromon_norm[i];
-                }
-                else
-                {
-                    svertka[i] = 0.0;
-                }
-                sumVector += svertka[i];
-            }
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                    k++;
-                }
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
-            }
-            double cachedResult = getCachedResultOptimized_non_cuda(hashTable, ant_parametr, bx);
-            int nom_iteration = 0;
-            if (cachedResult == -1.0) {
-                antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-                saveToCacheOptimized_non_cuda(hashTable, ant_parametr, bx, antOF[bx]);
-            }
-            else {
-                switch (TYPE_ACO) {
-                case 0: // ACOCN
-                    antOF[bx] = cachedResult;
-                    kol_hash_fail = kol_hash_fail + 1;
-                    break;
-                case 1: // ACOCNI
-                    antOF[bx] = ZERO_HASH_RESULT;
-                    kol_hash_fail = kol_hash_fail + 1;
-                    break;
-                case 2: // ACOCCyN
-                    while ((cachedResult != -1.0) && (nom_iteration < ACOCCyN_KOL_ITERATION))
-                    {
-                        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-                            double randomValue = distribution(generator);
-                            int k = 0;
-                            while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                                k++;
-                            }
-                            ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                            agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
-                        }
-                        cachedResult = getCachedResultOptimized_non_cuda(hashTable, ant_parametr, bx);
-                        nom_iteration = nom_iteration + 1;
-                        kol_hash_fail = kol_hash_fail + 1;
-                    }
-
-                    antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-                    saveToCacheOptimized_non_cuda(hashTable, ant_parametr, bx, antOF[bx]);
-                    break;
-                default:
-                    antOF[bx] = cachedResult;
-                    kol_hash_fail = kol_hash_fail + 1;
-                    break;
-                }
-            }
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-                pheromon_value[MAX_VALUE_SIZE * tx + i] *= PARAMETR_RO;
-            }
-        }
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = int(ant_parametr[i * PARAMETR_SIZE + tx]);
-                kol_enter_value[MAX_VALUE_SIZE * tx + k]++;
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * OF[i]; // MAX
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q / OF[i]; // MIN
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-
-    }
-    delete[] parametr_value;
-    delete[] pheromon_value;
-    delete[] kol_enter_value;
-    delete[] norm_matrix_probability;
-    delete[] ant;
-    delete[] ant_parametr;
-    delete[] antOF;
-    delete[] agent;
-}
-
-void matrix_ACO_non_hash() {
-    int kolBytes_matrix_graph = MAX_VALUE_SIZE * PARAMETR_SIZE;
-    int kolBytes_matrix_ant = PARAMETR_SIZE * ANT_SIZE;
-    double* parametr_value = new double[kolBytes_matrix_graph];
-    double* pheromon_value = new double[kolBytes_matrix_graph];
-    double* kol_enter_value = new double[kolBytes_matrix_graph];
-    double* norm_matrix_probability = new double[kolBytes_matrix_graph];
-    double* ant = new double[kolBytes_matrix_ant];
-    int* ant_parametr = new int[kolBytes_matrix_ant];
-    double* antOF = new double[ANT_SIZE];
-    double* agent = new double[PARAMETR_SIZE];
-    std::default_random_engine generator(123);
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
-    load_matrix_non_cuda(NAME_FILE_GRAPH, parametr_value, pheromon_value, kol_enter_value);
-    for (int nom_iter = 0; nom_iter < KOL_ITERATION; ++nom_iter) {
-        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            double sumVector = 0;
-            double pheromon_norm[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                sumVector += pheromon_value[MAX_VALUE_SIZE * tx + i];
-            }
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                pheromon_norm[i] = pheromon_value[MAX_VALUE_SIZE * tx + i] / sumVector;
-            }
-            sumVector = 0;
-            double svertka[MAX_VALUE_SIZE] = { 0 };
-            for (int i = 0; i < MAX_VALUE_SIZE; i++) {
-                if ((kol_enter_value[MAX_VALUE_SIZE * tx + i] != 0) && (pheromon_norm[i] != 0)) {
-                    svertka[i] = 1.0 / kol_enter_value[MAX_VALUE_SIZE * tx + i] + pheromon_norm[i];
-                }
-                else
-                {
-                    svertka[i] = 0.0;
-                }
-                sumVector += svertka[i];
-            }
-            norm_matrix_probability[MAX_VALUE_SIZE * tx] = svertka[0] / sumVector;
-            for (int i = 1; i < MAX_VALUE_SIZE; i++) {
-                norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i] / sumVector) + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1];
-            }
-        }
-
-        for (int bx = 0; bx < ANT_SIZE; bx++) {
-            for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
-                double randomValue = distribution(generator);
-                int k = 0;
-                while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                    k++;
-                }
-                ant_parametr[bx * PARAMETR_SIZE + tx] = k;
-                agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
-            }
-            antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-        }
-
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
-                pheromon_value[MAX_VALUE_SIZE * tx + i] *= PARAMETR_RO;
-            }
-        }
-        for (int tx = 0; tx < PARAMETR_SIZE; ++tx) {
-            for (int i = 0; i < ANT_SIZE; ++i) {
-                int k = int(ant_parametr[i * PARAMETR_SIZE + tx]);
-                kol_enter_value[MAX_VALUE_SIZE * tx + k]++;
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * OF[i]; // MAX
-                //            pheromon[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q / OF[i]; // MIN
-                if (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i] > 0) {
-                    pheromon_value[MAX_VALUE_SIZE * tx + k] += PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - antOF[i]); // MIN
-                }
-            }
-        }
-
-    }
-    delete[] parametr_value;
-    delete[] pheromon_value;
-    delete[] kol_enter_value;
-    delete[] norm_matrix_probability;
-    delete[] ant;
-    delete[] ant_parametr;
-    delete[] antOF;
-    delete[] agent;
-}
-
-/*
-Давайте рассмотрим детально каждую предложенную технику и реализуем соответствующие фрагменты кода.
-
-1. Метод псевдонима (Alias Method)
-
-Метод псевдонима позволяет создать специальную таблицу, которая преобразует равномерное распределение случайных чисел в произвольное заданное распределение вероятностей. Выбор одного значения из списка вероятностей осуществляется за константное время ($O(1)$), что делает этот подход крайне эффективным.
-
-Структура Alias Table Entry:
-
-struct AliasTableEntry {
-    uint32_t prob_idx;       // Индекс оригинальной вероятности
-    uint32_t alias_idx;      // Индекс альтернативного варианта ("псевдонима")
-    float prob_weight;        // Относительный вес вероятности
-};
-
-Построение таблицы псевдонимов:
-
-void build_alias_table(AliasTableEntry* table, const float* probabilities, int num_entries) {
-    // Массивы для подсчета малых и больших вероятностей
-    std::vector<uint32_t> small(num_entries), large(num_entries);
-    std::queue<uint32_t> smallQueue, largeQueue;
-
-    // Начальная инициализация очереди
-    for(uint32_t i = 0; i < num_entries; ++i) {
-        table[i].prob_idx = i;
-        table[i].prob_weight = probabilities[i] * num_entries;
-        if(table[i].prob_weight < 1.0f) {
-            smallQueue.push(i);
-        } else {
-            largeQueue.push(i);
-        }
-    }
-
-    // Основной цикл формирования таблицы
-    while(!smallQueue.empty() && !largeQueue.empty()) {
-        uint32_t less = smallQueue.front(); smallQueue.pop();
-        uint32_t more = largeQueue.front(); largeQueue.pop();
-
-        table[less].alias_idx = more;
-        table[more].prob_weight -= (1.0f - table[less].prob_weight);
-
-        if(table[more].prob_weight < 1.0f) {
-            smallQueue.push(more);
-        } else {
-            largeQueue.push(more);
-        }
-    }
-
-    // Завершаем оставшиеся крупные элементы
-    while(!largeQueue.empty()) {
-        uint32_t idx = largeQueue.front(); largeQueue.pop();
-        table[idx].alias_idx = idx;
-    }
-
-    // Осталось обработать маленькие элементы
-    while(!smallQueue.empty()) {
-        uint32_t idx = smallQueue.front(); smallQueue.pop();
-        table[idx].alias_idx = idx;
-    }
-}
-
-Финальный выбор случайного индекса:
-
-uint32_t select_random_entry(float rnd_num, const AliasTableEntry* table, int num_entries) {
-    int idx = floor(rnd_num * num_entries);
-    float random_prob = rnd_num * num_entries - idx;
-
-    if(random_prob < table[idx].prob_weight) {
-        return table[idx].prob_idx;
-    } else {
-        return table[idx].alias_idx;
-    }
-}
-
-Примеры использования метода псевдонима:
-
-Предположим, у вас есть массив вероятностей и вы хотите сделать быстрый выбор.
-
-float probabilities[] = {0.1, 0.2, 0.3, 0.4}; // Сумма равна единице
-AliasTableEntry table[sizeof(probabilities)/sizeof(probabilities[0])];
-build_alias_table(table, probabilities, sizeof(probabilities)/sizeof(probabilities[0]));
-
-std::default_random_engine gen(std::chrono::system_clock::now().time_since_epoch().count());
-std::uniform_real_distribution<float> dist(0.0, 1.0);
-
-// Сделаем несколько быстрых выборов
-for(int i = 0; i < 10; ++i) {
-    float rnd = dist(gen);
-    uint32_t selected = select_random_entry(rnd, table, sizeof(probabilities)/sizeof(probabilities[0]));
-    printf("Selected %d\n", selected);
-}
-
-2. SIMD-ускорение (AVX2)
-
-Intel Advanced Vector Extensions (AVX2) поддерживают одновременную обработку 8 пар вещественных чисел двойной точности (double) за одну инструкцию. Используя SIMD-векторизацию, можно значительно ускорить вычислительные этапы, такие как расчеты вероятностей и выборку индексов.
-
-Пример реализации выборки с использованием AVX2:
-
-Сначала определим макросы для удобного обращения к AVX2-инструкциям:
-
-#include <immintrin.h>
-
-#define LOAD_M256D(addr) _mm256_loadu_pd((const double*) addr)
-#define STORE_M256D(addr, val) _mm256_storeu_pd((double*) addr, val)
-#define SET_ONE _mm256_set1_pd(1.0)
-#define CMP_GT(a,b) _mm256_cmp_pd(a, b, _CMP_GT_OQ)
-#define MOVEMASK(pd) _mm256_movemask_pd(pd)
-
-Теперь реализуйте процедуру выборки с использованием SIMD:
-
-int select_random_simd(double randomValue, const double* probabilities, int length) {
-    __m256d comp_value = SET_ONE * randomValue;
-    __m256d current_probs;
-    int first_valid = -1;
-
-    for(int i = 0; i < length; i += 8) {
-        current_probs = LOAD_M256D(&probabilities[i]);
-        __m256d comparison = CMP_GT(comp_value, current_probs);
-        int bitmask = MOVEMASK(comparison);
-
-        if(bitmask != 0) {
-            first_valid = i + __builtin_ctzll(bitmask); // Получаем первый ненулевой бит
-            break;
-        }
-    }
-
-    return first_valid != -1 ? first_valid : length - 1;
-}
-
-Как работает выборка?
-
-Этот пример перебирает массив вероятностей, сравнивая каждый блок из 8 элементов с пороговым значением (случайным числом). Результат сравнения сохраняется в виде битовой маски, где единица означает, что соответствующее значение меньше порога. Затем определяется первая позиция, где произошло превышение порога.
-
-Полностью интегрированный пример:
-
-#include <iostream>
-#include <random>
-#include <cstdio>
-#include <immintrin.h>
-
-// Определение макросов
-#define LOAD_M256D(addr) _mm256_loadu_pd((const double*) addr)
-#define STORE_M256D(addr, val) _mm256_storeu_pd((double*) addr, val)
-#define SET_ONE _mm256_set1_pd(1.0)
-#define CMP_GT(a,b) _mm256_cmp_pd(a, b, _CMP_GT_OQ)
-#define MOVEMASK(pd) _mm256_movemask_pd(pd)
-
-// Функция быстрой выборки с использованием AVX2
-int select_random_simd(double randomValue, const double* probabilities, int length) {
-    __m256d comp_value = SET_ONE * randomValue;
-    __m256d current_probs;
-    int first_valid = -1;
-
-    for(int i = 0; i < length; i += 8) {
-        current_probs = LOAD_M256D(&probabilities[i]);
-        __m256d comparison = CMP_GT(comp_value, current_probs);
-        int bitmask = MOVEMASK(comparison);
-
-        if(bitmask != 0) {
-            first_valid = i + __builtin_ctzll(bitmask); // Найти первую позицию
-            break;
-        }
-    }
-
-    return first_valid != -1 ? first_valid : length - 1;
-}
-
-int main() {
-    // Случайные вероятности
-    double probabilities[] = {0.1, 0.2, 0.3, 0.4};
-    std::default_random_engine engine(std::chrono::system_clock::now().time_since_epoch().count());
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-
-    // Несколько примеров выборки
-    for(int i = 0; i < 10; ++i) {
-        double rnd = dist(engine);
-        int sel = select_random_simd(rnd, probabilities, sizeof(probabilities)/sizeof(probabilities[0]));
-        std::cout << "Selected: " << sel << "\n";
-    }
-
-    return 0;
-}
-
-3. Parallel Processing (OpenMP)
-
-Параллельное исполнение обеспечивает возможность разделить большую задачу на части, каждая из которых исполняется отдельным потоком. Библиотека OpenMP предоставляет удобный способ запуска параллельных процессов с минимальными изменениями исходного кода.
-
-Рассмотрим простейший пример парализации основного цикла:
-
-#include <omp.h>
-
-void process_ants_parallel(int NUM_THREADS, int PARAMETR_SIZE, int ANT_SIZE) {
-    #pragma omp parallel for num_threads(NUM_THREADS)
-    for(int bx = 0; bx < ANT_SIZE; bx++) {
-        for(int tx = 0; tx < PARAMETR_SIZE; tx++) {
-            // Ваш внутренний код тут...
-        }
-    }
-}
-
-Важные моменты:
-
-Атрибут #pragma omp parallel for автоматически распределяет итерации цикла между указанными потоками.
-Используйте разумное количество потоков (обычно равное количеству физических ядер процессора).
-
-Подытоживая:
-
-Мы рассмотрели три различных способа повышения эффективности вашей программы:
-
-Alias Method — чрезвычайно эффективный способ преобразования равномерного распределения в произвольное с постоянной скоростью выборки.
-SIMD (AVX2) — ускоряет массовые арифметические операции, повышая производительность при обработке блоков данных.
-Parallel Processing (OpenMP) — простой и надежный способ достижения высокой производительности за счет многоядерных процессоров.
-
-Каждый из этих подходов направлен на разные аспекты проблемы и позволяет добиться значительных улучшений в зависимости от конкретных требований и ограничений среды разработки.
-*/

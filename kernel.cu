@@ -928,19 +928,55 @@ __device__ void go_mass_probability(int tx, double* pheromon, double* kol_enter,
         norm_matrix_probability[MAX_VALUE_SIZE * tx + i] = (svertka[i]) / sumVector + norm_matrix_probability[MAX_VALUE_SIZE * tx + i - 1]; //Нормаирование значений матрицы с накоплением
     }
 }
+__device__ void go_mass_probability_optimized(int tx, double* __restrict__ pheromon, double* __restrict__ kol_enter, double* __restrict__ norm_matrix_probability) {
+    // Используем регистры и shared memory для лучшей производительности
+    __shared__ double shared_sums[BLOCK_SIZE];
+
+    const int start_idx = MAX_VALUE_SIZE * tx;
+    double sumVector = 0.0;
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        sumVector += pheromon[start_idx + i];
+    }
+
+    // Безопасное деление - проверка на ноль
+    const double inv_sumVector = (sumVector != 0.0) ? 1.0 / sumVector : 1.0;
+    double svertka_sum = 0.0;
+
+    // Объединяем два прохода в один для лучшей локальности данных
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        const double pheromon_norm = pheromon[start_idx + i] * inv_sumVector;
+        const double svertka_val = probability_formula(pheromon_norm, kol_enter[start_idx + i]);
+        norm_matrix_probability[start_idx + i] = svertka_val;
+        svertka_sum += svertka_val;
+    }
+
+    // Безопасное деление для нормализации
+    const double inv_svertka_sum = (svertka_sum != 0.0) ? 1.0 / svertka_sum : 1.0;
+
+    // Вычисляем cumulative distribution
+    double cumulative = 0.0;
+    for (int i = 0; i < MAX_VALUE_SIZE; i++) {
+        cumulative += norm_matrix_probability[start_idx + i] * inv_svertka_sum;
+        norm_matrix_probability[start_idx + i] = cumulative;
+    }
+    // Гарантируем, что последнее значение равно точно 1.0 (из-за ошибок округления)
+    if (tx == 0) { // Только один поток в блоке
+        norm_matrix_probability[start_idx + MAX_VALUE_SIZE - 1] = 1.0;
+    }
+}
 
 __global__ void go_mass_probability_thread(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
     int tx = threadIdx.x; // индекс потока (столбца)
-    go_mass_probability(tx, pheromon, kol_enter, norm_matrix_probability);
+    go_mass_probability_optimized(tx, pheromon, kol_enter, norm_matrix_probability);
 }
 __global__ void go_mass_probability_block(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
     int tx = blockIdx.x; // индекс потока (столбца)
-    go_mass_probability(tx, pheromon, kol_enter, norm_matrix_probability);
+    go_mass_probability_optimized(tx, pheromon, kol_enter, norm_matrix_probability);
 }
 __global__ void go_mass_probability_only(double* pheromon, double* kol_enter, double* norm_matrix_probability) {
     int tx = threadIdx.x + blockIdx.x * blockDim.x;  // индекс  (параметра) 
     if (tx < PARAMETR_SIZE) {
-        go_mass_probability(tx, pheromon, kol_enter, norm_matrix_probability);
+        go_mass_probability_optimized(tx, pheromon, kol_enter, norm_matrix_probability);
     }
 }
 
@@ -1892,6 +1928,42 @@ __global__ void decrease_pheromon_iteration(double* pheromon) {
         pheromon[tx] = pheromon[tx] * PARAMETR_RO;
     }
 }
+__global__ void decrease_pheromon_iteration_optimized(double* __restrict__ pheromon) {
+    const double parametr_ro = PARAMETR_RO;
+    const int total_size = PARAMETR_SIZE * MAX_VALUE_SIZE;
+
+    // 1. Определяем глобальный ID потока
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    const int threads_total = gridDim.x * blockDim.x;
+
+    // 2. Равномерно распределяем работу между потоками
+    const int elements_per_thread = (total_size + threads_total - 1) / threads_total;
+
+    // 3. Каждый поток получает свой диапазон индексов
+    int start_idx = tid * elements_per_thread;
+    int end_idx = min(start_idx + elements_per_thread, total_size);
+
+    // 4. Векторизованная обработка (основная часть)
+    int idx = start_idx;
+    for (; idx <= end_idx - 4; idx += 4) {
+        // Загружаем 4 элемента как один вектор double4
+        double4 vec = *reinterpret_cast<double4*>(&pheromon[idx]);
+
+        // Умножаем все 4 элемента одновременно
+        vec.x *= parametr_ro;
+        vec.y *= parametr_ro;
+        vec.z *= parametr_ro;
+        vec.w *= parametr_ro;
+
+        // Сохраняем обратно
+        *reinterpret_cast<double4*>(&pheromon[idx]) = vec;
+    }
+
+    // 5. Обработка оставшихся элементов (хвост)
+    for (; idx < end_idx; idx++) {
+        pheromon[idx] *= parametr_ro;
+    }
+}
 
 __device__ void only_add_pheromon_iteration_par(int tx, double* pheromon, double* kol_enter, int* agent_node, double* OF) {
     //tx - номер параметра
@@ -2621,7 +2693,7 @@ static int start_CUDA() {
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device);
             }
         }
     }
@@ -2659,8 +2731,8 @@ static int start_CUDA() {
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
     CUDA_CHECK(cudaEventDestroy(start));
-    std::cout << "Time CUDA:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile   << "Time CUDA:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile   << "Time CUDA:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -2832,7 +2904,7 @@ static int start_CUDA_Time() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -2888,7 +2960,7 @@ static int start_CUDA_Time() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device);
             }
         }
     }
@@ -2936,8 +3008,8 @@ static int start_CUDA_Time() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -3108,7 +3180,7 @@ static int start_CUDA_Const() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -3164,7 +3236,7 @@ static int start_CUDA_Const() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device );
             }
         }
     }
@@ -3211,8 +3283,8 @@ static int start_CUDA_Const() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -3382,7 +3454,7 @@ static int start_CUDA_only_block_Time() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -3438,7 +3510,7 @@ static int start_CUDA_only_block_Time() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, *global_minOf_in_device, *global_maxOf_in_device, *kol_hash_fail_in_device );
             }
         }
     CUDA_CHECK(cudaEventRecord(stop, 0));
@@ -3484,8 +3556,8 @@ static int start_CUDA_only_block_Time() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA Time only block:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA Time only block:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA Time only block:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime5 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA Time only block:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << SumgpuTime4 << ";" << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -3636,7 +3708,7 @@ static int start_CUDA_non_hash() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -3694,7 +3766,7 @@ static int start_CUDA_non_hash() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device );
             }
         }
     }
@@ -3740,8 +3812,8 @@ static int start_CUDA_non_hash() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -3921,7 +3993,7 @@ static int start_CUDA_ant() {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant_parametr[i * PARAMETR_SIZE + j] << " "; 
@@ -4204,7 +4276,7 @@ static int start_CUDA_ant_Const() {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -4478,7 +4550,7 @@ static int start_CUDA_ant_decrease_par_Const() {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -4759,7 +4831,7 @@ static int start_CUDA_ant_decrease_par_block_Const() {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -5041,7 +5113,7 @@ static int start_CUDA_ant_decrease_ant_Const() {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -5324,7 +5396,7 @@ static int start_CUDA_ant_decrease_ant_block_Const() {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -5607,7 +5679,7 @@ static int start_CUDA_ant_decrease_ant_par_Const() {
                 CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -5897,7 +5969,7 @@ static int start_CUDA_ant_decrease_ant_par_transp_Const() {
                 CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -6207,7 +6279,7 @@ static int start_CUDA_ant_add_CPU_Time() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -6731,7 +6803,7 @@ static int start_CUDA_ant_add_CPU_Const() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -7208,7 +7280,7 @@ static int start_CUDA_ant_add_CPU_non_hash() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -7433,7 +7505,7 @@ static int start_CUDA_ant_add_CPU2_Time() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(ant_parametr, ant_parametr_dev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " ";
@@ -7991,7 +8063,7 @@ static int start_CUDA_ant_non_hash() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -8286,7 +8358,7 @@ static int start_CUDA_ant_par() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -8582,7 +8654,7 @@ static int start_CUDA_ant_par_not_f() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             //CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     //std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -8882,7 +8954,7 @@ static int start_CUDA_ant_par_sort() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             //CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     //std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -9402,7 +9474,7 @@ static int start_CUDA_ant_par_Const() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -9672,7 +9744,7 @@ static int start_CUDA_opt() {
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device);
             }
         }
     }
@@ -9712,8 +9784,8 @@ static int start_CUDA_opt() {
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
     CUDA_CHECK(cudaEventDestroy(start));
-    std::cout << "Time CUDA opt:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -9895,7 +9967,7 @@ static int start_CUDA_opt_Time() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -9930,7 +10002,7 @@ static int start_CUDA_opt_Time() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device);
             }
         }
     }
@@ -9977,8 +10049,8 @@ static int start_CUDA_opt_Time() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA opt Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt Time:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -10159,7 +10231,7 @@ static int start_CUDA_opt_Const() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -10194,7 +10266,7 @@ static int start_CUDA_opt_Const() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device);
             }
         }
     }
@@ -10240,8 +10312,8 @@ static int start_CUDA_opt_Const() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA opt Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt Const:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -10416,7 +10488,7 @@ static int start_CUDA_opt_non_hash() {
                 CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
                 CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+                std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
                 for (int i = 0; i < ANT_SIZE; ++i) {
                     for (int j = 0; j < PARAMETR_SIZE; ++j) {
                         std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -10451,7 +10523,7 @@ static int start_CUDA_opt_non_hash() {
             if ((nom_iter + 1) % kol_shag_stat == 0) {
                 int NomStatistics = nom_iter / kol_shag_stat;
                 if (PRINT_INFORMATION) { std::cout << "nom_iter=" << nom_iter << " " << kol_shag_stat << " NomStatistics=" << NomStatistics << " "; }
-                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device / PARAMETR_SIZE);
+                update_all_Stat(NomStatistics, 0, 0, SumgpuTime1, SumgpuTime2, SumgpuTime3, SumgpuTime4, SumgpuTime5, SumgpuTime6, SumgpuTime7, 0, global_minOf, global_maxOf, *kol_hash_fail_in_device);
             }
         }
     }
@@ -10497,8 +10569,8 @@ static int start_CUDA_opt_non_hash() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA opt non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -10687,7 +10759,7 @@ static int start_CUDA_opt_ant() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -10954,7 +11026,7 @@ static int start_CUDA_opt_ant_Const() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -11214,7 +11286,7 @@ static int start_CUDA_opt_ant_non_hash() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -11494,7 +11566,7 @@ static int start_CUDA_opt_ant_par() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -11998,7 +12070,7 @@ static int start_CUDA_opt_ant_par_Const() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -12189,7 +12261,7 @@ static int start_CUDA_opt_one_GPU() {
         CUDA_CHECK(cudaMemcpy(ant, antdev, numBytesInt_matrix_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
         CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-        std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+        std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
         for (int i = 0; i < ANT_SIZE; ++i) {
             for (int j = 0; j < PARAMETR_SIZE; ++j) {
                 //std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -12236,8 +12308,8 @@ static int start_CUDA_opt_one_GPU() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA opt one:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device  << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt one:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt one:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device  << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt one:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -12359,8 +12431,8 @@ static int start_CUDA_opt_one_GPU_local() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA opt one local:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt one local:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt one local:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt one local:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -12491,8 +12563,8 @@ static int start_CUDA_opt_one_GPU_non_hash() {
 
     CUDA_CHECK(cudaEventDestroy(startAll));
     CUDA_CHECK(cudaEventDestroy(stop));
-    std::cout << "Time CUDA opt one non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
-    logFile << "Time CUDA opt one non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device / PARAMETR_SIZE << ";" << std::endl;
+    std::cout << "Time CUDA opt one non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
+    logFile << "Time CUDA opt one non hash:;" << AllgpuTime << "; " << AllgpuTime1 << "; " << SumgpuTime1 << "; " << SumgpuTime2 << "; " << SumgpuTime3 << ";" << *global_minOf_in_device << "; " << *global_maxOf_in_device << ";" << *kol_hash_fail_in_device << ";" << std::endl;
     delete global_maxOf_in_device;
     delete global_minOf_in_device;
     delete kol_hash_fail_in_device;
@@ -12933,166 +13005,198 @@ static int start_CUDA_opt_one_GPU_ant_non_hash() {
     return 0;
 }
 
-// ----------------- Kernel: Initializing Hash Table -----------------
-void initializeHashTable_omp(HashEntry* hashTable, int size) {
-#pragma omp parallel for
-    for (int i = 0; i < size; i++) {
-        hashTable[i].key = ZERO_HASH_RESULT;
-        hashTable[i].value = 0.0;
-    }
-}
-
-// ----------------- Kernel: Initializing Hash Table -----------------
+// ----------------- Инициализация хэш-таблицы -----------------
 void initializeHashTable_non_cuda(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
     for (int i = 0; i < size; i++) {
         hashTable[i].key = ZERO_HASH_RESULT;
         hashTable[i].value = 0.0;
     }
+    //std::cout << "Hash table initialized with size: " << size << std::endl;
 }
 
-// ----------------- MurmurHash64A Implementation -----------------
-unsigned long long murmurHash64A_non_cuda(unsigned long long key, unsigned long long seed = 0xDEADBEEFDEADBEEF) {
-    unsigned long long m = 0xc6a4a7935bd1e995;
-    int r = 47;
-    unsigned long long h = seed ^ (8 * m);
-
-    unsigned long long k = key;
-    k *= m;
-    k ^= k >> r;
-    k *= m;
-
-    h ^= k;
-    h *= m;
-
-    h ^= h >> r;
-    h *= m;
-    h ^= h >> r;
-
-    return h;
-}
-
-// ----------------- Improved Hash Function Using MurmurHash -----------------
-unsigned long long betterHashFunction_non_cuda(unsigned long long key) {
-    return murmurHash64A_non_cuda(key) % HASH_TABLE_SIZE;
-}
-
-// ----------------- Key Generation Function -----------------
-unsigned long long generateKey_non_cuda(const int* agent_node, int bx) {
-    unsigned long long key = 0;
-    unsigned long long factor = 1;
-    for (int i = 0; i < PARAMETR_SIZE; i++) {
-        int val = agent_node[bx * PARAMETR_SIZE + i];
-//        std::cout << val << " ";
-        key += val * factor;
-        factor *= MAX_VALUE_SIZE;
+// ----------------- Очистка хэш-таблицы -----------------
+void clearHashTable(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key = ZERO_HASH_RESULT;
+        hashTable[i].value = 0.0;
     }
-//    std::cout <<" key=" << key;
-//    std::cout << std::endl;
+    // std::cout << "Hash table cleared" << std::endl;
+}
+
+// ----------------- Быстрая хэш-функция -----------------
+inline unsigned long long fastHashFunction(unsigned long long key) {
+    // Оптимизированная хэш-функция для MSVC
+    key = (~key) + (key << 21);
+    key = key ^ (key >> 24);
+    key = (key + (key << 3)) + (key << 8);
+    key = key ^ (key >> 14);
+    key = (key + (key << 2)) + (key << 4);
+    key = key ^ (key >> 28);
+    key = key + (key << 31);
+
+    // Быстрый модуль через битовую маску
+    return key & (HASH_TABLE_SIZE - 1);
+}
+
+// ----------------- Генерация ключа из пути агента -----------------
+inline unsigned long long generateKey(const int* agent_path) {
+    // Полиномиальное хэширование для лучшего распределения
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long key = 14695981039346656037ULL;
+
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        key ^= static_cast<unsigned long long>(agent_path[i]);
+        key *= prime;
+    }
+
     return key;
 }
 
-// ---------------- - Hash Table Search with Quadratic Probing---------------- -
-double getCachedResultOptimized_omp(HashEntry * hashTable, const int* agent_node, int bx) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
+// ----------------- Альтернативная генерация ключа -----------------
+inline unsigned long long generateKeySimple(const int* agent_path) {
+    unsigned long long key = 0;
 
-#pragma omp parallel for
-    for (int i = 1; i <= MAX_PROBES; i++) {
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx;
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        key = key * MAX_VALUE_SIZE + agent_path[i];
+    }
 
-        // Используем критическую секцию для безопасного доступа к хэш-таблице
-#pragma omp critical
-        {
-            if (hashTable[idx].key == key) {
-                return hashTable[idx].value; // Found
+    return key;
+}
+
+// ----------------- Поиск в хэш-таблице -----------------
+double getCachedResultOptimized_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    // Поиск с квадратичным probing
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+        // Используем совместимый макрос для предсказания ветвлений
+        if (hashTable[new_idx].key == key) {
+            return hashTable[new_idx].value; // Найдено
+        }
+        if (hashTable[new_idx].key == ZERO_HASH_RESULT) {
+            return -1.0; // Не найдено - пустой слот
+        }
+    }
+
+    return -1.0; // Не найдено после всех проб
+}
+
+// ----------------- Сохранение в хэш-таблицу -----------------
+bool saveToCacheOptimized_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx, double value) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    // Поиск пустого слота или обновление существующего
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+        if (hashTable[new_idx].key == ZERO_HASH_RESULT || hashTable[new_idx].key == key) {
+            // Найден пустой слот или существующий ключ
+            hashTable[new_idx].key = key;
+            hashTable[new_idx].value = value;
+            return true;
+        }
+    }
+
+    // Не удалось найти слот
+    //std::cerr << "Warning: Hash table full, could not insert key" << std::endl;
+    return false;
+}
+
+// ----------------- Потокобезопасная версия поиска -----------------
+double getCachedResultOptimized_OMP_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    double result = -1.0;
+
+    // Критическая секция для потокобезопасного доступа
+#pragma omp critical(hash_lookup)
+    {
+        for (int i = 0; i < MAX_PROBES; i++) {
+            unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
+
+            if (hashTable[new_idx].key == key) {
+                result = hashTable[new_idx].value;
+                break;
             }
-            if (hashTable[idx].key == ZERO_HASH_RESULT) {
-                return -1.0; // Not found and slot is empty
+            if (hashTable[new_idx].key == ZERO_HASH_RESULT) {
+                result = -1.0;
+                break;
             }
         }
     }
-    return -1.0; // Not found after maximum probes
+
+    return result;
 }
 
-// ----------------- Hash Table Search with Quadratic Probing -----------------
-double getCachedResultOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, int bx) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
-    int i = 1;
+// ----------------- Потокобезопасная версия сохранения -----------------
+bool saveToCacheOptimized_OMP_non_cuda(HashEntry* __restrict hashTable, const int* __restrict agent_path, int bx, double value) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
 
-    while (i <= MAX_PROBES) {
-        if (hashTable[idx].key == key) {
-            return hashTable[idx].value; // Found
-        }
-        if (hashTable[idx].key == ZERO_HASH_RESULT) {
-            return -1.0; // Not found and slot is empty
-        }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx;
-        i++;
-    }
-    return -1.0; // Not found after maximum probes
-}
+    bool success = false;
 
-// ----------------- Hash Table Insertion with Quadratic Probing -----------------
-void saveToCacheOptimized_omp(HashEntry* hashTable, const int* agent_node, int bx, double value) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
+#pragma omp critical(hash_save)
+    {
+        for (int i = 0; i < MAX_PROBES; i++) {
+            unsigned long long new_idx = (idx + static_cast<unsigned long long>(i * i)) & mask;
 
-#pragma omp parallel for
-    for (int i = 1; i <= MAX_PROBES; i++) {
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx;
-        unsigned long long expected = ZERO_HASH_RESULT;
-        unsigned long long old_key;
-
-        // Используем критическую секцию для безопасного доступа к хэш-таблице
-#pragma omp critical
-        {
-            old_key = hashTable[idx].key;
-
-            if (old_key == expected) {
-                // Successfully inserted
-                hashTable[idx].key = key;
-                hashTable[idx].value = value;
-                return;
-            }
-            else if (old_key == key) {
-                // Key already exists
-                hashTable[idx].value = value; // Update value
-                return;
+            if (hashTable[new_idx].key == ZERO_HASH_RESULT || hashTable[new_idx].key == key) {
+                hashTable[new_idx].key = key;
+                hashTable[new_idx].value = value;
+                success = true;
+                break;
             }
         }
     }
-    // Если таблица полна, обработайте ошибку или игнорируйте
+
+    return success;
 }
 
-// ----------------- Hash Table Insertion with Quadratic Probing -----------------
-void saveToCacheOptimized_non_cuda(HashEntry* hashTable, const int* agent_node, int bx, double value) {
-    unsigned long long key = generateKey_non_cuda(agent_node, bx);
-    unsigned long long idx = betterHashFunction_non_cuda(key);
-    int i = 1;
+// ----------------- Статистика хэш-таблицы -----------------
+void printHashTableStats(const HashEntry* hashTable, int size) {
+    int used_slots = 0;
 
-    while (i <= MAX_PROBES) {
-        unsigned long long expected = ZERO_HASH_RESULT;
-        unsigned long long old_key = hashTable[idx].key;
-
-        if (old_key == expected) {
-            // Successfully inserted
-            hashTable[idx].key = key;
-            hashTable[idx].value = value;
-            return;
+#pragma omp parallel for reduction(+:used_slots) schedule(static)
+    for (int i = 0; i < size; i++) {
+        if (hashTable[i].key != ZERO_HASH_RESULT) {
+            used_slots++;
         }
-        else if (old_key == key) {
-            // Key already exists
-            hashTable[idx].value = value; // Update value
-            return;
-        }
-
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) {new_idx %= HASH_TABLE_SIZE;}idx = new_idx;
-        i++;
     }
-    // If the table is full, handle the error or ignore
+
+    double load_factor = static_cast<double>(used_slots) / size;
+
+    std::cout << "=== Hash Table Statistics ===" << std::endl;
+    std::cout << "Size: " << size << std::endl;
+    std::cout << "Used slots: " << used_slots << std::endl;
+    std::cout << "Load factor: " << (load_factor * 100.0) << "%" << std::endl;
+    std::cout << "Max probes: " << MAX_PROBES << std::endl;
+    std::cout << "=============================" << std::endl;
 }
 
+// ----------------- Коэффициент заполнения -----------------
+double getHashTableLoadFactor(const HashEntry* hashTable, int size) {
+    int used_slots = 0;
+
+#pragma omp parallel for reduction(+:used_slots) schedule(static)
+    for (int i = 0; i < size; i++) {
+        if (hashTable[i].key != ZERO_HASH_RESULT) {
+            used_slots++;
+        }
+    }
+
+    return static_cast<double>(used_slots) / size;
+}
 // Функция для вычисления вероятностной формулы
 double probability_formula_non_cuda(double pheromon, double kol_enter) {
     double res = 0;
@@ -13348,7 +13452,7 @@ void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probabi
             }
             auto start = std::chrono::high_resolution_clock::now();
             // Проверка наличия решения в Хэш-таблице
-            double cachedResult = getCachedResultOptimized_omp(hashTable, agent_node, bx);
+            double cachedResult = getCachedResultOptimized_OMP_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
             int nom_iteration = 0;
             if (cachedResult == -1.0) {
                 // Если значение не найдено в ХЭШ, то заносим новое значение
@@ -13356,7 +13460,7 @@ void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probabi
                 OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
                 auto end_OF = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
-                saveToCacheOptimized_omp(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_OMP_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             }
             else {
                 // Если значение в Хэш-найдено, то агент "нулевой"
@@ -13388,12 +13492,12 @@ void go_all_agent_omp(int gpuTime, double* parametr, double* norm_matrix_probabi
                         }
 
                         // Проверка наличия решения в Хэш-таблице
-                        cachedResult = getCachedResultOptimized_omp(hashTable, agent_node, bx);
+                        cachedResult = getCachedResultOptimized_OMP_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                         nom_iteration++;
                         kol_hash_fail++;
                     }
                     OF[bx] = BenchShafferaFunction_omp(&agent[bx * PARAMETR_SIZE]);
-                    saveToCacheOptimized_omp(hashTable, agent_node, bx, OF[bx]);
+                    saveToCacheOptimized_OMP_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                     break;
                 default:
                     OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -13461,7 +13565,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
             SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
             auto start = std::chrono::high_resolution_clock::now();
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
             auto end_OF = std::chrono::high_resolution_clock::now();
             HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
         /*
@@ -13477,7 +13581,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                 auto end_OF = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
                 auto start_SaveHash = std::chrono::high_resolution_clock::now();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 auto end_SaveHash = std::chrono::high_resolution_clock::now();
                 HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
         }
@@ -13516,7 +13620,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                         SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     // Проверка наличия решения в Хэш-таблице
                         start_OF_2 = std::chrono::high_resolution_clock::now();
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                         end_OF_2 = std::chrono::high_resolution_clock::now();
                         HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     nom_iteration = nom_iteration + 1;
@@ -13528,7 +13632,7 @@ void go_all_agent_non_cuda_time(int gpuTime, double* parametr, double* norm_matr
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     start_OF_2 = std::chrono::high_resolution_clock::now();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 break;
@@ -13566,12 +13670,12 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
         }
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         int nom_iteration = 0;
         if (cachedResult == -1.0) {
             // Если значение не найденов ХЭШ, то заносим новое значение
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
         }
         else {
             //Если значение в Хэш-найдено, то агент "нулевой"
@@ -13602,13 +13706,13 @@ void go_all_agent_non_cuda(int gpuTime, double* parametr, double* norm_matrix_pr
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                     }
                     // Проверка наличия решения в Хэш-таблице
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     nom_iteration = nom_iteration + 1;
                     kol_hash_fail = kol_hash_fail + 1;
                 }
 
                 OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 break;
             default:
                 OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -13640,13 +13744,13 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
     }
 
     // Проверка наличия решения в Хэш-таблице
-    double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+    double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
     int nom_iteration = 0;
 
     if (cachedResult == -1.0) {
         // Если значение не найдено в ХЭШ, то заносим новое значение
         OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-        saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+        saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
     }
     else {
         // Если значение в Хэш-найдено, то агент "нулевой"
@@ -13679,7 +13783,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
                     agent[bx * PARAMETR_SIZE + tx] = parametr[tx * MAX_VALUE_SIZE + k];
                 }
                 // Проверка наличия решения в Хэш-таблице
-                cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                 nom_iteration++;
                 mtx.lock();
                 kol_hash_fail++;
@@ -13687,7 +13791,7 @@ void process_agent(int bx, double* parametr, double* norm_matrix_probability, do
             }
 
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             break;
         default:
             OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -13947,7 +14051,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
         SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
         auto start = std::chrono::high_resolution_clock::now();
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         auto end_OF = std::chrono::high_resolution_clock::now();
         HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
         /*
@@ -13963,7 +14067,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
             auto end_OF = std::chrono::high_resolution_clock::now();
             totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
             auto start_SaveHash = std::chrono::high_resolution_clock::now();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             auto end_SaveHash = std::chrono::high_resolution_clock::now();
             HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
         }
@@ -14002,7 +14106,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
                     SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     // Проверка наличия решения в Хэш-таблице
                     start_OF_2 = std::chrono::high_resolution_clock::now();
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     nom_iteration = nom_iteration + 1;
@@ -14014,7 +14118,7 @@ void go_all_agent_transp_non_cuda_time(int gpuTime, double* parametr, double* no
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 start_OF_2 = std::chrono::high_resolution_clock::now();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 break;
@@ -14048,12 +14152,12 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
             agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
         }
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         int nom_iteration = 0;
         if (cachedResult == -1.0) {
             // Если значение не найденов ХЭШ, то заносим новое значение
             OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
         }
         else {
             //Если значение в Хэш-найдено, то агент "нулевой"
@@ -14082,12 +14186,12 @@ void go_all_agent_transp_non_cuda(int gpuTime, double* parametr, double* norm_ma
                         agent[bx * PARAMETR_SIZE + tx] = parametr[tx + k * PARAMETR_SIZE];
                     }
                     // Проверка наличия решения в Хэш-таблице
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     nom_iteration = nom_iteration + 1;
                     kol_hash_fail = kol_hash_fail + 1;
                 }
                 OF[bx] = BenchShafferaFunction_non_cuda(&agent[bx * PARAMETR_SIZE]);
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 break;
             default:
                 OF[bx] = cachedResult; // Обработка случая, если TYPE_ACO не соответствует ни одному из вариантов
@@ -14154,7 +14258,7 @@ int start_omp() {
     // Выделение памяти для хэш-таблицы на CPU
     HashEntry* hashTable = new HashEntry[HASH_TABLE_SIZE];
     // Вызов функции инициализации
-    initializeHashTable_omp(hashTable, HASH_TABLE_SIZE);
+    initializeHashTable_non_cuda(hashTable, HASH_TABLE_SIZE);
 
     double global_maxOf = -std::numeric_limits<double>::max();
     double global_minOf = std::numeric_limits<double>::max();
@@ -15397,76 +15501,124 @@ private:
     }
 };
 
+// Структура для классической хэш-таблицы
 struct HashEntry_classic {
-    std::vector<int> key; // Ключ (вектор пути)
-    double value; // Значение
+    std::vector<int> key;
+    double value;
+
+    // Конструктор по умолчанию
+    HashEntry_classic() : value(0.0) {}
+
+    // Проверка на пустоту
+    bool isEmpty() const {
+        return key.empty();
+    }
+
+    // Проверка совпадения ключей
+    bool keyEquals(const std::vector<int>& other) const {
+        if (key.size() != other.size()) return false;
+        for (size_t i = 0; i < key.size(); ++i) {
+            if (key[i] != other[i]) return false;
+        }
+        return true;
+    }
 };
 
-// Функция инициализации хэш-таблицы
+// ----------------- Функция инициализации хэш-таблицы -----------------
 void initializeHashTable_classic(HashEntry_classic* hashTable, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         hashTable[i] = HashEntry_classic(); // Инициализируем каждый элемент
     }
+    //std::cout << "Classic hash table initialized with size: " << size << std::endl;
 }
 
-// ----------------- Key Generation Function -----------------
+// ----------------- Оптимизированная генерация ключа -----------------
 unsigned long long generateKey_classic(const std::vector<int>& path) {
     unsigned long long key = 0;
     unsigned long long factor = 1;
+
     for (int val : path) {
-        key += val * factor;
-        factor *= MAX_VALUE_SIZE; // MAX_VALUE_SIZE - максимальное значение, которое может принимать элемент пути
+        key += static_cast<unsigned long long>(val) * factor;
+
+        // Проверка переполнения
+        if (factor > ULLONG_MAX / MAX_VALUE_SIZE) {
+            // Используем хэширование при переполнении
+            key = key * 131 + val; // Простая хэш-функция
+            factor = 1;
+        }
+        else {
+            factor *= MAX_VALUE_SIZE;
+        }
     }
     return key;
 }
 
-// ----------------- Hash Function for Path -----------------
-unsigned long long hashFunction_classic(const std::vector<int>& path) {
-    unsigned long long key = generateKey_classic(path);
-    return betterHashFunction_non_cuda(key);
+// ----------------- Быстрая хэш-функция -----------------
+unsigned long long hashFunction_classic_fast(const std::vector<int>& path) {
+    // Полиномиальное хэширование для лучшего распределения
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long hash = 14695981039346656037ULL;
+
+    for (int val : path) {
+        hash ^= static_cast<unsigned long long>(val);
+        hash *= prime;
+    }
+
+    return hash % HASH_TABLE_SIZE;
 }
 
-double getCachedResultOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path) {
-    unsigned long long key = hashFunction_classic(path);
-    unsigned long long idx = key;
-    int i = 1;
+// ----------------- Альтернативная хэш-функция -----------------
+unsigned long long hashFunction_classic_simple(const std::vector<int>& path) {
+    unsigned long long hash = 0;
 
-    while (i <= MAX_PROBES) {
-        if (hashTable[idx].key == path) {
-            return hashTable[idx].value; // Найдено
+    for (int val : path) {
+        hash = hash * 31 + val; // Простая, но эффективная хэш-функция
+    }
+
+    return hash % HASH_TABLE_SIZE;
+}
+
+// ----------------- Оптимизированный поиск в хэш-таблице -----------------
+double getCachedResultOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path) {
+    unsigned long long key_hash = hashFunction_classic_fast(path);
+
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (key_hash + static_cast<unsigned long long>(i * i)) % HASH_TABLE_SIZE;
+
+        if (hashTable[new_idx].keyEquals(path)) {
+            return hashTable[new_idx].value; // Найдено
         }
-        if (hashTable[idx].key.empty()) {
+        if (hashTable[new_idx].isEmpty()) {
             return -1.0; // Не найдено и слот пуст
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        i++;
     }
     return -1.0; // Не найдено после максимального количества проб
 }
 
-void saveToCacheOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path, double value) {
-    unsigned long long key = hashFunction_classic(path);
-    unsigned long long idx = key;
-    int i = 1;
+// ----------------- Оптимизированное сохранение в хэш-таблицу -----------------
+bool saveToCacheOptimized_classic_ant(HashEntry_classic* hashTable, const std::vector<int>& path, double value) {
+    unsigned long long key_hash = hashFunction_classic_fast(path);
 
-    while (i <= MAX_PROBES) {
-        if (hashTable[idx].key.empty()) {
+    for (int i = 0; i < MAX_PROBES; i++) {
+        unsigned long long new_idx = (key_hash + static_cast<unsigned long long>(i * i)) % HASH_TABLE_SIZE;
+
+        if (hashTable[new_idx].isEmpty()) {
             // Успешно вставлено
-            hashTable[idx].key = path;
-            hashTable[idx].value = value;
-            return;
+            hashTable[new_idx].key = path;
+            hashTable[new_idx].value = value;
+            return true;
         }
-        else if (hashTable[idx].key == path) {
-            // Ключ уже существует
-            hashTable[idx].value = value; // Обновление значения
-            return;
+        else if (hashTable[new_idx].keyEquals(path)) {
+            // Ключ уже существует - обновление значения
+            hashTable[new_idx].value = value;
+            return true;
         }
-        unsigned long long new_idx = idx + static_cast<unsigned long long>(i * i); if (new_idx >= HASH_TABLE_SIZE) { new_idx %= HASH_TABLE_SIZE; }idx = new_idx;
-        i++;
     }
-    // Если таблица полна, обработайте ошибку или проигнорируйте
-}
 
+    // Таблица переполнена
+    //std::cerr << "Warning: Hash table full, could not insert path" << std::endl;
+    return false;
+}
 // Определение статических членов класса PG
 double PG::alf1 = 1;
 double PG::alf2 = 1;
@@ -16891,7 +17043,7 @@ static int start_CUDA_ant_add_CPU_AVX_Time() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device<< std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -17379,7 +17531,7 @@ static int start_CUDA_ant_add_CPU_AVX_non_hash() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -17522,7 +17674,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
         SumTimeSearch += std::chrono::duration<double, std::milli>(end_ant - start_ant).count();
         auto start = std::chrono::high_resolution_clock::now();
         // Проверка наличия решения в Хэш-таблице
-        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+        double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
         auto end_OF = std::chrono::high_resolution_clock::now();
         HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF - start).count();
         /*
@@ -17538,7 +17690,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
             auto end_OF = std::chrono::high_resolution_clock::now();
             totalOFTime += std::chrono::duration<double, std::milli>(end_OF - start_OF).count();
             auto start_SaveHash = std::chrono::high_resolution_clock::now();
-            saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+            saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
             auto end_SaveHash = std::chrono::high_resolution_clock::now();
             HashTimeSave += std::chrono::duration<double, std::milli>(end_SaveHash - start_SaveHash).count();
         }
@@ -17577,7 +17729,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
                     SumTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     // Проверка наличия решения в Хэш-таблице
                     start_OF_2 = std::chrono::high_resolution_clock::now();
-                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, agent_node, bx);
+                    cachedResult = getCachedResultOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx);
                     end_OF_2 = std::chrono::high_resolution_clock::now();
                     HashTimeSearch += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                     nom_iteration = nom_iteration + 1;
@@ -17589,7 +17741,7 @@ void go_all_agent_non_cuda_time_4(int gpuTime, double* parametr, double* norm_ma
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 totalOFTime += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 start_OF_2 = std::chrono::high_resolution_clock::now();
-                saveToCacheOptimized_non_cuda(hashTable, agent_node, bx, OF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &agent_node[bx * PARAMETR_SIZE], bx, OF[bx]);
                 end_OF_2 = std::chrono::high_resolution_clock::now();
                 HashTimeSave += std::chrono::duration<double, std::milli>(end_OF_2 - start_OF_2).count();
                 break;
@@ -19422,7 +19574,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_Time() {
         if (PRINT_INFORMATION) {
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -19954,7 +20106,7 @@ static int start_CUDA_ant_add_CPU_AVX_transp_non_hash() {
             CUDA_CHECK(cudaMemcpy(antOF, antOFdev, numBytes_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(random_values_print, random_values_dev, numBytes_matrix_ant, cudaMemcpyDeviceToHost));
             CUDA_CHECK(cudaMemcpy(kol_hash_fail_in_device, kol_hash_fail, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device / PARAMETR_SIZE << std::endl;
+            std::cout << "ANT (" << ANT_SIZE << "):" << *kol_hash_fail_in_device << std::endl;
             for (int i = 0; i < ANT_SIZE; ++i) {
                 for (int j = 0; j < PARAMETR_SIZE; ++j) {
                     std::cout << ant[i * PARAMETR_SIZE + j] << " + " << random_values_print[i * PARAMETR_SIZE + j] << " ";
@@ -23400,11 +23552,11 @@ void matrix_ACO() {
                 ant_parametr[bx * PARAMETR_SIZE + tx] = k;
                 agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
             }
-            double cachedResult = getCachedResultOptimized_non_cuda(hashTable, ant_parametr, bx);
+            double cachedResult = getCachedResultOptimized_non_cuda(hashTable, &ant_parametr[bx * PARAMETR_SIZE], bx);
             int nom_iteration = 0;
             if (cachedResult == -1.0) {
                 antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-                saveToCacheOptimized_non_cuda(hashTable, ant_parametr, bx, antOF[bx]);
+                saveToCacheOptimized_non_cuda(hashTable, &ant_parametr[bx * PARAMETR_SIZE], bx, antOF[bx]);
             }
             else {
                 switch (TYPE_ACO) {
@@ -23428,13 +23580,13 @@ void matrix_ACO() {
                             ant_parametr[bx * PARAMETR_SIZE + tx] = k;
                             agent[tx] = parametr_value[tx * MAX_VALUE_SIZE + k];
                         }
-                        cachedResult = getCachedResultOptimized_non_cuda(hashTable, ant_parametr, bx);
+                        cachedResult = getCachedResultOptimized_non_cuda(hashTable, &ant_parametr[bx * PARAMETR_SIZE], bx);
                         nom_iteration = nom_iteration + 1;
                         kol_hash_fail = kol_hash_fail + 1;
                     }
 
                     antOF[bx] = BenchShafferaFunction_non_cuda(agent);
-                    saveToCacheOptimized_non_cuda(hashTable, ant_parametr, bx, antOF[bx]);
+                    saveToCacheOptimized_non_cuda(hashTable, &ant_parametr[bx * PARAMETR_SIZE], bx, antOF[bx]);
                     break;
                 default:
                     antOF[bx] = cachedResult; 

@@ -1,0 +1,12 @@
+Особенности каждой версии:
+OpenMP 2.0-3.1: Базовый parallel for, только CPU
+
+OpenMP 4.0: Добавлен simd для векторизации
+
+OpenMP 4.5: if clause, collapse, aligned, улучшенная векторизация
+
+OpenMP 5.0: metadirective, scan directive, преобразования циклов
+
+OpenMP 5.1: order(concurrent), nontemporal, неблокирующие редукции
+
+OpenMP 5.2: assume clauses, улучшенный target, interop

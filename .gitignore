@@ -4,4 +4,13 @@ Create_Graph/
 .vs/
 .git/
 log_supercomput/
-Create_Graph_New/
+Create_Graph_New/x64/
+Create_Graph_New/Create_Graph_New/
+Create_Graph_New/.vs/
+MPI_and_Win/x64/
+MPI_and_Win/MPI_and_Win/
+MPI_and_Win/.vs/
+OMP_AVX_C++/x64/
+OMP_AVX_C++/OMP_AVX_C++/
+OMP_AVX_C++/.vs/
+OMP+Cuda+geterogenus/.vs/
