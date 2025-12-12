@@ -1,0 +1,22 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o rtx3060_optimizations.exe rtx3060_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+rtx3060_optimizations.cu(455): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+rtx3060_optimizations.cu(741): error: identifier "print_metrics" is undefined
+          print_metrics(metrics, "4 function ACO 4start", i);
+          ^
+
+rtx3060_optimizations.cu(754): error: identifier "metrics" is undefined
+      std::cout << "  Total Time:        " << metrics.total_time_ms << " ms" << std::endl;
+                                              ^
+
+2 errors detected in the compilation of "rtx3060_optimizations.cu".
+rtx3060_optimizations.cu
+========== COMPILATION END ========== 
+Exit code: 2 

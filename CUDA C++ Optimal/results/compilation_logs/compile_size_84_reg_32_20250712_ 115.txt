@@ -1,0 +1,35 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=84, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(242): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(253): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_global_while.cu(254): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_global_while.cu(286): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_global_while.cu(1130): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1267): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1374): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+^C^C========== COMPILATION END ========== 

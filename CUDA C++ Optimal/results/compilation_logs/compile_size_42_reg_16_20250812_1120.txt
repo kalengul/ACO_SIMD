@@ -1,0 +1,110 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(242): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(253): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_global_while.cu(254): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_global_while.cu(286): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_global_while.cu(1263): warning #174-D: expression has no effect
+          computeProbabilities << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); 
+                                    ^
+
+aco_cuda_global_while.cu(1263): warning #174-D: expression has no effect
+          computeProbabilities << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); 
+                                    ^
+
+aco_cuda_global_while.cu(1263): warning #174-D: expression has no effect
+          computeProbabilities << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); 
+                                    ^
+
+aco_cuda_global_while.cu(1263): error: expected a ")"
+          computeProbabilities << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); 
+                                                                                          ^
+
+aco_cuda_global_while.cu(1263): error: no suitable constructor exists to convert from "cudaStream_t" (aka "CUstream_st *") to "dim3"
+          computeProbabilities << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); 
+                                   ^
+
+aco_cuda_global_while.cu(1263): error: too few arguments in function call
+          computeProbabilities << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); 
+                                                                                          ^
+
+aco_cuda_global_while.cu(1279): warning #174-D: expression has no effect
+          evaporatePheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (dev_pheromon);
+                                   ^
+
+aco_cuda_global_while.cu(1279): warning #174-D: expression has no effect
+          evaporatePheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (dev_pheromon);
+                                   ^
+
+aco_cuda_global_while.cu(1279): warning #174-D: expression has no effect
+          evaporatePheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (dev_pheromon);
+                                   ^
+
+aco_cuda_global_while.cu(1279): error: expected a ")"
+          evaporatePheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (dev_pheromon);
+                                                                                         ^
+
+aco_cuda_global_while.cu(1279): error: no suitable constructor exists to convert from "cudaStream_t" (aka "CUstream_st *") to "dim3"
+          evaporatePheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (dev_pheromon);
+                                  ^
+
+aco_cuda_global_while.cu(1279): error: too few arguments in function call
+          evaporatePheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (dev_pheromon);
+                                                                                         ^
+
+aco_cuda_global_while.cu(1280): warning #174-D: expression has no effect
+          depositPheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                                 ^
+
+aco_cuda_global_while.cu(1280): warning #174-D: expression has no effect
+          depositPheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                                 ^
+
+aco_cuda_global_while.cu(1280): warning #174-D: expression has no effect
+          depositPheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                                 ^
+
+aco_cuda_global_while.cu(1280): error: expected a ")"
+          depositPheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                                                                                       ^
+
+aco_cuda_global_while.cu(1280): error: no suitable constructor exists to convert from "cudaStream_t" (aka "CUstream_st *") to "dim3"
+          depositPheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                                ^
+
+aco_cuda_global_while.cu(1280): error: too few arguments in function call
+          depositPheromones << <(blocks_per_grid, threads_per_block, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                                                                                       ^
+
+aco_cuda_global_while.cu(1305): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1443): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1550): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+9 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

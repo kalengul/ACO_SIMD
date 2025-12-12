@@ -1,0 +1,11 @@
+
+RTX 3060 GPU Information:
+Device: NVIDIA GeForce RTX 3060 Laptop GPU
+Global Memory: 6143.5 MB
+SMs: 30
+Compute Capability: 8.6
+
+Optimization Settings:
+MAX_VALUE_SIZE: 4
+PARAMETR_SIZE: 168
+ANT_SIZE: 512

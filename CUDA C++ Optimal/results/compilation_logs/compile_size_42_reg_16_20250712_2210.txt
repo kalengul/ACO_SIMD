@@ -1,0 +1,58 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o v100_optimizations.exe v100_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+v100_optimizations.cu(463): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+v100_optimizations.cu(626): warning #940-D: missing return statement at end of non-void function "run_aco_iterations_V100"
+  }
+  ^
+
+v100_optimizations.cu(463): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+v100_optimizations.cu(626): warning #940-D: missing return statement at end of non-void function "run_aco_iterations_V100"
+  }
+  ^
+
+ptxas warning : For profile sm_86 adjusting per thread register count of 16 to lower bound of 24
+ptxas info    : Overriding maximum register limit 256 for '_Z24initializeHashTable_V100P9HashEntry' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z21updatePheromones_V100PKdPKiPdS3_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26antColonyOptimization_V100PKdS0_PiPdP9HashEntryS2_S2_S1_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z25computeProbabilities_V100PKdS0_Pd' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z24evaporatePheromones_V100Pd' with  24 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z24initializeHashTable_V100P9HashEntry' for 'sm_86'
+ptxas info    : Function properties for _Z24initializeHashTable_V100P9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z21updatePheromones_V100PKdPKiPdS3_' for 'sm_86'
+ptxas info    : Function properties for _Z21updatePheromones_V100PKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z26antColonyOptimization_V100PKdS0_PiPdP9HashEntryS2_S2_S1_' for 'sm_86'
+ptxas info    : Function properties for _Z26antColonyOptimization_V100PKdS0_PiPdP9HashEntryS2_S2_S1_
+    400 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 0 barriers, 400 bytes cumulative stack size, 416 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z25computeProbabilities_V100PKdS0_Pd' for 'sm_86'
+ptxas info    : Function properties for _Z25computeProbabilities_V100PKdS0_Pd
+    16 bytes stack frame, 24 bytes spill stores, 24 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 16 bytes cumulative stack size, 4096 bytes smem, 376 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z24evaporatePheromones_V100Pd' for 'sm_86'
+ptxas info    : Function properties for _Z24evaporatePheromones_V100Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 12 registers, used 0 barriers, 360 bytes cmem[0], 8 bytes cmem[2]
+v100_optimizations.cu
+tmpxft_00003b5c_00000000-10_v100_optimizations.cudafe1.cpp
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\v100_optimizations.cu(626) : warning C4715: 'run_aco_iterations_V100': not all control paths return a value
+========== COMPILATION END ========== 
+Exit code: 0 

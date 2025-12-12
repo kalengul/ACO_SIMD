@@ -1,0 +1,3 @@
+nvcc -O3 -arch=sm_86 -std=c++17 -o rtx3060.exe rtx3060_optimizations_time.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math  -lcudart  -maxrregcount=64  -Xptxas "-O3,-v"
+
+nsys profile  --trace=cuda  --cuda-memory-usage=true --cuda-um-cpu-page-faults=true --stats=true  --force-overwrite=true  --output=profile_memory  rtx3060.exe 

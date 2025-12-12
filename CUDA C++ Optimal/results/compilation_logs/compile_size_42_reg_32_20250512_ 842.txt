@@ -1,0 +1,98 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1515): error: argument of type "int *" is incompatible with parameter of type "double *"
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF,
+                                                                                                                       ^
+
+aco_cuda_optimized.cu(1515): error: argument of type "double *" is incompatible with parameter of type "int *"
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF,
+                                                                                                                                       ^
+
+aco_cuda_optimized.cu(1517): error: argument of type "HashEntry *" is incompatible with parameter of type "double *"
+              dev_hashTable,
+              ^
+
+aco_cuda_optimized.cu(1519): error: argument of type "double *" is incompatible with parameter of type "HashEntry *"
+              dev_max, dev_min, dev_hash_fail); 
+              ^
+
+aco_cuda_optimized.cu(1519): error: argument of type "int *" is incompatible with parameter of type "double *"
+              dev_max, dev_min, dev_hash_fail); 
+                                ^
+
+aco_cuda_optimized.cu(1519): error: too few arguments in function call
+              dev_max, dev_min, dev_hash_fail); 
+                                             ^
+
+aco_cuda_optimized.cu(1658): error: argument of type "int *" is incompatible with parameter of type "double *"
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+                                                                                                                       ^
+
+aco_cuda_optimized.cu(1658): error: argument of type "double *" is incompatible with parameter of type "int *"
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+                                                                                                                                       ^
+
+aco_cuda_optimized.cu(1660): error: argument of type "HashEntry *" is incompatible with parameter of type "double *"
+              dev_hashTable, 
+              ^
+
+aco_cuda_optimized.cu(1662): error: argument of type "double *" is incompatible with parameter of type "HashEntry *"
+              dev_max, dev_min, dev_hash_fail); 
+              ^
+
+aco_cuda_optimized.cu(1662): error: argument of type "int *" is incompatible with parameter of type "double *"
+              dev_max, dev_min, dev_hash_fail); 
+                                ^
+
+aco_cuda_optimized.cu(1662): error: too few arguments in function call
+              dev_max, dev_min, dev_hash_fail); 
+                                             ^
+
+aco_cuda_optimized.cu(1808): error: argument of type "int *" is incompatible with parameter of type "double *"
+          antColonyOptimization << <ant_blocks, threads_per_block, 42 * sizeof(double), compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+                                                                                                                              ^
+
+aco_cuda_optimized.cu(1808): error: argument of type "double *" is incompatible with parameter of type "int *"
+          antColonyOptimization << <ant_blocks, threads_per_block, 42 * sizeof(double), compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+                                                                                                                                              ^
+
+aco_cuda_optimized.cu(1810): error: argument of type "HashEntry *" is incompatible with parameter of type "double *"
+              dev_hashTable, 
+              ^
+
+aco_cuda_optimized.cu(1812): error: argument of type "double *" is incompatible with parameter of type "HashEntry *"
+              dev_max, dev_min, dev_hash_fail);
+              ^
+
+aco_cuda_optimized.cu(1812): error: argument of type "int *" is incompatible with parameter of type "double *"
+              dev_max, dev_min, dev_hash_fail);
+                                ^
+
+aco_cuda_optimized.cu(1812): error: too few arguments in function call
+              dev_max, dev_min, dev_hash_fail);
+                                             ^
+
+18 errors detected in the compilation of "aco_cuda_optimized.cu".
+aco_cuda_optimized.cu
+========== COMPILATION END ========== 
+Exit code: 2 

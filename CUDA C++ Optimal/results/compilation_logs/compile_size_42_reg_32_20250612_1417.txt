@@ -1,0 +1,34 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_while_non_hash.exe aco_cuda_global_while_non_hash.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while_non_hash.cu(682): warning #940-D: missing return statement at end of non-void function "initialize_cuda_resources"
+  }
+  ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while_non_hash.cu(781): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while_non_hash.cu(918): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while_non_hash.cu(1025): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while_non_hash.cu(1120): error: identifier "HashEntry" is undefined
+          GlobalMem = GlobalMem - sizeof(double) * 2 - sizeof(int) - 500 * sizeof(double) - 67108864 * sizeof(HashEntry);
+                                                                                                              ^
+
+aco_cuda_global_while_non_hash.cu(1179): error: identifier "HashEntry" is undefined
+          std::cout << "GPU Global Memory Hash Table: " << 67108864 * sizeof(HashEntry) / (1024.0 * 1024.0) << " MB" << std::endl;
+                                                                             ^
+
+2 errors detected in the compilation of "aco_cuda_global_while_non_hash.cu".
+aco_cuda_global_while_non_hash.cu
+========== COMPILATION END ========== 
+Exit code: 2 

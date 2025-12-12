@@ -1,0 +1,164 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=168, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(242): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(253): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_global_while.cu(254): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_global_while.cu(286): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_global_while.cu(985): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1122): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1229): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(242): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(253): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_global_while.cu(254): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_global_while.cu(286): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_global_while.cu(432): warning #177-D: variable "warp_id" was declared but never referenced
+      const int warp_id = threadIdx.x / 32; 
+                ^
+
+aco_cuda_global_while.cu(434): warning #177-D: variable "warps_per_block" was declared but never referenced
+      const int warps_per_block = blockDim.x / 32;
+                ^
+
+aco_cuda_global_while.cu(530): warning #177-D: variable "warp_id" was declared but never referenced
+      const int warp_id = threadIdx.x / 32;
+                ^
+
+aco_cuda_global_while.cu(532): warning #177-D: variable "warps_per_block" was declared but never referenced
+      const int warps_per_block = blockDim.x / 32;
+                ^
+
+aco_cuda_global_while.cu(985): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(926): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 168 * sizeof(double);
+             ^
+
+aco_cuda_global_while.cu(930): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(1122): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1030): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 168 * sizeof(double);
+             ^
+
+aco_cuda_global_while.cu(1034): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(1229): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1169): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(1323): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_global_while.cu(1492): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_global_while.cu(1493): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+ptxas info    : Overriding maximum register limit 256 for '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z17depositPheromonesPKdPKiPdS3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19evaporatePheromonesPd' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z16updatePheromonesPKdPKiPdS3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z20computeProbabilitiesPKdS0_Pd' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  32 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_' for 'sm_70'
+ptxas info    : Function properties for _Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_
+    72 bytes stack frame, 24 bytes spill stores, 20 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 72 bytes cumulative stack size, 20480 bytes smem, 464 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' for 'sm_70'
+ptxas info    : Function properties for _Z26updateAndComputePheromonesPKdPKiPdS3_S3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 20480 bytes smem, 392 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z17depositPheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z17depositPheromonesPKdPKiPdS3_
+    80 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 0 barriers, 80 bytes cumulative stack size, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19evaporatePheromonesPd' for 'sm_70'
+ptxas info    : Function properties for _Z19evaporatePheromonesPd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 22 registers, used 0 barriers, 360 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z16updatePheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z16updatePheromonesPKdPKiPdS3_
+    80 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 0 barriers, 80 bytes cumulative stack size, 384 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S_' for 'sm_70'
+ptxas info    : Function properties for _Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 0 barriers, 48 bytes cumulative stack size, 424 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z20computeProbabilitiesPKdS0_Pd' for 'sm_70'
+ptxas info    : Function properties for _Z20computeProbabilitiesPKdS0_Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 20480 bytes smem, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_70'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_global_while.cu
+tmpxft_00003fd0_00000000-10_aco_cuda_global_while.cudafe1.cpp
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_global_while.cu(985) : warning C4700: uninitialized local variable 'hash_fails' used
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_global_while.cu(1122) : warning C4700: uninitialized local variable 'hash_fails' used
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_global_while.cu(1229) : warning C4700: uninitialized local variable 'hash_fails' used
+========== COMPILATION END ========== 
+Exit code: 0 

@@ -1,0 +1,8 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o v100_optimizations.exe v100_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\parametrs.h(120): fatal error C1070: mismatched #if/#endif pair in file 'C:\Programs\ACO_Cluster\CUDA C++ Optimal\parametrs.h'
+v100_optimizations.cu
+========== COMPILATION END ========== 
+Exit code: 2 

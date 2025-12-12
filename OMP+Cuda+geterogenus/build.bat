@@ -35,7 +35,7 @@ if %errorlevel% neq 0 (
 :: Компиляция основного приложения с Clang
 echo.
 echo Step 2: Compiling main application with Clang...
-clang++ -O3 -fopenmp -std=c++17 -o test_hybrid.exe main_omp.cpp -L. -lcuda_module
+clang++ -std=c++17 -fopenmp -O3 -mavx -mavx2 -mfma -march=native -o test_hybrid.exe main_omp.cpp -L. -lcuda_module
 if %errorlevel% neq 0 (
     echo ERROR: Clang compilation failed!
     pause

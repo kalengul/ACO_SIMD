@@ -10,10 +10,11 @@
 // 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128, 1376256
 #define MAX_VALUE_SIZE 4
 #define PARAMETR_SIZE 1344
-#define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
+#define SET_PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
 #define ANT_SIZE 500
 
 #define MAX_THREAD_CUDA 256
+#define THREADS_PER_AGENT 32
 #define HASH_TABLE_SIZE 10000000 // Hash table size (10 million entries)
 #define ZERO_HASH_RESULT 1234567891
 #define ZERO_HASH 0
@@ -55,7 +56,11 @@ struct CudaData {
     bool initialized;
 };
 
-static CudaData cuda_data = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false, false };
+static CudaData cuda_data = {
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, 0, false, false
+};
 
 // ----------------- Kernel: Initializing Hash Table -----------------
 __global__ void initializeHashTable(HashEntry* hashTable, int size) {
@@ -209,9 +214,9 @@ __device__ double go_x(double* parametr, int start_index, int kol_parametr) {
 __device__ double BenchShafferaFunction(double* parametr) {
     double r_squared = 0.0;
     double x = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         r_squared += x * x; // Сумма квадратов
     }
     double r = sqrt(r_squared);
@@ -227,9 +232,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
     double sum = 0.0;
     double second_sum = 0.0;
     double r_cos = 1.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_if += x;
         r_squared += x * x; // Сумма квадратов
         sum += x * x - 10 * cos(2 * M_PI * x) + 10;
@@ -262,9 +267,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 __device__ double BenchShafferaFunction(double* parametr) {
     double r_cos = 1.0;
     double r_squared = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         r_cos *= cos(x);
         r_squared += x * x;
     }
@@ -277,9 +282,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 // Растригин-функция
 __device__ double BenchShafferaFunction(double* parametr) {
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum += x * x - 10 * cos(2 * M_PI * x) + 10;
     }
     return sum;
@@ -290,9 +295,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 __device__ double BenchShafferaFunction(double* parametr) {
     double first_sum = 0.0;
     double second_sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         first_sum += x * x;
         second_sum += cos(2 * M_PI * x);
     }
@@ -305,9 +310,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 // Сферическая функция
 __device__ double BenchShafferaFunction(double* parametr) {
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum += x * x;
     }
     return sum;
@@ -318,9 +323,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 __device__ double BenchShafferaFunction(double* parametr) {
     double sum = 0.0;
     double prod = 1.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum += x * x;
         prod *= cos(x / sqrt(i + 1));
     }
@@ -332,9 +337,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 __device__ double BenchShafferaFunction(double* parametr) {
     double sum1 = 0.0;
     double sum2 = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum1 += pow(x, 2);
         sum2 += 0.5 * i * x;
     }
@@ -345,9 +350,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 // Швейфель-функция
 __device__ double BenchShafferaFunction(double* parametr) {
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum -= x * sin(sqrt(abs(x)));
     }
     return sum;
@@ -356,14 +361,14 @@ __device__ double BenchShafferaFunction(double* parametr) {
 #if (LEVY)
 // Леви-функция - ИСПРАВЛЕННАЯ ВЕРСИЯ
 __device__ double BenchShafferaFunction(double* parametr) {
-    double w_first = 1 + (go_x(parametr, 0, PARAMETR_SIZE_ONE_X) - 1) / 4;
-    double w_last = 1 + (go_x(parametr, (PARAMETR_SIZE / PARAMETR_SIZE_ONE_X - 1) * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_first = 1 + (go_x(parametr, 0, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_last = 1 + (go_x(parametr, (PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X - 1) * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
     for (int i = 1; i <= num_variables - 1; ++i) {
-        double wi = 1 + (go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
-        double w_prev = 1 + (go_x(parametr, (i - 1) * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+        double wi = 1 + (go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
+        double w_prev = 1 + (go_x(parametr, (i - 1) * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
         sum += pow(wi - 1, 2) * (1 + 10 * pow(sin(M_PI * wi), 2)) +
             pow(wi - w_prev, 2) * (1 + pow(sin(2 * M_PI * wi), 2));
     }
@@ -374,9 +379,9 @@ __device__ double BenchShafferaFunction(double* parametr) {
 // Михаэлевич-Викинский
 __device__ double BenchShafferaFunction(double* parametr) {
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum -= sin(x) * pow(sin((i + 1) * x * x / M_PI), 20);
     }
     return sum;
@@ -399,22 +404,172 @@ __device__ void debug_print_ant_parameters(double* parametr, int* agent_node, do
         printf("] -> OF = %.6f\n", OF[bx]);
     }
 }
+// Атомарная функция для максимума double
+__device__ void atomicMaxDouble(double* address, double val) {
+    unsigned long long int* address_as_ull = (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull;
+    unsigned long long int assumed;
 
-__global__ void go_all_agent_only_4_optimized(double* parametr, double* norm_matrix_probability, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail, int iteration, int ant_size) {
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+            __double_as_longlong(fmax(val, __longlong_as_double(assumed))));
+    } while (assumed != old);
+}
+
+__device__ void atomicMinDouble(double* address, double val) {
+    unsigned long long int* address_as_ull = (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull;
+    unsigned long long int assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+            __double_as_longlong(fmin(val, __longlong_as_double(assumed))));
+    } while (assumed != old);
+}
+
+#if (MAX_VALUE_SIZE==4)
+// Оптимизированная версия с использованием шаблонов и лучшей организации потоков
+__global__ void go_all_agent_optimized_v2(
+    double* __restrict__ parametr,
+    double* __restrict__ norm_matrix_probability,
+    int* __restrict__ agent_node,
+    double* __restrict__ OF,
+#if (GO_HASH)
+    HashEntry* __restrict__ hashTable,
+    int* __restrict__ kol_hash_fail,
+#endif
+    double* __restrict__ maxOf_dev,
+    double* __restrict__ minOf_dev,
+    int iteration,
+    int ant_size) {
+
+    // ==================== ОПТИМИЗАЦИЯ 1: ОРГАНИЗАЦИЯ ПАМЯТИ ====================
+    __shared__ curandState shared_states[MAX_THREAD_CUDA];  // Shared memory для генераторов
+
+    int tx = threadIdx.x;
+    int bx = blockIdx.x;
+    int block_agents = blockDim.x;  // Количество агентов в блоке
+    int global_agent_id = bx * block_agents + tx; // Глобальный ID агента
+    if (global_agent_id > ant_size) { return; }
+    // Предзагружаем вероятности (для MAX_VALUE_SIZE=4)
+    double probs[PARAMETR_SIZE][MAX_VALUE_SIZE-1];
+
+#pragma unroll
+        for (int param = 0; param < PARAMETR_SIZE; param++) {
+            int base_idx = param * MAX_VALUE_SIZE;
+            probs[param][0] = norm_matrix_probability[base_idx];
+            probs[param][1] = norm_matrix_probability[base_idx + 1];
+            probs[param][2] = norm_matrix_probability[base_idx + 2];
+        }
+    if (global_agent_id < ant_size) {
+        // Каждый поток инициализирует свой генератор
+        curand_init(clock64() + global_agent_id * 100 + iteration * 7919, tx, 0, &shared_states[tx]);
+    }
+    __syncthreads();
+
+    if (global_agent_id >= ant_size) return;
+
+    // ==================== ОПТИМИЗАЦИЯ 4: УСТРАНЕНИЕ WARP DIVERGENCE ====================
+    // Только первый поток в группе обрабатывает агента
+    if (tx % THREADS_PER_AGENT == 0) {
+        curandState* state = &shared_states[tx];
+        double agent[PARAMETR_SIZE];
+        int nodes[PARAMETR_SIZE];
+        bool valid_solution = true;
+
+        // ==================== ОПТИМИЗАЦИЯ 5: РАЗВЕРНУТЫЙ ЦИКЛ И БИНАРНЫЙ ПОИСК ====================
+#pragma unroll
+        for (int param = 0; param < PARAMETR_SIZE; param++) {
+            double randomValue = curand_uniform(state);
+            int selected_idx = 0;
+            // Развернутый цикл для избежания Warp Divergence
+            if (valid_solution) {
+                if (randomValue <= probs[param][0]) {
+                    selected_idx = 0;
+                }
+                else if (randomValue <= probs[param][1]) {
+                    selected_idx = 1;
+                }
+                else if (randomValue <= probs[param][2]) {
+                    selected_idx = 2;
+                }
+                else {
+                    selected_idx = 3;
+                }
+            }
+            nodes[param] = selected_idx;
+
+            // Быстрая загрузка параметров с предвычисленными индексами
+            int param_idx = param * MAX_VALUE_SIZE + selected_idx;
+            agent[param] = parametr[param_idx];
+            // Проверка выбора 4-го значения (9) в слое 0,3,6,9
+            valid_solution = (selected_idx != (MAX_VALUE_SIZE - 1));
+        }
+        double fitness;
+#if (GO_HASH)
+            // Используем оптимизированный кэш
+            double cachedResult = getCachedResultOptimized(hashTable, nodes, global_agent_id);
+            if (cachedResult < 0.0) {
+                fitness = BenchShafferaFunction(agent);
+                saveToCacheOptimized(hashTable, nodes, global_agent_id, fitness);
+            }
+            else {
+                fitness = cachedResult;
+                atomicAdd(kol_hash_fail, 1);
+            }
+#else
+        fitness = BenchShafferaFunction(agent);
+#endif
+        // Сохраняем узлы в память
+        int agent_base = global_agent_id * PARAMETR_SIZE;
+#pragma unroll 4
+        for (int i = 0; i < PARAMETR_SIZE; i++) {
+            agent_node[agent_base + i] = nodes[i];
+        }
+
+        // Сохраняем значение фитнес-функции
+        OF[global_agent_id] = fitness;
+        if (fabs(fitness - ZERO_HASH_RESULT) > 1e-10) {
+            // Используем атомарные операции без приведения типов
+            atomicMaxDouble(maxOf_dev, fitness);
+            atomicMinDouble(minOf_dev, fitness);
+        }
+
+        // Обработка невалидных решений
+        if (!valid_solution) {
+            OF[global_agent_id] = ZERO_HASH_RESULT;
+        }
+    }
+}
+
+
+__global__ void go_all_agent_optimized(double* parametr, double* norm_matrix_probability, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail, int iteration, int ant_size) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;
     if (bx < ant_size) {
         curandState state;
         curand_init(clock64() + bx + iteration * 1000, 0, 0, &state);
-        
-        double agent[PARAMETR_SIZE] = {0};
+
+        double agent[PARAMETR_SIZE] = { 0 };
         bool valid_solution = true;
-        
+#pragma unroll
         for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
             double randomValue = curand_uniform(&state);
             int k = 0;
-            
-            while (valid_solution && k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                k++;
+            if (valid_solution) {
+                if (randomValue <= norm_matrix_probability[MAX_VALUE_SIZE * tx + 0]) {
+                    k = 0;
+                }
+                else if (randomValue <= norm_matrix_probability[MAX_VALUE_SIZE * tx + 1]) {
+                    k = 1;
+                }
+                else if (randomValue <= norm_matrix_probability[MAX_VALUE_SIZE * tx + 2]) {
+                    k = 2;
+                }
+                else {
+                    k = 3;
+                }
             }
             agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[tx] = parametr[tx * MAX_VALUE_SIZE + k];
@@ -425,23 +580,67 @@ __global__ void go_all_agent_only_4_optimized(double* parametr, double* norm_mat
 
 
         double cachedResult = getCachedResultOptimized(hashTable, agent_node, bx);
-        
+
         if (cachedResult < 0) {
             OF[bx] = BenchShafferaFunction(agent);
             saveToCacheOptimized(hashTable, agent_node, bx, OF[bx]);
-        } else {
+        }
+        else {
             OF[bx] = cachedResult;
             atomicAdd(kol_hash_fail, 1);
         }
-        
+
         if (OF[bx] != ZERO_HASH_RESULT) {
-            atomicMax((int64_t*)maxOf_dev, __double_as_longlong(OF[bx]));
-            atomicMin((int64_t*)minOf_dev, __double_as_longlong(OF[bx]));
+            atomicMaxDouble(maxOf_dev, OF[bx]);
+            atomicMinDouble(minOf_dev, OF[bx]);
         }
     }
 }
 
-__global__ void go_all_agent_only_4_optimized_non_hash(double* parametr, double* norm_matrix_probability, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int iteration, int ant_size) {
+#else
+__global__ void go_all_agent_optimized(double* parametr, double* norm_matrix_probability, int* agent_node, double* OF, HashEntry* hashTable, double* maxOf_dev, double* minOf_dev, int* kol_hash_fail, int iteration, int ant_size) {
+    int bx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (bx < ant_size) {
+        curandState state;
+        curand_init(clock64() + bx + iteration * 1000, 0, 0, &state);
+
+        double agent[PARAMETR_SIZE] = { 0 };
+
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            double randomValue = curand_uniform(&state);
+            int k = 0;
+
+            while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
+                k++;
+            }
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
+            agent[tx] = parametr[tx * MAX_VALUE_SIZE + k];
+        }
+        //OF[bx] = -bx;
+        //OF[bx] = BenchShafferaFunction(agent);
+
+
+        double cachedResult = getCachedResultOptimized(hashTable, agent_node, bx);
+
+        if (cachedResult < 0) {
+            OF[bx] = BenchShafferaFunction(agent);
+            saveToCacheOptimized(hashTable, agent_node, bx, OF[bx]);
+        }
+        else {
+            OF[bx] = cachedResult;
+            atomicAdd(kol_hash_fail, 1);
+        }
+
+        if (OF[bx] != ZERO_HASH_RESULT) {
+            atomicMaxDouble(maxOf_dev, OF[bx]);
+            atomicMinDouble(minOf_dev, OF[bx]);
+        }
+    }
+}
+#endif
+
+#if (MAX_VALUE_SIZE==4)
+__global__ void go_all_agent_optimized_non_hash(double* parametr, double* norm_matrix_probability, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int iteration, int ant_size) {
     int bx = threadIdx.x + blockIdx.x * blockDim.x;
     if (bx < ant_size) {
         curandState state;
@@ -449,24 +648,61 @@ __global__ void go_all_agent_only_4_optimized_non_hash(double* parametr, double*
 
         double agent[PARAMETR_SIZE] = { 0 };
         bool valid_solution = true;
-
+#pragma unroll
         for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
             double randomValue = curand_uniform(&state);
             int k = 0;
-
-            while (valid_solution && k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
-                k++;
+            if (valid_solution) {
+                if (randomValue <= norm_matrix_probability[MAX_VALUE_SIZE * tx + 0]) {
+                    k = 0;
+                }
+                else if (randomValue <= norm_matrix_probability[MAX_VALUE_SIZE * tx + 1]) {
+                    k = 1;
+                }
+                else if (randomValue <= norm_matrix_probability[MAX_VALUE_SIZE * tx + 2]) {
+                    k = 2;
+                }
+                else {
+                    k = 3;
+                }
             }
             agent_node[bx * PARAMETR_SIZE + tx] = k;
             agent[tx] = parametr[tx * MAX_VALUE_SIZE + k];
             valid_solution = (k != MAX_VALUE_SIZE - 1);
         }
-        
+
         OF[bx] = BenchShafferaFunction(agent);
-        atomicMax((int64_t*)maxOf_dev, __double_as_longlong(OF[bx]));
-        atomicMin((int64_t*)minOf_dev, __double_as_longlong(OF[bx]));
+        atomicMaxDouble(maxOf_dev, OF[bx]);
+        atomicMinDouble(minOf_dev, OF[bx]);
     }
 }
+
+#else
+__global__ void go_all_agent_optimized_non_hash(double* parametr, double* norm_matrix_probability, int* agent_node, double* OF, double* maxOf_dev, double* minOf_dev, int iteration, int ant_size) {
+    int bx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (bx < ant_size) {
+        curandState state;
+        curand_init(clock64() + bx + iteration * 1000, 0, 0, &state);
+
+        double agent[PARAMETR_SIZE] = { 0 };
+
+        for (int tx = 0; tx < PARAMETR_SIZE; tx++) {
+            double randomValue = curand_uniform(&state);
+            int k = 0;
+
+            while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[MAX_VALUE_SIZE * tx + k]) {
+                k++;
+            }
+            agent_node[bx * PARAMETR_SIZE + tx] = k;
+            agent[tx] = parametr[tx * MAX_VALUE_SIZE + k];
+        }
+
+        OF[bx] = BenchShafferaFunction(agent);
+        atomicMaxDouble(maxOf_dev, OF[bx]);
+        atomicMinDouble(minOf_dev, OF[bx]);
+    }
+}
+#endif
 
 // Простое CUDA ядро
 __global__ void simple_ant_kernel(double* parametr, double* probabilities, int* ant_params, double* results, int iteration) {
@@ -675,7 +911,7 @@ void cuda_run_iteration(const double* norm_matrix_probability, int* ant_parametr
     const int threadsPerBlock = MAX_THREAD_CUDA;
     const int numBlocks = (ant_size + threadsPerBlock - 1) / threadsPerBlock;
 
-    go_all_agent_only_4_optimized<<<numBlocks, threadsPerBlock, 0, cuda_data.stream >>>(cuda_data.parametr_value_dev, cuda_data.norm_matrix_probability_dev, cuda_data.ant_parametr_dev, cuda_data.antOFdev, cuda_data.hashTable_dev, cuda_data.maxOf_dev, cuda_data.minOf_dev, cuda_data.kol_hash_fail_dev, iteration, ant_size);
+    go_all_agent_optimized<<<numBlocks, threadsPerBlock, 0, cuda_data.stream >>>(cuda_data.parametr_value_dev, cuda_data.norm_matrix_probability_dev, cuda_data.ant_parametr_dev, cuda_data.antOFdev, cuda_data.hashTable_dev, cuda_data.maxOf_dev, cuda_data.minOf_dev, cuda_data.kol_hash_fail_dev, iteration, ant_size);
 
     cudaEventRecord(stop_event, cuda_data.stream);
     cudaEventSynchronize(stop_event);
@@ -730,7 +966,7 @@ void cuda_run_iteration_non_hash(const double* norm_matrix_probability, int* ant
     const int threadsPerBlock = MAX_THREAD_CUDA;
     const int numBlocks = (ant_size + threadsPerBlock - 1) / threadsPerBlock;
 
-    go_all_agent_only_4_optimized_non_hash << <numBlocks, threadsPerBlock, 0, cuda_data.stream >> > (cuda_data.parametr_value_dev, cuda_data.norm_matrix_probability_dev, cuda_data.ant_parametr_dev, cuda_data.antOFdev, cuda_data.maxOf_dev, cuda_data.minOf_dev, iteration, ant_size);
+    go_all_agent_optimized_non_hash << <numBlocks, threadsPerBlock, 0, cuda_data.stream >> > (cuda_data.parametr_value_dev, cuda_data.norm_matrix_probability_dev, cuda_data.ant_parametr_dev, cuda_data.antOFdev, cuda_data.maxOf_dev, cuda_data.minOf_dev, iteration, ant_size);
 
     cudaEventRecord(stop_event, cuda_data.stream);
     cudaEventSynchronize(stop_event);

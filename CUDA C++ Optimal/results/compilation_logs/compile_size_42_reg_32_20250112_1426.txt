@@ -1,0 +1,132 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1914): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_optimized.cu(2071): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_optimized.cu(2072): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+aco_cuda_optimized.cu(997): error: no instance of overloaded function "curand_uniform" matches the argument list
+            argument types are: (curandState (*)[1])
+              double randomValue = curand_uniform(&s_curand_state);
+                                   ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(473): note #3326-D: function "curand_uniform(curandStateScrambledSobol64_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateScrambledSobol64_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(435): note #3326-D: function "curand_uniform(curandStateSobol64_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateSobol64_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(394): note #3326-D: function "curand_uniform(curandStateScrambledSobol32_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateScrambledSobol32_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(353): note #3326-D: function "curand_uniform(curandStateSobol32_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateSobol32_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(290): note #3326-D: function "curand_uniform(curandStateMtgp32_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateMtgp32_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(255): note #3326-D: function "curand_uniform(curandStatePhilox4_32_10_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStatePhilox4_32_10_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(177): note #3326-D: function "curand_uniform(curandStateMRG32k3a_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateMRG32k3a_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(134): note #3326-D: function "curand_uniform(curandStateXORWOW_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateXORWOW_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(108): note #3326-D: function "curand_uniform(curandStateTest_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateTest_t *state)
+                                                    ^
+          detected during instantiation of "void ComputePheromonesAdaptive<USE_SHARED_MEMORY,PARAMS_PER_BLOCK>(double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *, int) [with USE_SHARED_MEMORY=true, PARAMS_PER_BLOCK=32]" at line 1334
+
+aco_cuda_optimized.cu(872): warning #177-D: variable "s_agent_of" was declared but never referenced
+      __declspec(__shared__) double s_agent_of;
+                                    ^
+          detected during instantiation of "void ComputePheromonesAdaptive<USE_SHARED_MEMORY,PARAMS_PER_BLOCK>(double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *, int) [with USE_SHARED_MEMORY=true, PARAMS_PER_BLOCK=32]" at line 1334
+
+aco_cuda_optimized.cu(997): error: no instance of overloaded function "curand_uniform" matches the argument list
+            argument types are: (curandState (*)[32])
+              double randomValue = curand_uniform(&s_curand_state);
+                                   ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(473): note #3326-D: function "curand_uniform(curandStateScrambledSobol64_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateScrambledSobol64_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(435): note #3326-D: function "curand_uniform(curandStateSobol64_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateSobol64_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(394): note #3326-D: function "curand_uniform(curandStateScrambledSobol32_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateScrambledSobol32_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(353): note #3326-D: function "curand_uniform(curandStateSobol32_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateSobol32_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(290): note #3326-D: function "curand_uniform(curandStateMtgp32_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateMtgp32_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(255): note #3326-D: function "curand_uniform(curandStatePhilox4_32_10_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStatePhilox4_32_10_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(177): note #3326-D: function "curand_uniform(curandStateMRG32k3a_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateMRG32k3a_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(134): note #3326-D: function "curand_uniform(curandStateXORWOW_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateXORWOW_t *state)
+                                                    ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\curand_uniform.h(108): note #3326-D: function "curand_uniform(curandStateTest_t *)" does not match because argument #1 does not match parameter
+  static __forceinline __declspec(__device__) float curand_uniform(curandStateTest_t *state)
+                                                    ^
+          detected during instantiation of "void ComputePheromonesAdaptive<USE_SHARED_MEMORY,PARAMS_PER_BLOCK>(double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *, int) [with USE_SHARED_MEMORY=false, PARAMS_PER_BLOCK=1]" at line 1347
+
+aco_cuda_optimized.cu(872): warning #177-D: variable "s_agent_of" was declared but never referenced
+      __declspec(__shared__) double s_agent_of;
+                                    ^
+          detected during instantiation of "void ComputePheromonesAdaptive<USE_SHARED_MEMORY,PARAMS_PER_BLOCK>(double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *, int) [with USE_SHARED_MEMORY=false, PARAMS_PER_BLOCK=1]" at line 1347
+
+2 errors detected in the compilation of "aco_cuda_optimized.cu".
+aco_cuda_optimized.cu
+========== COMPILATION END ========== 
+Exit code: 1 

@@ -1,0 +1,46 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1384): warning #940-D: missing return statement at end of non-void function "calculate_max_parametr_size_in_gpu_memory"
+  }
+  ^
+
+aco_cuda_optimized.cu(1583): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1596): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run", i);
+                                 ^
+
+aco_cuda_optimized.cu(1608): error: identifier "run_parallel_aco_iterations" is undefined
+          auto metrics = run_parallel_aco_iterations(500, true);
+                         ^
+
+aco_cuda_optimized.cu(1609): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Parallel Run", i);
+                                 ^
+
+1 error detected in the compilation of "aco_cuda_optimized.cu".
+aco_cuda_optimized.cu
+========== COMPILATION END ========== 
+Exit code: 2 

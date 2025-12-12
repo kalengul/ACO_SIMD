@@ -1,0 +1,468 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o v100_optimizations.exe v100_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+v100_optimizations.cu(463): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+v100_optimizations.cu(626): warning #940-D: missing return statement at end of non-void function "run_aco_iterations_V100"
+  }
+  ^
+
+v100_optimizations.cu(627): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(630): warning #12-D: parsing restarts here after previous syntax error
+      double best_fitness, worst_fitness;
+                                        ^
+
+v100_optimizations.cu(633): error: expected a declaration
+      do { cudaError_t err = cudaMemcpy(&best_fitness, dev_min, sizeof(double), cudaMemcpyDeviceToHost); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "v100_optimizations.cu" << ":" << 633 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+v100_optimizations.cu(634): error: expected a declaration
+      do { cudaError_t err = cudaMemcpy(&worst_fitness, dev_max, sizeof(double), cudaMemcpyDeviceToHost); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "v100_optimizations.cu" << ":" << 634 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+v100_optimizations.cu(635): error: expected a declaration
+      do { cudaError_t err = cudaMemcpy(&hash_fails, dev_hash_fail, sizeof(int), cudaMemcpyDeviceToHost); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "v100_optimizations.cu" << ":" << 635 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+v100_optimizations.cu(637): error: this declaration has no storage class or type specifier
+      metrics.min_fitness = best_fitness;
+      ^
+
+v100_optimizations.cu(637): error: expected a ";"
+      metrics.min_fitness = best_fitness;
+             ^
+
+v100_optimizations.cu(638): error: this declaration has no storage class or type specifier
+      metrics.max_fitness = worst_fitness;
+      ^
+
+v100_optimizations.cu(638): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.max_fitness = worst_fitness;
+      ^
+
+v100_optimizations.cu(638): error: expected a ";"
+      metrics.max_fitness = worst_fitness;
+             ^
+
+v100_optimizations.cu(639): error: this declaration has no storage class or type specifier
+      metrics.hash_misses = hash_fails;
+      ^
+
+v100_optimizations.cu(639): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.hash_misses = hash_fails;
+      ^
+
+v100_optimizations.cu(639): error: expected a ";"
+      metrics.hash_misses = hash_fails;
+             ^
+
+v100_optimizations.cu(640): error: this declaration has no storage class or type specifier
+      metrics.hash_hits = num_iterations * 512 - hash_fails;
+      ^
+
+v100_optimizations.cu(640): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.hash_hits = num_iterations * 512 - hash_fails;
+      ^
+
+v100_optimizations.cu(640): error: expected a ";"
+      metrics.hash_hits = num_iterations * 512 - hash_fails;
+             ^
+
+v100_optimizations.cu(641): error: this declaration has no storage class or type specifier
+      metrics.iterations_completed = num_iterations;
+      ^
+
+v100_optimizations.cu(641): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.iterations_completed = num_iterations;
+      ^
+
+v100_optimizations.cu(641): error: expected a ";"
+      metrics.iterations_completed = num_iterations;
+             ^
+
+v100_optimizations.cu(645): error: expected a declaration
+      do { cudaError_t err = cudaGetDeviceProperties_v2(&prop, 0); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "v100_optimizations.cu" << ":" << 645 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+v100_optimizations.cu(649): error: identifier "threads_per_block" is undefined
+      const int warps_per_block = (threads_per_block + warp_size - 1) / warp_size;
+                                   ^
+
+v100_optimizations.cu(651): error: this declaration has no storage class or type specifier
+      metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+      ^
+
+v100_optimizations.cu(651): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+      ^
+
+v100_optimizations.cu(651): error: expected a ";"
+      metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+             ^
+
+v100_optimizations.cu(654): error: this declaration has no storage class or type specifier
+      metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+      ^
+
+v100_optimizations.cu(654): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+      ^
+
+v100_optimizations.cu(654): error: expected a ";"
+      metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+             ^
+
+v100_optimizations.cu(655): error: this declaration has no storage class or type specifier
+      metrics.memory_time_ms = metrics.total_time_ms - metrics.kernel_time_ms;
+      ^
+
+v100_optimizations.cu(655): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.memory_time_ms = metrics.total_time_ms - metrics.kernel_time_ms;
+      ^
+
+v100_optimizations.cu(655): error: expected a ";"
+      metrics.memory_time_ms = metrics.total_time_ms - metrics.kernel_time_ms;
+             ^
+
+v100_optimizations.cu(659): error: identifier "num_iterations" is undefined
+          (5 * 42 * sizeof(double)) * 3 * num_iterations +
+                                          ^
+
+v100_optimizations.cu(663): error: this declaration has no storage class or type specifier
+      metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) /
+      ^
+
+v100_optimizations.cu(663): error: variable "metrics" has already been defined (previous definition at line 637)
+      metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) /
+      ^
+
+v100_optimizations.cu(663): error: expected a ";"
+      metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) /
+             ^
+
+v100_optimizations.cu(666): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start);
+      ^
+
+v100_optimizations.cu(666): error: declaration is incompatible with "cudaError_t __stdcall cudaEventDestroy(cudaEvent_t)" (declared at line 3660 of C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h)
+      cudaEventDestroy(start);
+      ^
+
+v100_optimizations.cu(666): error: identifier "start" is undefined
+      cudaEventDestroy(start);
+                       ^
+
+v100_optimizations.cu(667): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start_ant);
+      ^
+
+v100_optimizations.cu(667): error: variable "cudaEventDestroy" has already been defined (previous definition at line 666)
+      cudaEventDestroy(start_ant);
+      ^
+
+v100_optimizations.cu(667): error: identifier "start_ant" is undefined
+      cudaEventDestroy(start_ant);
+                       ^
+
+v100_optimizations.cu(668): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start_update);
+      ^
+
+v100_optimizations.cu(668): error: variable "cudaEventDestroy" has already been defined (previous definition at line 666)
+      cudaEventDestroy(start_update);
+      ^
+
+v100_optimizations.cu(668): error: identifier "start_update" is undefined
+      cudaEventDestroy(start_update);
+                       ^
+
+v100_optimizations.cu(669): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(stop);
+      ^
+
+v100_optimizations.cu(669): error: variable "cudaEventDestroy" has already been defined (previous definition at line 666)
+      cudaEventDestroy(stop);
+      ^
+
+v100_optimizations.cu(669): error: identifier "stop" is undefined
+      cudaEventDestroy(stop);
+                       ^
+
+v100_optimizations.cu(671): error: expected a declaration
+      return metrics;
+      ^
+
+v100_optimizations.cu(672): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(696): warning #12-D: parsing restarts here after previous syntax error
+              visits[i] = 1.0;
+                             ^
+
+v100_optimizations.cu(697): error: expected a declaration
+          }
+          ^
+
+v100_optimizations.cu(703): warning #12-D: parsing restarts here after previous syntax error
+      file.close();
+                  ^
+
+v100_optimizations.cu(704): error: this declaration has no storage class or type specifier
+      std::cout << "Loaded " << total_size << " elements from " << filename << std::endl;
+      ^
+
+v100_optimizations.cu(704): error: declaration is incompatible with "std::ostream std::cout" (declared at line 40 of C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\iostream)
+      std::cout << "Loaded " << total_size << " elements from " << filename << std::endl;
+           ^
+
+v100_optimizations.cu(704): error: expected a ";"
+      std::cout << "Loaded " << total_size << " elements from " << filename << std::endl;
+                ^
+
+v100_optimizations.cu(705): error: expected a declaration
+      return true;
+      ^
+
+v100_optimizations.cu(706): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(735): warning #12-D: parsing restarts here after previous syntax error
+      do { cudaError_t err = cudaSetDevice(0); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "v100_optimizations.cu" << ":" << 735 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                       ^
+
+v100_optimizations.cu(736): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(769): warning #12-D: parsing restarts here after previous syntax error
+          << metrics.max_fitness << std::endl;
+                                             ^
+
+v100_optimizations.cu(770): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(798): warning #12-D: parsing restarts here after previous syntax error
+      dev_parametr_value = dev_pheromon = dev_kol_enter = dev_norm_matrix = nullptr;
+                                                                                   ^
+
+v100_optimizations.cu(799): error: this declaration has no storage class or type specifier
+      dev_agent_node = nullptr;
+      ^
+
+v100_optimizations.cu(799): error: variable "dev_agent_node" has already been defined (previous definition at line 477)
+      dev_agent_node = nullptr;
+      ^
+
+v100_optimizations.cu(799): error: a value of type "std::nullptr_t" cannot be used to initialize an entity of type "int"
+      dev_agent_node = nullptr;
+                       ^
+
+v100_optimizations.cu(800): error: this declaration has no storage class or type specifier
+      dev_OF = dev_max = dev_min = nullptr;
+      ^
+
+v100_optimizations.cu(800): error: variable "dev_OF" has already been defined (previous definition at line 474)
+      dev_OF = dev_max = dev_min = nullptr;
+      ^
+
+v100_optimizations.cu(800): error: a value of type "double *" cannot be used to initialize an entity of type "int"
+      dev_OF = dev_max = dev_min = nullptr;
+               ^
+
+v100_optimizations.cu(801): error: this declaration has no storage class or type specifier
+      dev_hash_fail = nullptr;
+      ^
+
+v100_optimizations.cu(801): error: variable "dev_hash_fail" has already been defined (previous definition at line 478)
+      dev_hash_fail = nullptr;
+      ^
+
+v100_optimizations.cu(801): error: a value of type "std::nullptr_t" cannot be used to initialize an entity of type "int"
+      dev_hash_fail = nullptr;
+                      ^
+
+v100_optimizations.cu(806): error: explicit type is missing ("int" assumed)
+      cudaDeviceReset();
+      ^
+
+v100_optimizations.cu(806): error: cannot overload functions distinguished by return type alone
+      cudaDeviceReset();
+      ^
+
+v100_optimizations.cu(807): error: this declaration has no storage class or type specifier
+      std::cout << "CUDA resources cleaned up successfully!" << std::endl;
+      ^
+
+v100_optimizations.cu(807): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "CUDA resources cleaned up successfully!" << std::endl;
+           ^
+
+v100_optimizations.cu(807): error: expected a ";"
+      std::cout << "CUDA resources cleaned up successfully!" << std::endl;
+                ^
+
+v100_optimizations.cu(808): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(833): warning #12-D: parsing restarts here after previous syntax error
+      cudaEventDestroy(start);
+                             ^
+
+v100_optimizations.cu(834): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(stop);
+      ^
+
+v100_optimizations.cu(834): error: variable "cudaEventDestroy" has already been defined (previous definition at line 666)
+      cudaEventDestroy(stop);
+      ^
+
+v100_optimizations.cu(835): error: expected a declaration
+  }
+  ^
+
+v100_optimizations.cu(860): warning #12-D: parsing restarts here after previous syntax error
+      std::cout << "\n=== Loading Data ===" << std::endl;
+                                                        ^
+
+v100_optimizations.cu(861): error: this declaration has no storage class or type specifier
+      std::cout << "File: " << "Parametr_Graph/test42.txt" << std::endl;
+      ^
+
+v100_optimizations.cu(861): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "File: " << "Parametr_Graph/test42.txt" << std::endl;
+           ^
+
+v100_optimizations.cu(861): error: expected a ";"
+      std::cout << "File: " << "Parametr_Graph/test42.txt" << std::endl;
+                ^
+
+v100_optimizations.cu(864): error: expected a declaration
+      if (!load_matrix_data("Parametr_Graph/test42.txt", params, pheromones, visits)) {
+      ^
+
+v100_optimizations.cu(870): warning #12-D: parsing restarts here after previous syntax error
+      std::cout << "\n=== Initializing CUDA Resources ===" << std::endl;
+                                                                       ^
+
+v100_optimizations.cu(871): error: expected a declaration
+      if (!initialize_cuda_resources_V100(params.data(), pheromones.data(), visits.data())) {
+      ^
+
+v100_optimizations.cu(877): warning #12-D: parsing restarts here after previous syntax error
+      std::cout << "\n=== Performing Warmup Runs ===" << std::endl;
+                                                                  ^
+
+v100_optimizations.cu(878): error: expected a declaration
+      for (int i = 0; i < 5; ++i) {
+      ^
+
+v100_optimizations.cu(889): warning #12-D: parsing restarts here after previous syntax error
+      std::cout << "\n=== Starting ACO Optimization ===" << std::endl;
+                                                                     ^
+
+v100_optimizations.cu(892): error: expected a declaration
+      for (int i = 0; i < 50; ++i) {
+      ^
+
+v100_optimizations.cu(898): warning #12-D: parsing restarts here after previous syntax error
+      auto total_end = std::chrono::high_resolution_clock::now();
+                                                                ^
+
+v100_optimizations.cu(902): error: this declaration has no storage class or type specifier
+      std::cout << "\n==================================================================" << std::endl;
+      ^
+
+v100_optimizations.cu(902): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "\n==================================================================" << std::endl;
+           ^
+
+v100_optimizations.cu(902): error: expected a ";"
+      std::cout << "\n==================================================================" << std::endl;
+                ^
+
+v100_optimizations.cu(903): error: this declaration has no storage class or type specifier
+      std::cout << "  BENCHMARK RESULTS - TESLA V100" << std::endl;
+      ^
+
+v100_optimizations.cu(903): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "  BENCHMARK RESULTS - TESLA V100" << std::endl;
+           ^
+
+v100_optimizations.cu(903): error: expected a ";"
+      std::cout << "  BENCHMARK RESULTS - TESLA V100" << std::endl;
+                ^
+
+v100_optimizations.cu(904): error: this declaration has no storage class or type specifier
+      std::cout << "==================================================================" << std::endl;
+      ^
+
+v100_optimizations.cu(904): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "==================================================================" << std::endl;
+           ^
+
+v100_optimizations.cu(904): error: expected a ";"
+      std::cout << "==================================================================" << std::endl;
+                ^
+
+v100_optimizations.cu(906): error: this declaration has no storage class or type specifier
+      std::cout << "\nPerformance Summary:" << std::endl;
+      ^
+
+v100_optimizations.cu(906): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "\nPerformance Summary:" << std::endl;
+           ^
+
+v100_optimizations.cu(906): error: expected a ";"
+      std::cout << "\nPerformance Summary:" << std::endl;
+                ^
+
+v100_optimizations.cu(907): error: this declaration has no storage class or type specifier
+      std::cout << "  Total Execution Time: " << total_duration.count() << " ms" << std::endl;
+      ^
+
+v100_optimizations.cu(907): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "  Total Execution Time: " << total_duration.count() << " ms" << std::endl;
+           ^
+
+v100_optimizations.cu(907): error: expected a ";"
+      std::cout << "  Total Execution Time: " << total_duration.count() << " ms" << std::endl;
+                ^
+
+v100_optimizations.cu(908): error: this declaration has no storage class or type specifier
+      std::cout << "  Average Time per Run: " << total_duration.count() / 50 << " ms" << std::endl;
+      ^
+
+v100_optimizations.cu(908): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "  Average Time per Run: " << total_duration.count() / 50 << " ms" << std::endl;
+           ^
+
+v100_optimizations.cu(908): error: expected a ";"
+      std::cout << "  Average Time per Run: " << total_duration.count() / 50 << " ms" << std::endl;
+                ^
+
+v100_optimizations.cu(909): error: this declaration has no storage class or type specifier
+      std::cout << "  Kernel Efficiency: "
+      ^
+
+v100_optimizations.cu(909): error: variable "std::cout" has already been defined (previous definition at line 704)
+      std::cout << "  Kernel Efficiency: "
+           ^
+
+Error limit reached.
+100 errors detected in the compilation of "v100_optimizations.cu".
+Compilation terminated.
+v100_optimizations.cu
+========== COMPILATION END ========== 
+Exit code: 4 

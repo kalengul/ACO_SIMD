@@ -1,0 +1,820 @@
+=== CONFIGURATION: compile_size_10752_reg_128_20252611_1909 ===
+Graph Size: 10752
+Register Count: 128
+Total functions: 6
+Total registers used: 300
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (124 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_10752_reg_192_20252611_1909 ===
+Graph Size: 10752
+Register Count: 192
+Total functions: 6
+Total registers used: 356
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (180 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_10752_reg_256_20252611_1909 ===
+Graph Size: 10752
+Register Count: 256
+Total functions: 6
+Total registers used: 356
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (180 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_10752_reg_32_20252611_1909 ===
+Graph Size: 10752
+Register Count: 32
+Total functions: 6
+Total registers used: 166
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_10752_reg_64_20252611_1909 ===
+Graph Size: 10752
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_10752_reg_96_20252611_1909 ===
+Graph Size: 10752
+Register Count: 96
+Total functions: 6
+Total registers used: 268
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (92 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_1344_reg_128_20252611_ 944 ===
+Graph Size: 1344
+Register Count: 128
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_1344_reg_192_20252611_ 944 ===
+Graph Size: 1344
+Register Count: 192
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_1344_reg_256_20252611_ 944 ===
+Graph Size: 1344
+Register Count: 256
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_1344_reg_32_20252611_ 944 ===
+Graph Size: 1344
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_1344_reg_64_20252611_ 944 ===
+Graph Size: 1344
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_1344_reg_96_20252611_ 944 ===
+Graph Size: 1344
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_168_reg_128_20252611_ 944 ===
+Graph Size: 168
+Register Count: 128
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_168_reg_192_20252611_ 944 ===
+Graph Size: 168
+Register Count: 192
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_168_reg_256_20252611_ 944 ===
+Graph Size: 168
+Register Count: 256
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_168_reg_32_20252611_ 944 ===
+Graph Size: 168
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_168_reg_64_20252611_ 944 ===
+Graph Size: 168
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_168_reg_96_20252611_ 944 ===
+Graph Size: 168
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_21504_reg_128_20252611_1909 ===
+Graph Size: 21504
+Register Count: 128
+Total functions: 6
+Total registers used: 300
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (124 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_21504_reg_192_20252611_1909 ===
+Graph Size: 21504
+Register Count: 192
+Total functions: 6
+Total registers used: 356
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (180 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_21504_reg_256_20252611_1909 ===
+Graph Size: 21504
+Register Count: 256
+Total functions: 6
+Total registers used: 356
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (180 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_21504_reg_32_20252611_1909 ===
+Graph Size: 21504
+Register Count: 32
+Total functions: 6
+Total registers used: 166
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_21504_reg_64_20252611_1909 ===
+Graph Size: 21504
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_21504_reg_96_20252611_1909 ===
+Graph Size: 21504
+Register Count: 96
+Total functions: 6
+Total registers used: 268
+Total shared memory: 61440 bytes
+Total constant memory: 2504 bytes
+Function with most registers: antColonyOptimization (92 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_2688_reg_128_20252611_ 944 ===
+Graph Size: 2688
+Register Count: 128
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_2688_reg_192_20252611_ 944 ===
+Graph Size: 2688
+Register Count: 192
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_2688_reg_256_20252611_ 944 ===
+Graph Size: 2688
+Register Count: 256
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_2688_reg_32_20252611_ 944 ===
+Graph Size: 2688
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_2688_reg_64_20252611_ 944 ===
+Graph Size: 2688
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_2688_reg_96_20252611_ 944 ===
+Graph Size: 2688
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_336_reg_128_20252611_ 944 ===
+Graph Size: 336
+Register Count: 128
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_336_reg_192_20252611_ 944 ===
+Graph Size: 336
+Register Count: 192
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_336_reg_256_20252611_ 944 ===
+Graph Size: 336
+Register Count: 256
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_336_reg_32_20252611_ 944 ===
+Graph Size: 336
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_336_reg_64_20252611_ 944 ===
+Graph Size: 336
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_336_reg_96_20252611_ 944 ===
+Graph Size: 336
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_128_20252611_ 944 ===
+Graph Size: 42
+Register Count: 128
+Total functions: 6
+Total registers used: 184
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_192_20252611_ 944 ===
+Graph Size: 42
+Register Count: 192
+Total functions: 6
+Total registers used: 184
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_256_20252611_ 944 ===
+Graph Size: 42
+Register Count: 256
+Total functions: 6
+Total registers used: 184
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252511_1809 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 4
+Total registers used: 104
+Total shared memory: 20480 bytes
+Total constant memory: 1584 bytes
+Function with most registers:  (32 registers)
+Functions with spill memory: antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252511_1814 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 4
+Total registers used: 104
+Total shared memory: 20480 bytes
+Total constant memory: 1584 bytes
+Function with most registers:  (32 registers)
+Functions with spill memory: antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 031 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 5
+Total registers used: 136
+Total shared memory: 40960 bytes
+Total constant memory: 1984 bytes
+Function with most registers: updateAndComputePheromones (32 registers)
+Functions with spill memory: antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 036 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 5
+Total registers used: 136
+Total shared memory: 40960 bytes
+Total constant memory: 1984 bytes
+Function with most registers: updateAndComputePheromones (32 registers)
+Functions with spill memory: antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 048 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 5
+Total registers used: 136
+Total shared memory: 40960 bytes
+Total constant memory: 1984 bytes
+Function with most registers: updateAndComputePheromones (32 registers)
+Functions with spill memory: antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 131 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 132 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 133 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 134 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 822 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 825 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 916 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 927 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_32_20252611_ 944 ===
+Graph Size: 42
+Register Count: 32
+Total functions: 6
+Total registers used: 166
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_64_20252611_ 031 ===
+Graph Size: 42
+Register Count: 64
+Total functions: 5
+Total registers used: 148
+Total shared memory: 40960 bytes
+Total constant memory: 1984 bytes
+Function with most registers: antColonyOptimization (38 registers)
+Functions with spill memory: antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_64_20252611_ 131 ===
+Graph Size: 42
+Register Count: 64
+Total functions: 6
+Total registers used: 186
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_64_20252611_ 822 ===
+Graph Size: 42
+Register Count: 64
+Total functions: 6
+Total registers used: 186
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_64_20252611_ 825 ===
+Graph Size: 42
+Register Count: 64
+Total functions: 6
+Total registers used: 186
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_64_20252611_ 927 ===
+Graph Size: 42
+Register Count: 64
+Total functions: 6
+Total registers used: 186
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_64_20252611_ 944 ===
+Graph Size: 42
+Register Count: 64
+Total functions: 6
+Total registers used: 184
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_96_20252611_ 927 ===
+Graph Size: 42
+Register Count: 96
+Total functions: 6
+Total registers used: 186
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_42_reg_96_20252611_ 944 ===
+Graph Size: 42
+Register Count: 96
+Total functions: 6
+Total registers used: 184
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (38 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_128_20252611_1909 ===
+Graph Size: 5376
+Register Count: 128
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_192_20252611_1909 ===
+Graph Size: 5376
+Register Count: 192
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_256_20252611_1909 ===
+Graph Size: 5376
+Register Count: 256
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_32_20252611_ 944 ===
+Graph Size: 5376
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_32_20252611_1909 ===
+Graph Size: 5376
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_64_20252611_ 944 ===
+Graph Size: 5376
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_64_20252611_1909 ===
+Graph Size: 5376
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_96_20252611_ 944 ===
+Graph Size: 5376
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_5376_reg_96_20252611_1909 ===
+Graph Size: 5376
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_672_reg_128_20252611_ 944 ===
+Graph Size: 672
+Register Count: 128
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_672_reg_192_20252611_ 944 ===
+Graph Size: 672
+Register Count: 192
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_672_reg_256_20252611_ 944 ===
+Graph Size: 672
+Register Count: 256
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_672_reg_32_20252611_ 944 ===
+Graph Size: 672
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_672_reg_64_20252611_ 944 ===
+Graph Size: 672
+Register Count: 64
+Total functions: 6
+Total registers used: 228
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (60 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_672_reg_96_20252611_ 944 ===
+Graph Size: 672
+Register Count: 96
+Total functions: 6
+Total registers used: 244
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (68 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_84_reg_128_20252611_ 944 ===
+Graph Size: 84
+Register Count: 128
+Total functions: 6
+Total registers used: 240
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (66 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_84_reg_192_20252611_ 944 ===
+Graph Size: 84
+Register Count: 192
+Total functions: 6
+Total registers used: 240
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (66 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_84_reg_256_20252611_ 944 ===
+Graph Size: 84
+Register Count: 256
+Total functions: 6
+Total registers used: 240
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (66 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_84_reg_32_20252611_ 944 ===
+Graph Size: 84
+Register Count: 32
+Total functions: 6
+Total registers used: 168
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (32 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_84_reg_64_20252611_ 944 ===
+Graph Size: 84
+Register Count: 64
+Total functions: 6
+Total registers used: 236
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (64 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+
+=== CONFIGURATION: compile_size_84_reg_96_20252611_ 944 ===
+Graph Size: 84
+Register Count: 96
+Total functions: 6
+Total registers used: 240
+Total shared memory: 61440 bytes
+Total constant memory: 2488 bytes
+Function with most registers: parallelACOIteration (66 registers)
+Functions with spill memory: parallelACOIteration antColonyOptimization 
+

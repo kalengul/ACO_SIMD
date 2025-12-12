@@ -1,0 +1,54 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1794): error: "prop" has already been declared in the current scope
+      cudaDeviceProp prop;
+                     ^
+
+aco_cuda_optimized.cu(1799): error: identifier "unified_threads" is undefined
+      int unified_warps_per_block = (unified_threads + warp_size - 1) / warp_size;
+                                     ^
+
+aco_cuda_optimized.cu(1802): error: identifier "shared_mem_size" is undefined
+      int shared_mem_per_block = shared_mem_size;
+                                 ^
+
+aco_cuda_optimized.cu(2115): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "4 function ACO 4start", i);
+                                 ^
+
+aco_cuda_optimized.cu(2127): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO 3start", i);
+                                 ^
+
+aco_cuda_optimized.cu(2140): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run 2start", i);
+                                 ^
+
+aco_cuda_optimized.cu(2153): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Unified Run 1start", i);
+                                 ^
+
+3 errors detected in the compilation of "aco_cuda_optimized.cu".
+aco_cuda_optimized.cu
+========== COMPILATION END ========== 
+Exit code: 2 

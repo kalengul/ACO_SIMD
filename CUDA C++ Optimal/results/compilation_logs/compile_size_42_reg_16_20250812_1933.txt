@@ -1,0 +1,99 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_4layers.exe aco_cuda_global_4layers.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_4layers.cu(187): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_4layers.cu(187): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_4layers.cu(310): warning #550-D: variable "s_prob" was set but never used
+      __declspec(__shared__) float s_prob[32][4];
+                                   ^
+
+aco_cuda_global_4layers.cu(497): warning #550-D: variable "s_pheromon_updated" was set but never used
+              __declspec(__shared__) Float4 s_pheromon_updated[256];
+                                            ^
+
+aco_cuda_global_4layers.cu(498): warning #550-D: variable "s_kol_enter_updated" was set but never used
+              __declspec(__shared__) Float4 s_kol_enter_updated[256];
+                                            ^
+
+aco_cuda_global_4layers.cu(514): warning #550-D: variable "s_prob_block" was set but never used
+      __declspec(__shared__) float s_prob_block[256][4];
+                                   ^
+
+aco_cuda_global_4layers.cu(683): warning #177-D: variable "warp_id" was declared but never referenced
+      const int warp_id = threadIdx.x / 32;
+                ^
+
+aco_cuda_global_4layers.cu(798): warning #550-D: variable "s_agent_params" was set but never used
+      __declspec(__shared__) double s_agent_params[128][16];  
+                                    ^
+
+aco_cuda_global_4layers.cu(32): warning #177-D: variable "RTX3060_WARP_SIZE" was declared but never referenced
+  const int RTX3060_WARP_SIZE = 32;
+            ^
+
+aco_cuda_global_4layers.cu(33): warning #177-D: variable "RTX3060_MAX_THREADS_PER_SM" was declared but never referenced
+  const int RTX3060_MAX_THREADS_PER_SM = 1536;
+            ^
+
+aco_cuda_global_4layers.cu(34): warning #177-D: variable "RTX3060_MAX_THREADS_PER_BLOCK" was declared but never referenced
+  const int RTX3060_MAX_THREADS_PER_BLOCK = 1024;
+            ^
+
+aco_cuda_global_4layers.cu(35): warning #177-D: variable "RTX3060_SHARED_MEM_PER_BLOCK" was declared but never referenced
+  const int RTX3060_SHARED_MEM_PER_BLOCK = 48 * 1024;  
+            ^
+
+ptxas warning : For profile sm_86 adjusting per thread register count of 16 to lower bound of 24
+ptxas info    : Overriding maximum register limit 256 for '_Z28combinedUpdateKernel_rtx3060PKfPKiPfS3_S3_i' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z31antColonyOptimization_optimizedPKfS0_PiPfP9HashEntryS2_S2_S1_S2_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z30computeProbabilities_optimizedPKfS0_Pf' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26updatePheromones_optimizedPKfPKiPfS3_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z27depositPheromones_optimizedPKfPKiPfS3_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z29evaporatePheromones_optimizedPf' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  24 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z28combinedUpdateKernel_rtx3060PKfPKiPfS3_S3_i' for 'sm_86'
+ptxas info    : Function properties for _Z28combinedUpdateKernel_rtx3060PKfPKiPfS3_S3_i
+    144 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 144 bytes cumulative stack size, 17408 bytes smem, 396 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z31antColonyOptimization_optimizedPKfS0_PiPfP9HashEntryS2_S2_S1_S2_' for 'sm_86'
+ptxas info    : Function properties for _Z31antColonyOptimization_optimizedPKfS0_PiPfP9HashEntryS2_S2_S1_S2_
+    88 bytes stack frame, 44 bytes spill stores, 44 bytes spill loads
+ptxas info    : Used 24 registers, used 0 barriers, 88 bytes cumulative stack size, 424 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z30computeProbabilities_optimizedPKfS0_Pf' for 'sm_86'
+ptxas info    : Function properties for _Z30computeProbabilities_optimizedPKfS0_Pf
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 2048 bytes smem, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z26updatePheromones_optimizedPKfPKiPfS3_' for 'sm_86'
+ptxas info    : Function properties for _Z26updatePheromones_optimizedPKfPKiPfS3_
+    8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 8 bytes cumulative stack size, 1024 bytes smem, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z27depositPheromones_optimizedPKfPKiPfS3_' for 'sm_86'
+ptxas info    : Function properties for _Z27depositPheromones_optimizedPKfPKiPfS3_
+    8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 8 bytes cumulative stack size, 1024 bytes smem, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z29evaporatePheromones_optimizedPf' for 'sm_86'
+ptxas info    : Function properties for _Z29evaporatePheromones_optimizedPf
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 10 registers, used 0 barriers, 360 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_86'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 12 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_global_4layers.cu
+tmpxft_000035fc_00000000-10_aco_cuda_global_4layers.cudafe1.cpp
+========== COMPILATION END ========== 
+Exit code: 0 

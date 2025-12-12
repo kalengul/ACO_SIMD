@@ -1,0 +1,125 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=672, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1996): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_optimized.cu(2153): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_optimized.cu(2154): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+aco_cuda_optimized.cu(872): warning #177-D: variable "s_agent_of" was declared but never referenced
+      __declspec(__shared__) double s_agent_of;
+                                    ^
+          detected during instantiation of "void ComputePheromonesAdaptive<USE_SHARED_MEMORY,PARAMS_PER_BLOCK>(double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *, int) [with USE_SHARED_MEMORY=true, PARAMS_PER_BLOCK=32]" at line 1417
+
+aco_cuda_optimized.cu(872): warning #177-D: variable "s_agent_of" was declared but never referenced
+      __declspec(__shared__) double s_agent_of;
+                                    ^
+          detected during instantiation of "void ComputePheromonesAdaptive<USE_SHARED_MEMORY,PARAMS_PER_BLOCK>(double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *, int) [with USE_SHARED_MEMORY=false, PARAMS_PER_BLOCK=1]" at line 1429
+
+ptxas info    : Overriding maximum register limit 256 for '_Z25ComputePheromonesAdaptiveILb0ELi1EEvPdS0_S0_PiS0_P9HashEntryS0_S0_S1_i' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z25ComputePheromonesAdaptiveILb1ELi32EEvPdS0_S0_PiS0_P9HashEntryS0_S0_S1_i' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z17depositPheromonesPKdPKiPdS3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19evaporatePheromonesPd' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z16updatePheromonesPKdPKiPdS3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z20computeProbabilitiesPKdS0_Pd' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  32 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 26952 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z25ComputePheromonesAdaptiveILb0ELi1EEvPdS0_S0_PiS0_P9HashEntryS0_S0_S1_i' for 'sm_70'
+ptxas info    : Function properties for _Z25ComputePheromonesAdaptiveILb0ELi1EEvPdS0_S0_PiS0_P9HashEntryS0_S0_S1_i
+    8128 bytes stack frame, 8 bytes spill stores, 4 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 8128 bytes cumulative stack size, 48 bytes smem, 428 bytes cmem[0], 56 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z25ComputePheromonesAdaptiveILb1ELi32EEvPdS0_S0_PiS0_P9HashEntryS0_S0_S1_i' for 'sm_70'
+ptxas info    : Function properties for _Z25ComputePheromonesAdaptiveILb1ELi32EEvPdS0_S0_PiS0_P9HashEntryS0_S0_S1_i
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 48 bytes cumulative stack size, 10672 bytes smem, 428 bytes cmem[0], 56 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4_' for 'sm_70'
+ptxas info    : Function properties for _Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 48 bytes cumulative stack size, 20480 bytes smem, 448 bytes cmem[0], 56 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' for 'sm_70'
+ptxas info    : Function properties for _Z26updateAndComputePheromonesPKdPKiPdS3_S3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 20480 bytes smem, 392 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z17depositPheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z17depositPheromonesPKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 26 registers, used 0 barriers, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19evaporatePheromonesPd' for 'sm_70'
+ptxas info    : Function properties for _Z19evaporatePheromonesPd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 22 registers, used 0 barriers, 360 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z16updatePheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z16updatePheromonesPKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 28 registers, used 0 barriers, 384 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0_' for 'sm_70'
+ptxas info    : Function properties for _Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 48 bytes cumulative stack size, 408 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z20computeProbabilitiesPKdS0_Pd' for 'sm_70'
+ptxas info    : Function properties for _Z20computeProbabilitiesPKdS0_Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 20480 bytes smem, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_70'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_optimized.cu
+tmpxft_00002258_00000000-10_aco_cuda_optimized.cudafe1.cpp
+========== COMPILATION END ========== 
+Exit code: 0 

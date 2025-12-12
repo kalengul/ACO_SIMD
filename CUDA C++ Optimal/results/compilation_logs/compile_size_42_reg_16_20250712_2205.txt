@@ -1,0 +1,8 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o v100_optimizations.exe v100_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+v100_optimizations.cu(10): fatal error C1083: Cannot open include file: 'parametrs_v100.h': No such file or directory
+v100_optimizations.cu
+========== COMPILATION END ========== 
+Exit code: 2 

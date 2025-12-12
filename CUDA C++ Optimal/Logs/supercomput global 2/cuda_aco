@@ -1,0 +1,329 @@
+#!/bin/sh
+#SBATCH -J 1_aco
+#SBATCH --gres=gpu:1           # Запросить 1 GPU V100!
+#SBATCH -p v100         # partition with GPUs
+#SBATCH -t 3-0:0:0
+#SBATCH -o results/slurm-%j.out
+#SBATCH -e results/slurm-%j.err
+
+module add cuda/v12.1
+module add gcc/v9.1
+
+echo "==================================================="
+echo "    CUDA ACO Benchmark Launcher"
+echo "==================================================="
+
+EXE_NAME="aco_cuda_optimized.exe"
+OUTPUT_DIR="results"
+CONFIG_FILE="parametrs.h"
+
+ANT_SIZES="500"
+PARAM_SIZES="42 84 168 336 672 1344 2688 5376 10752 21504 43008 86016 172032 344064 688128 1376256"
+
+# Создание директории результатов
+mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${OUTPUT_DIR}/compilation_logs"
+
+# Проверка наличия CUDA
+echo "Checking CUDA availability..."
+if ! command -v nvcc > /dev/null 2>&1; then
+    echo "ERROR: nvcc not found in PATH!"
+    echo "Please install CUDA Toolkit or add to PATH"
+    exit 1
+fi
+
+# Получение информации о GPU
+echo "Checking GPU information..."
+if command -v nvidia-smi > /dev/null 2>&1; then
+    echo "GPU Information:"
+    nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
+else
+    echo "WARNING: Could not query GPU information"
+fi
+
+# Очистка предыдущих сборок
+echo "Cleaning previous builds..."
+rm -f *.o *.obj *.exe *.dll *.lib *.exp > /dev/null 2>&1
+
+# Фиксированная архитектура для V100
+echo "Setting GPU architecture..."
+ARCH="sm_70"  # Tesla V100 имеет compute capability 7.0
+echo "Using ARCH: ${ARCH} (V100)"
+
+# Функция для обновления параметра размера графа
+update_parameter_size() {
+    new_size=$1
+    graph_file="Parametr_Graph/test${new_size}.txt"
+    
+    echo "Updating parametrs.h with PARAMETR_SIZE=${new_size} and NAME_FILE_GRAPH=${graph_file}"
+    
+    # Создание временного файла
+    temp_file=$(mktemp)
+    
+    # Обработка исходного файла и замена значений
+    while IFS= read -r line; do
+        if echo "$line" | grep -q "#define PARAMETR_SIZE"; then
+            echo "#define PARAMETR_SIZE ${new_size}"
+        elif echo "$line" | grep -q "#define NAME_FILE_GRAPH"; then
+            echo "#define NAME_FILE_GRAPH \"${graph_file}\""
+        else
+            echo "$line"
+        fi
+    done < "$CONFIG_FILE" > "$temp_file"
+    
+    # Копирование временного файла обратно
+    cp "$temp_file" "$CONFIG_FILE"
+    rm "$temp_file"
+    
+    # Проверка, что изменения применены
+    if ! grep -q "#define PARAMETR_SIZE ${new_size}" "$CONFIG_FILE"; then
+        echo "ERROR: Failed to update PARAMETR_SIZE in config file"
+        return 1
+    fi
+    
+    if ! grep -q "$graph_file" "$CONFIG_FILE"; then
+        echo "ERROR: Failed to update NAME_FILE_GRAPH in config file"
+        return 1
+    fi
+    
+    echo "Successfully updated parametrs.h with PARAMETR_SIZE=${new_size}"
+    return 0
+}
+
+# Функция для обновления параметра размера блока
+update_ant_size() {
+    ant_size=$1
+    
+    echo "Updating parametrs.h with ANT_SIZE=${ant_size}"
+    
+    # Создание временного файла
+    temp_file=$(mktemp)
+    
+    # Обработка исходного файла и замена значения ANT_SIZE
+    ant_size_found=false
+    while IFS= read -r line; do
+        if echo "$line" | grep -q "#define ANT_SIZE"; then
+            echo "#define ANT_SIZE ${ant_size}"
+            ant_size_found=true
+        else
+            echo "$line"
+        fi
+    done < "$CONFIG_FILE" > "$temp_file"
+    
+    # Если ANT_SIZE не найден, добавляем его в начало файла
+    if [ "$ant_size_found" = false ]; then
+        echo "WARNING: ANT_SIZE not found in parametrs.h, adding at the beginning"
+        temp_file2=$(mktemp)
+        echo "#define ANT_SIZE ${ant_size}" > "$temp_file2"
+        cat "$temp_file" >> "$temp_file2"
+        mv "$temp_file2" "$temp_file"
+    fi
+    
+    # Копирование временного файла обратно
+    cp "$temp_file" "$CONFIG_FILE"
+    rm "$temp_file"
+    
+    # Проверка, что изменения применены
+    if ! grep -q "#define ANT_SIZE ${ant_size}" "$CONFIG_FILE"; then
+        echo "ERROR: Failed to update ANT_SIZE in config file"
+        return 1
+    fi
+    
+    echo "Successfully updated parametrs.h with ANT_SIZE=${ant_size}"
+    return 0
+}
+
+# Функция для обновления BLOCK_SIZE в зависимости от PARAM_SIZE
+update_block_size() {
+    param_size=$1
+    
+    echo "Updating BLOCK_SIZE based on PARAM_SIZE=${param_size}"
+    
+    # Определение BLOCK_SIZE по условию
+    if [ "$param_size" -le 2688 ]; then
+        block_size=64
+        echo "PARAM_SIZE=${param_size} <= 2688, setting BLOCK_SIZE=${block_size}"
+    else
+        block_size=256
+        echo "PARAM_SIZE=${param_size} > 2688, setting BLOCK_SIZE=${block_size}"
+    fi
+    
+    # Создание временного файла
+    temp_file=$(mktemp)
+    
+    # Обработка исходного файла и замена/добавление BLOCK_SIZE
+    block_size_found=false
+    while IFS= read -r line; do
+        if echo "$line" | grep -q "#define BLOCK_SIZE"; then
+            echo "#define BLOCK_SIZE ${block_size}"
+            block_size_found=true
+        else
+            echo "$line"
+        fi
+    done < "$CONFIG_FILE" > "$temp_file"
+    
+    # Если BLOCK_SIZE не найден, добавляем его после PARAMETR_SIZE
+    if [ "$block_size_found" = false ]; then
+        echo "WARNING: BLOCK_SIZE not found in parametrs.h, adding after PARAMETR_SIZE"
+        temp_file2=$(mktemp)
+        
+        # Ищем позицию после PARAMETR_SIZE и вставляем BLOCK_SIZE
+        inserted=false
+        while IFS= read -r line; do
+            echo "$line"
+            if echo "$line" | grep -q "#define PARAMETR_SIZE" && [ "$inserted" = false ]; then
+                echo "#define BLOCK_SIZE ${block_size}"
+                inserted=true
+            fi
+        done < "$temp_file" > "$temp_file2"
+        
+        # Если не нашли PARAMETR_SIZE, добавляем в начало
+        if [ "$inserted" = false ]; then
+            temp_file3=$(mktemp)
+            echo "#define BLOCK_SIZE ${block_size}" > "$temp_file3"
+            cat "$temp_file2" >> "$temp_file3"
+            mv "$temp_file3" "$temp_file2"
+        fi
+        
+        mv "$temp_file2" "$temp_file"
+    fi
+    
+    # Копирование временного файла обратно
+    cp "$temp_file" "$CONFIG_FILE"
+    rm "$temp_file"
+    
+    # Проверка, что изменения применены
+    if ! grep -q "#define BLOCK_SIZE ${block_size}" "$CONFIG_FILE"; then
+        echo "ERROR: Failed to update BLOCK_SIZE in config file"
+        return 1
+    fi
+    
+    echo "Successfully updated parametrs.h with BLOCK_SIZE=${block_size}"
+    return 0
+}
+
+# Основной цикл бенчмарка
+for size in $PARAM_SIZES; do
+    echo
+    echo "==================================================="
+    echo "Testing with PARAMETR_SIZE=${size}"
+    echo "==================================================="
+    
+    # Обновление параметра размера графа в файле parametrs.h
+    echo "Updating parameter file with PARAMETR_SIZE=${size}..."
+    if ! update_parameter_size "$size"; then
+        echo "ERROR: Failed to update parameter file!"
+        exit 1
+    fi
+    
+    # Обновление BLOCK_SIZE в зависимости от PARAM_SIZE
+    echo "Updating BLOCK_SIZE based on PARAM_SIZE..."
+    if ! update_block_size "$size"; then
+        echo "ERROR: Failed to update BLOCK_SIZE!"
+        exit 1
+    fi
+    
+    for ant_size in $ANT_SIZES; do
+        echo "==================================================="
+        echo "Testing with PARAMETR_SIZE=${size}, ANT_SIZE=${ant_size}"
+        echo "==================================================="
+        
+        # Обновление параметра размера блока
+        echo "Updating parameter file with ANT_SIZE=${ant_size}..."
+        if ! update_ant_size "$ant_size"; then
+            echo "ERROR: Failed to update ANT_SIZE in parameter file!"
+            exit 1
+        fi
+        
+        echo "Compiling CUDA program with arch=${ARCH}..."
+
+        # Создание имени файла для лога компиляции
+        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+        COMPILE_LOG="${OUTPUT_DIR}/compilation_logs/compile_size_${size}_block_${ant_size}_${TIMESTAMP}.txt"
+
+        # Расширенная компиляция с сохранением вывода в файл
+        {
+            echo "========== COMPILATION START =========="
+            echo "Parameters: PARAMETR_SIZE=${size}, ANT_SIZE=${ant_size}"
+            echo "Compile command: nvcc -O3 -arch=${ARCH} -std=c++17 -o ${EXE_NAME} aco_cuda_global_while.cu -Xcompiler \"-O2 -ffast-math -fopenmp\" -use_fast_math -lcudart -Xptxas \"-O3,-v,-maxrregcount=32\" --resource-usage"
+            echo
+            
+            nvcc -O3 -arch=${ARCH} -std=c++17 -o ${EXE_NAME} aco_cuda_global_while.cu \
+                 -Xcompiler "-O2 -ffast-math -fopenmp" \
+                 -use_fast_math \
+                 -lcudart \
+                 -Xptxas "-O3,-v,-maxrregcount=32" \
+                 --resource-usage 2>&1
+                 
+            COMPILE_RESULT=$?
+            echo "========== COMPILATION END =========="
+            echo "Exit code: ${COMPILE_RESULT}"
+        } > "$COMPILE_LOG"
+
+        if [ $COMPILE_RESULT -ne 0 ]; then
+            echo
+            echo "ERROR: Compilation failed!"
+            echo "Compilation errors saved to: ${COMPILE_LOG}"
+            echo "Showing last 10 lines of compilation log:"
+            tail -10 "$COMPILE_LOG"
+            
+            # Пробуем упрощенную компиляцию для диагностики
+            echo "Trying simplified compilation..."
+            nvcc -arch=${ARCH} -o ${EXE_NAME}_simple aco_cuda_optimized.cu 2>&1 | tail -5
+            exit 1
+        else
+            echo "Compilation successful. Log saved to: ${COMPILE_LOG}"
+        fi
+
+        if [ ! -f "$EXE_NAME" ]; then
+            echo "ERROR: Compilation failed - executable not created!"
+            echo "Files in current directory:"
+            ls -la
+            exit 1
+        fi
+
+        echo
+        echo "==================================================="
+        echo "Running ACO optimization..."
+        echo "==================================================="
+        echo
+
+        # Запуск программы с измерением времени
+        START_TIME=$(date +%s.%N)
+        echo "Start time: $(date)"
+
+        if ./${EXE_NAME}; then
+            echo "Program executed successfully"
+        else
+            echo "WARNING: Program execution failed with exit code $?"
+        fi
+
+        END_TIME=$(date +%s.%N)
+        echo "End time: $(date)"
+
+        # Расчет времени выполнения
+        DURATION=$(echo "$END_TIME - $START_TIME" | bc)
+        echo "Execution time: ${DURATION} seconds"
+
+        # Копирование логов
+        if [ -f "log.txt" ]; then
+            cp "log.txt" "${OUTPUT_DIR}/log_size_${size}_block_${ant_size}_${TIMESTAMP}.txt"
+            echo "Log file saved to ${OUTPUT_DIR}"
+        else
+            echo "WARNING: log.txt not found after execution"
+        fi
+
+        echo
+        echo "==================================================="
+        echo "Benchmark completed for PARAMETR_SIZE=${size}, ANT_SIZE=${ant_size}!"
+        echo "Results saved in: ${OUTPUT_DIR}/"
+        echo "Execution time: ${DURATION} seconds"
+        echo "==================================================="
+
+        # Очистка временных файлов
+        rm -f *.linkinfo > /dev/null 2>&1
+        rm -f ${EXE_NAME} > /dev/null 2>&1
+    done
+done
+
+echo "All benchmarks completed successfully!"

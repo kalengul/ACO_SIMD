@@ -1,0 +1,112 @@
+#!/bin/sh
+#SBATCH -J cuda_omp_aco_hybrid
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --cpus-per-task=32
+#SBATCH --gres=gpu:2
+#SBATCH --mem=256G
+#SBATCH -t 2-0:0:0
+#SBATCH -o slurm-%j.out
+#SBATCH -e slurm-%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=your.email@domain.com
+
+# Очистка и загрузка модулей
+module purge
+module add gcc/v9.1
+module add cuda/v11.0
+module add openmpi/4.0.3
+
+# Экспорт переменных окружения
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export OMP_PLACES=cores
+export OMP_PROC_BIND=close
+export OMP_DISPLAY_ENV=verbose
+
+# CUDA настройки
+export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+
+# Информация о системе
+echo "=== Информация о системе ==="
+echo "Узел: $(hostname)"
+echo "CPU потоков: $OMP_NUM_THREADS"
+echo "GPU устройств: $CUDA_VISIBLE_DEVICES"
+echo "Память: $SLURM_MEM_PER_NODE"
+echo "Время: $SLURM_TIMELIMIT"
+
+echo ""
+echo "=== Информация о компиляторах ==="
+which g++
+g++ --version | head -n 3
+echo ""
+which nvcc
+nvcc --version | head -n 3
+
+# Проверка GPU
+echo ""
+echo "=== Информация о GPU ==="
+nvidia-smi --query-gpu=name,memory.total,compute_capability --format=csv
+
+echo ""
+echo "=== Компиляция ==="
+
+# Компиляция CUDA библиотеки
+echo "1. Компиляция CUDA библиотеки..."
+nvcc -O3 -Xcompiler "-fPIC" -shared -arch=sm_70 -Xcompiler "-march=native" -o libcuda_module.so cuda_module.cu
+
+if [ $? -ne 0 ]; then
+    echo "❌ Ошибка компиляции CUDA библиотеки!"
+    exit 1
+fi
+echo "✅ CUDA библиотека скомпилирована"
+
+# Компиляция основной программы
+echo "2. Компиляция основной программы..."
+g++ -fopenmp -O3 -std=c++17 -march=native -ffast-math -o test_hybrid main_omp.cpp -L. -lcuda_module -Wl,-rpath,.
+
+if [ $? -ne 0 ]; then
+    echo "❌ Ошибка компиляции основной программы!"
+    exit 1
+fi
+echo "✅ Основная программа скомпилирована"
+
+# Проверка бинарных файлов
+echo ""
+echo "=== Проверка бинарных файлов ==="
+file libcuda_module.so
+file test_hybrid
+echo "Размер CUDA библиотеки: $(du -h libcuda_module.so | cut -f1)"
+echo "Размер программы: $(du -h test_hybrid | cut -f1)"
+
+echo ""
+echo "=== Запуск программы ==="
+echo "Начало выполнения: $(date)"
+echo "Параметры:"
+echo "  - Потоков CPU: $OMP_NUM_THREADS"
+echo "  - GPU устройств: $(echo $CUDA_VISIBLE_DEVICES | tr ',' ' ' | wc -w)"
+echo "  - Память: $SLURM_MEM_PER_NODE"
+
+# Запуск с измерением времени
+start_time=$(date +%s)
+
+./test_hybrid
+
+EXIT_CODE=$?
+end_time=$(date +%s)
+duration=$((end_time - start_time))
+
+echo ""
+echo "=== Результаты выполнения ==="
+echo "Завершено: $(date)"
+echo "Время выполнения: $duration секунд"
+echo "Код завершения: $EXIT_CODE"
+
+# Анализ результатов
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ Программа завершилась успешно"
+else
+    echo "❌ Программа завершилась с ошибкой"
+fi
+
+exit $EXIT_CODE

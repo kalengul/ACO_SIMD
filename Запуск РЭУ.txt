@@ -1,0 +1,3 @@
+module add cuda/v12.1    
+nvcc -std=c++11 kernel_s.cu -o cuda_ACO
+sbatch script_cuda_ACO.sh

@@ -1,0 +1,72 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=168, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+
+aco_cuda_optimized.cu(1495): warning #2464-D: conversion from a string literal to "char *" is deprecated
+
+aco_cuda_optimized.cu(1508): warning #2464-D: conversion from a string literal to "char *" is deprecated
+
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+
+aco_cuda_optimized.cu(1285): warning #177-D: variable "max_parametr" was declared but never referenced
+
+aco_cuda_optimized.cu(1432): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+
+aco_cuda_optimized.cu(1433): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+
+aco_cuda_optimized.cu(1495): warning #2464-D: conversion from a string literal to "char *" is deprecated
+
+aco_cuda_optimized.cu(1508): warning #2464-D: conversion from a string literal to "char *" is deprecated
+
+ptxas info    : 218320 bytes gmem, 6792 bytes cmem[3]
+ptxas info    : Compiling entry function '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4_' for 'sm_70'
+ptxas info    : Function properties for _Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 20480 bytes smem, 448 bytes cmem[0], 56 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' for 'sm_70'
+ptxas info    : Function properties for _Z26updateAndComputePheromonesPKdPKiPdS3_S3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 20480 bytes smem, 392 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z16updatePheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z16updatePheromonesPKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 26 registers, 384 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0_' for 'sm_70'
+ptxas info    : Function properties for _Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 408 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z20computeProbabilitiesPKdS0_Pd' for 'sm_70'
+ptxas info    : Function properties for _Z20computeProbabilitiesPKdS0_Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, 20480 bytes smem, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_70'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, 360 bytes cmem[0]
+aco_cuda_optimized.cu
+tmpxft_00000bd8_00000000-10_aco_cuda_optimized.cudafe1.cpp
+C:\Users\USER\Documents\CUDA C++ Optimal\aco_cuda_optimized.cu(1296) : warning C4715: calculate_max_parametr_size_in_gpu_memory: значение возвращается не при всех путях выполнения
+========== COMPILATION END ========== 
+Exit code: 0 

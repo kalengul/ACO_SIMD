@@ -1,0 +1,566 @@
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_10752_reg_128_20252611_1909;10752;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_10752_reg_128_20252611_1909;10752;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_10752_reg_128_20252611_1909;10752;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_10752_reg_128_20252611_1909;10752;128;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;124;0;424;40;0;4800;480;4800;sm_70
+compile_size_10752_reg_128_20252611_1909;10752;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_10752_reg_128_20252611_1909;10752;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_10752_reg_192_20252611_1909;10752;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_10752_reg_192_20252611_1909;10752;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_10752_reg_192_20252611_1909;10752;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_10752_reg_192_20252611_1909;10752;192;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;180;0;424;40;0;4800;480;4800;sm_70
+compile_size_10752_reg_192_20252611_1909;10752;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_10752_reg_192_20252611_1909;10752;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_10752_reg_256_20252611_1909;10752;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_10752_reg_256_20252611_1909;10752;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_10752_reg_256_20252611_1909;10752;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_10752_reg_256_20252611_1909;10752;256;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;180;0;424;40;0;4800;480;4800;sm_70
+compile_size_10752_reg_256_20252611_1909;10752;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_10752_reg_256_20252611_1909;10752;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_10752_reg_32_20252611_1909;10752;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;32;20480;464;48;0;4800;480;4800;sm_70
+compile_size_10752_reg_32_20252611_1909;10752;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_10752_reg_32_20252611_1909;10752;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_10752_reg_32_20252611_1909;10752;32;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;30;0;424;40;0;4800;480;4800;sm_70
+compile_size_10752_reg_32_20252611_1909;10752;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_10752_reg_32_20252611_1909;10752;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_10752_reg_64_20252611_1909;10752;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;60;20480;464;48;0;4800;480;4800;sm_70
+compile_size_10752_reg_64_20252611_1909;10752;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_10752_reg_64_20252611_1909;10752;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_10752_reg_64_20252611_1909;10752;64;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;60;0;424;40;0;4800;480;4800;sm_70
+compile_size_10752_reg_64_20252611_1909;10752;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_10752_reg_64_20252611_1909;10752;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_10752_reg_96_20252611_1909;10752;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_10752_reg_96_20252611_1909;10752;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_10752_reg_96_20252611_1909;10752;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_10752_reg_96_20252611_1909;10752;96;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;92;0;424;40;0;4800;480;4800;sm_70
+compile_size_10752_reg_96_20252611_1909;10752;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_10752_reg_96_20252611_1909;10752;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_1344_reg_128_20252611_ 944;1344;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_1344_reg_128_20252611_ 944;1344;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_1344_reg_128_20252611_ 944;1344;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_1344_reg_128_20252611_ 944;1344;128;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_1344_reg_128_20252611_ 944;1344;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_1344_reg_128_20252611_ 944;1344;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_1344_reg_192_20252611_ 944;1344;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_1344_reg_192_20252611_ 944;1344;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_1344_reg_192_20252611_ 944;1344;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_1344_reg_192_20252611_ 944;1344;192;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_1344_reg_192_20252611_ 944;1344;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_1344_reg_192_20252611_ 944;1344;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_1344_reg_256_20252611_ 944;1344;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_1344_reg_256_20252611_ 944;1344;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_1344_reg_256_20252611_ 944;1344;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_1344_reg_256_20252611_ 944;1344;256;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_1344_reg_256_20252611_ 944;1344;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_1344_reg_256_20252611_ 944;1344;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_1344_reg_32_20252611_ 944;1344;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_1344_reg_32_20252611_ 944;1344;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_1344_reg_32_20252611_ 944;1344;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_1344_reg_32_20252611_ 944;1344;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;408;48;0;4800;480;4800;sm_70
+compile_size_1344_reg_32_20252611_ 944;1344;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_1344_reg_32_20252611_ 944;1344;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_1344_reg_64_20252611_ 944;1344;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;448;56;0;4800;480;4800;sm_70
+compile_size_1344_reg_64_20252611_ 944;1344;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_1344_reg_64_20252611_ 944;1344;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_1344_reg_64_20252611_ 944;1344;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;408;48;0;4800;480;4800;sm_70
+compile_size_1344_reg_64_20252611_ 944;1344;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_1344_reg_64_20252611_ 944;1344;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_1344_reg_96_20252611_ 944;1344;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_1344_reg_96_20252611_ 944;1344;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_1344_reg_96_20252611_ 944;1344;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_1344_reg_96_20252611_ 944;1344;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_1344_reg_96_20252611_ 944;1344;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_1344_reg_96_20252611_ 944;1344;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_168_reg_128_20252611_ 944;168;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_168_reg_128_20252611_ 944;168;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_168_reg_128_20252611_ 944;168;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_168_reg_128_20252611_ 944;168;128;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_168_reg_128_20252611_ 944;168;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_168_reg_128_20252611_ 944;168;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_168_reg_192_20252611_ 944;168;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_168_reg_192_20252611_ 944;168;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_168_reg_192_20252611_ 944;168;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_168_reg_192_20252611_ 944;168;192;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_168_reg_192_20252611_ 944;168;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_168_reg_192_20252611_ 944;168;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_168_reg_256_20252611_ 944;168;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_168_reg_256_20252611_ 944;168;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_168_reg_256_20252611_ 944;168;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_168_reg_256_20252611_ 944;168;256;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_168_reg_256_20252611_ 944;168;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_168_reg_256_20252611_ 944;168;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_168_reg_32_20252611_ 944;168;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_168_reg_32_20252611_ 944;168;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_168_reg_32_20252611_ 944;168;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_168_reg_32_20252611_ 944;168;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;408;48;0;4800;480;4800;sm_70
+compile_size_168_reg_32_20252611_ 944;168;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_168_reg_32_20252611_ 944;168;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_168_reg_64_20252611_ 944;168;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;448;56;0;4800;480;4800;sm_70
+compile_size_168_reg_64_20252611_ 944;168;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_168_reg_64_20252611_ 944;168;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_168_reg_64_20252611_ 944;168;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;408;48;0;4800;480;4800;sm_70
+compile_size_168_reg_64_20252611_ 944;168;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_168_reg_64_20252611_ 944;168;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_168_reg_96_20252611_ 944;168;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_168_reg_96_20252611_ 944;168;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_168_reg_96_20252611_ 944;168;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_168_reg_96_20252611_ 944;168;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_168_reg_96_20252611_ 944;168;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_168_reg_96_20252611_ 944;168;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_21504_reg_128_20252611_1909;21504;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_21504_reg_128_20252611_1909;21504;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_21504_reg_128_20252611_1909;21504;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_21504_reg_128_20252611_1909;21504;128;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;124;0;424;40;0;4800;480;4800;sm_70
+compile_size_21504_reg_128_20252611_1909;21504;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_21504_reg_128_20252611_1909;21504;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_21504_reg_192_20252611_1909;21504;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_21504_reg_192_20252611_1909;21504;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_21504_reg_192_20252611_1909;21504;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_21504_reg_192_20252611_1909;21504;192;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;180;0;424;40;0;4800;480;4800;sm_70
+compile_size_21504_reg_192_20252611_1909;21504;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_21504_reg_192_20252611_1909;21504;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_21504_reg_256_20252611_1909;21504;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_21504_reg_256_20252611_1909;21504;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_21504_reg_256_20252611_1909;21504;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_21504_reg_256_20252611_1909;21504;256;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;180;0;424;40;0;4800;480;4800;sm_70
+compile_size_21504_reg_256_20252611_1909;21504;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_21504_reg_256_20252611_1909;21504;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_21504_reg_32_20252611_1909;21504;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;32;20480;464;48;0;4800;480;4800;sm_70
+compile_size_21504_reg_32_20252611_1909;21504;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_21504_reg_32_20252611_1909;21504;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_21504_reg_32_20252611_1909;21504;32;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;30;0;424;40;0;4800;480;4800;sm_70
+compile_size_21504_reg_32_20252611_1909;21504;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_21504_reg_32_20252611_1909;21504;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_21504_reg_64_20252611_1909;21504;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;60;20480;464;48;0;4800;480;4800;sm_70
+compile_size_21504_reg_64_20252611_1909;21504;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_21504_reg_64_20252611_1909;21504;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_21504_reg_64_20252611_1909;21504;64;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;60;0;424;40;0;4800;480;4800;sm_70
+compile_size_21504_reg_64_20252611_1909;21504;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_21504_reg_64_20252611_1909;21504;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_21504_reg_96_20252611_1909;21504;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3;parallelACOIteration;68;20480;464;48;0;4800;480;4800;sm_70
+compile_size_21504_reg_96_20252611_1909;21504;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_21504_reg_96_20252611_1909;21504;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_21504_reg_96_20252611_1909;21504;96;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0_S;antColonyOptimization;92;0;424;40;0;4800;480;4800;sm_70
+compile_size_21504_reg_96_20252611_1909;21504;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_21504_reg_96_20252611_1909;21504;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_2688_reg_128_20252611_ 944;2688;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_2688_reg_128_20252611_ 944;2688;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_2688_reg_128_20252611_ 944;2688;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_2688_reg_128_20252611_ 944;2688;128;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_2688_reg_128_20252611_ 944;2688;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_2688_reg_128_20252611_ 944;2688;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_2688_reg_192_20252611_ 944;2688;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_2688_reg_192_20252611_ 944;2688;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_2688_reg_192_20252611_ 944;2688;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_2688_reg_192_20252611_ 944;2688;192;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_2688_reg_192_20252611_ 944;2688;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_2688_reg_192_20252611_ 944;2688;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_2688_reg_256_20252611_ 944;2688;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_2688_reg_256_20252611_ 944;2688;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_2688_reg_256_20252611_ 944;2688;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_2688_reg_256_20252611_ 944;2688;256;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_2688_reg_256_20252611_ 944;2688;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_2688_reg_256_20252611_ 944;2688;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_2688_reg_32_20252611_ 944;2688;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;456;48;0;4800;480;4800;sm_70
+compile_size_2688_reg_32_20252611_ 944;2688;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_2688_reg_32_20252611_ 944;2688;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_2688_reg_32_20252611_ 944;2688;32;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;416;40;0;4800;480;4800;sm_70
+compile_size_2688_reg_32_20252611_ 944;2688;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_2688_reg_32_20252611_ 944;2688;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_2688_reg_64_20252611_ 944;2688;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;456;48;0;4800;480;4800;sm_70
+compile_size_2688_reg_64_20252611_ 944;2688;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_2688_reg_64_20252611_ 944;2688;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_2688_reg_64_20252611_ 944;2688;64;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;416;40;0;4800;480;4800;sm_70
+compile_size_2688_reg_64_20252611_ 944;2688;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_2688_reg_64_20252611_ 944;2688;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_2688_reg_96_20252611_ 944;2688;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_2688_reg_96_20252611_ 944;2688;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_2688_reg_96_20252611_ 944;2688;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_2688_reg_96_20252611_ 944;2688;96;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_2688_reg_96_20252611_ 944;2688;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_2688_reg_96_20252611_ 944;2688;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_336_reg_128_20252611_ 944;336;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_336_reg_128_20252611_ 944;336;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_336_reg_128_20252611_ 944;336;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_336_reg_128_20252611_ 944;336;128;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_336_reg_128_20252611_ 944;336;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_336_reg_128_20252611_ 944;336;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_336_reg_192_20252611_ 944;336;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_336_reg_192_20252611_ 944;336;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_336_reg_192_20252611_ 944;336;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_336_reg_192_20252611_ 944;336;192;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_336_reg_192_20252611_ 944;336;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_336_reg_192_20252611_ 944;336;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_336_reg_256_20252611_ 944;336;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_336_reg_256_20252611_ 944;336;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_336_reg_256_20252611_ 944;336;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_336_reg_256_20252611_ 944;336;256;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_336_reg_256_20252611_ 944;336;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_336_reg_256_20252611_ 944;336;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_336_reg_32_20252611_ 944;336;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_336_reg_32_20252611_ 944;336;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_336_reg_32_20252611_ 944;336;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_336_reg_32_20252611_ 944;336;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;408;48;0;4800;480;4800;sm_70
+compile_size_336_reg_32_20252611_ 944;336;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_336_reg_32_20252611_ 944;336;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_336_reg_64_20252611_ 944;336;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;448;56;0;4800;480;4800;sm_70
+compile_size_336_reg_64_20252611_ 944;336;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_336_reg_64_20252611_ 944;336;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_336_reg_64_20252611_ 944;336;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;408;48;0;4800;480;4800;sm_70
+compile_size_336_reg_64_20252611_ 944;336;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_336_reg_64_20252611_ 944;336;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_336_reg_96_20252611_ 944;336;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_336_reg_96_20252611_ 944;336;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_336_reg_96_20252611_ 944;336;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_336_reg_96_20252611_ 944;336;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_336_reg_96_20252611_ 944;336;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_336_reg_96_20252611_ 944;336;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_128_20252611_ 944;42;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_128_20252611_ 944;42;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_128_20252611_ 944;42;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_128_20252611_ 944;42;128;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_128_20252611_ 944;42;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_128_20252611_ 944;42;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_192_20252611_ 944;42;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_192_20252611_ 944;42;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_192_20252611_ 944;42;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_192_20252611_ 944;42;192;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_192_20252611_ 944;42;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_192_20252611_ 944;42;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_256_20252611_ 944;42;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_256_20252611_ 944;42;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_256_20252611_ 944;42;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_256_20252611_ 944;42;256;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_256_20252611_ 944;42;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_256_20252611_ 944;42;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252511_1809;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252511_1809;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252511_1809;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252511_1809;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252511_1814;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252511_1814;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252511_1814;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252511_1814;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 031;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 031;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 031;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 031;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 031;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 036;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 036;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 036;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 036;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 036;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 048;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 048;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 048;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 048;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 048;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 131;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 131;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 131;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 131;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 131;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 131;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 132;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 132;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 132;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 132;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 132;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 132;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 133;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 133;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 133;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 133;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 133;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 133;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 134;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 134;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 134;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 134;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 134;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 134;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 822;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 822;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 822;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 822;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 822;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 822;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 825;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 825;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 825;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 825;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 825;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 825;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 916;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 916;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 916;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 916;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 916;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 916;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 927;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 927;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 927;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 927;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 927;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 927;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_32_20252611_ 944;42;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 944;42;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 944;42;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 944;42;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;30;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_32_20252611_ 944;42;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_32_20252611_ 944;42;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_64_20252611_ 031;42;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 031;42;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 031;42;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 031;42;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 031;42;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_64_20252611_ 131;42;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 131;42;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 131;42;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 131;42;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 131;42;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 131;42;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_64_20252611_ 822;42;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 822;42;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 822;42;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 822;42;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 822;42;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 822;42;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_64_20252611_ 825;42;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 825;42;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 825;42;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 825;42;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 825;42;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 825;42;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_64_20252611_ 927;42;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 927;42;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 927;42;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 927;42;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 927;42;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 927;42;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_64_20252611_ 944;42;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 944;42;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 944;42;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 944;42;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_64_20252611_ 944;42;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_64_20252611_ 944;42;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_96_20252611_ 927;42;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_96_20252611_ 927;42;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_96_20252611_ 927;42;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;28;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_96_20252611_ 927;42;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_96_20252611_ 927;42;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_96_20252611_ 927;42;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_42_reg_96_20252611_ 944;42;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;38;20480;448;56;0;4800;480;4800;sm_70
+compile_size_42_reg_96_20252611_ 944;42;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_42_reg_96_20252611_ 944;42;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_42_reg_96_20252611_ 944;42;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;38;0;408;48;0;4800;480;4800;sm_70
+compile_size_42_reg_96_20252611_ 944;42;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_42_reg_96_20252611_ 944;42;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_128_20252611_1909;5376;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_128_20252611_1909;5376;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_128_20252611_1909;5376;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_128_20252611_1909;5376;128;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_128_20252611_1909;5376;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_128_20252611_1909;5376;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_192_20252611_1909;5376;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_192_20252611_1909;5376;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_192_20252611_1909;5376;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_192_20252611_1909;5376;192;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_192_20252611_1909;5376;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_192_20252611_1909;5376;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_256_20252611_1909;5376;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_256_20252611_1909;5376;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_256_20252611_1909;5376;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_256_20252611_1909;5376;256;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_256_20252611_1909;5376;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_256_20252611_1909;5376;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_32_20252611_ 944;5376;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_32_20252611_ 944;5376;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_32_20252611_ 944;5376;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_32_20252611_ 944;5376;32;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_32_20252611_ 944;5376;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_32_20252611_ 944;5376;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_32_20252611_1909;5376;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_32_20252611_1909;5376;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_32_20252611_1909;5376;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_32_20252611_1909;5376;32;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_32_20252611_1909;5376;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_32_20252611_1909;5376;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_64_20252611_ 944;5376;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_64_20252611_ 944;5376;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_64_20252611_ 944;5376;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_64_20252611_ 944;5376;64;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_64_20252611_ 944;5376;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_64_20252611_ 944;5376;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_64_20252611_1909;5376;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_64_20252611_1909;5376;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_64_20252611_1909;5376;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_64_20252611_1909;5376;64;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_64_20252611_1909;5376;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_64_20252611_1909;5376;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_96_20252611_ 944;5376;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_96_20252611_ 944;5376;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_96_20252611_ 944;5376;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_96_20252611_ 944;5376;96;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_96_20252611_ 944;5376;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_96_20252611_ 944;5376;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_5376_reg_96_20252611_1909;5376;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;456;48;0;4800;480;4800;sm_70
+compile_size_5376_reg_96_20252611_1909;5376;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_5376_reg_96_20252611_1909;5376;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_5376_reg_96_20252611_1909;5376;96;_Z21antColonyOptimizationPdS_PiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;416;40;0;4800;480;4800;sm_70
+compile_size_5376_reg_96_20252611_1909;5376;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_5376_reg_96_20252611_1909;5376;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_672_reg_128_20252611_ 944;672;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_672_reg_128_20252611_ 944;672;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_672_reg_128_20252611_ 944;672;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_672_reg_128_20252611_ 944;672;128;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_672_reg_128_20252611_ 944;672;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_672_reg_128_20252611_ 944;672;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_672_reg_192_20252611_ 944;672;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_672_reg_192_20252611_ 944;672;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_672_reg_192_20252611_ 944;672;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_672_reg_192_20252611_ 944;672;192;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_672_reg_192_20252611_ 944;672;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_672_reg_192_20252611_ 944;672;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_672_reg_256_20252611_ 944;672;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_672_reg_256_20252611_ 944;672;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_672_reg_256_20252611_ 944;672;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_672_reg_256_20252611_ 944;672;256;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_672_reg_256_20252611_ 944;672;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_672_reg_256_20252611_ 944;672;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_672_reg_32_20252611_ 944;672;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_672_reg_32_20252611_ 944;672;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_672_reg_32_20252611_ 944;672;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_672_reg_32_20252611_ 944;672;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;408;48;0;4800;480;4800;sm_70
+compile_size_672_reg_32_20252611_ 944;672;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_672_reg_32_20252611_ 944;672;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_672_reg_64_20252611_ 944;672;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;60;20480;448;56;0;4800;480;4800;sm_70
+compile_size_672_reg_64_20252611_ 944;672;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_672_reg_64_20252611_ 944;672;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_672_reg_64_20252611_ 944;672;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;60;0;408;48;0;4800;480;4800;sm_70
+compile_size_672_reg_64_20252611_ 944;672;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_672_reg_64_20252611_ 944;672;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_672_reg_96_20252611_ 944;672;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;68;20480;448;56;0;4800;480;4800;sm_70
+compile_size_672_reg_96_20252611_ 944;672;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_672_reg_96_20252611_ 944;672;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_672_reg_96_20252611_ 944;672;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;68;0;408;48;0;4800;480;4800;sm_70
+compile_size_672_reg_96_20252611_ 944;672;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_672_reg_96_20252611_ 944;672;96;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_84_reg_128_20252611_ 944;84;128;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;66;20480;448;56;0;4800;480;4800;sm_70
+compile_size_84_reg_128_20252611_ 944;84;128;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_84_reg_128_20252611_ 944;84;128;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_84_reg_128_20252611_ 944;84;128;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;66;0;408;48;0;4800;480;4800;sm_70
+compile_size_84_reg_128_20252611_ 944;84;128;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_84_reg_128_20252611_ 944;84;128;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_84_reg_192_20252611_ 944;84;192;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;66;20480;448;56;0;4800;480;4800;sm_70
+compile_size_84_reg_192_20252611_ 944;84;192;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_84_reg_192_20252611_ 944;84;192;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_84_reg_192_20252611_ 944;84;192;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;66;0;408;48;0;4800;480;4800;sm_70
+compile_size_84_reg_192_20252611_ 944;84;192;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_84_reg_192_20252611_ 944;84;192;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_84_reg_256_20252611_ 944;84;256;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;66;20480;448;56;0;4800;480;4800;sm_70
+compile_size_84_reg_256_20252611_ 944;84;256;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_84_reg_256_20252611_ 944;84;256;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_84_reg_256_20252611_ 944;84;256;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;66;0;408;48;0;4800;480;4800;sm_70
+compile_size_84_reg_256_20252611_ 944;84;256;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_84_reg_256_20252611_ 944;84;256;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_84_reg_32_20252611_ 944;84;32;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;32;20480;448;56;0;4800;480;4800;sm_70
+compile_size_84_reg_32_20252611_ 944;84;32;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;32;20480;392;8;0;0;0;0;sm_70
+compile_size_84_reg_32_20252611_ 944;84;32;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_84_reg_32_20252611_ 944;84;32;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;32;0;408;48;0;4800;480;4800;sm_70
+compile_size_84_reg_32_20252611_ 944;84;32;;;32;20480;376;0;0;0;0;0;sm_70
+compile_size_84_reg_32_20252611_ 944;84;32;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_84_reg_64_20252611_ 944;84;64;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;64;20480;448;56;0;4800;480;4800;sm_70
+compile_size_84_reg_64_20252611_ 944;84;64;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_84_reg_64_20252611_ 944;84;64;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_84_reg_64_20252611_ 944;84;64;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;64;0;408;48;0;4800;480;4800;sm_70
+compile_size_84_reg_64_20252611_ 944;84;64;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_84_reg_64_20252611_ 944;84;64;;;14;0;360;0;0;0;0;0;sm_70
+Config;GraphSize;RegisterCount;Function;DemangledName;Registers;SMem_Bytes;CMem_Bank0;CMem_Bank2;CMem_Bank3;Stack_Frame;Spill_Stores;Spill_Loads;Architecture
+compile_size_84_reg_96_20252611_ 944;84;96;_Z20parallelACOIterationPKdPKiPdS3_S3_S3_PiS3_P9HashEntryS3_S3_S4;parallelACOIteration;66;20480;448;56;0;4800;480;4800;sm_70
+compile_size_84_reg_96_20252611_ 944;84;96;_Z26updateAndComputePheromonesPKdPKiPdS3_S3;updateAndComputePheromones;34;20480;392;8;0;0;0;0;sm_70
+compile_size_84_reg_96_20252611_ 944;84;96;_Z16updatePheromonesPKdPKiPdS3;updatePheromones;26;0;384;8;0;0;0;0;sm_70
+compile_size_84_reg_96_20252611_ 944;84;96;_Z21antColonyOptimizationPdPiS_P9HashEntryS_S_S0;antColonyOptimization;66;0;408;48;0;4800;480;4800;sm_70
+compile_size_84_reg_96_20252611_ 944;84;96;;;34;20480;376;0;0;0;0;0;sm_70
+compile_size_84_reg_96_20252611_ 944;84;96;;;14;0;360;0;0;0;0;0;sm_70

@@ -1,0 +1,452 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1482): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start);
+      ^
+
+aco_cuda_optimized.cu(1482): error: declaration is incompatible with "cudaError_t __stdcall cudaEventDestroy(cudaEvent_t)" (declared at line 3660 of C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h)
+      cudaEventDestroy(start);
+      ^
+
+aco_cuda_optimized.cu(1482): error: identifier "start" is undefined
+      cudaEventDestroy(start);
+                       ^
+
+aco_cuda_optimized.cu(1483): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(stop);
+      ^
+
+aco_cuda_optimized.cu(1483): error: variable "cudaEventDestroy" has already been defined (previous definition at line 1482)
+      cudaEventDestroy(stop);
+      ^
+
+aco_cuda_optimized.cu(1483): error: identifier "stop" is undefined
+      cudaEventDestroy(stop);
+                       ^
+
+aco_cuda_optimized.cu(1485): error: expected a declaration
+      return metrics;
+      ^
+
+aco_cuda_optimized.cu(1486): error: expected a declaration
+  }
+  ^
+
+aco_cuda_optimized.cu(1511): warning #12-D: parsing restarts here after previous syntax error
+      do { cudaError_t err = cudaMemcpyAsync(dev_hash_fail, &fail_init, sizeof(int), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1511 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                                                  ^
+
+aco_cuda_optimized.cu(1514): error: expected a declaration
+      for (int iter = 0; iter < num_iterations; ++iter) {
+      ^
+
+aco_cuda_optimized.cu(1544): warning #12-D: parsing restarts here after previous syntax error
+          do { cudaError_t err = cudaEventRecord(stop, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1544 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                            ^
+
+aco_cuda_optimized.cu(1545): error: expected a declaration
+          do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1545 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1546): error: expected a declaration
+          do { cudaError_t err = cudaEventElapsedTime(&iter_time, start_ant, stop); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1546 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1547): error: this declaration has no storage class or type specifier
+          antColonyOptimization_time += iter_time;
+          ^
+
+aco_cuda_optimized.cu(1547): error: expected a ";"
+          antColonyOptimization_time += iter_time;
+                                     ^
+
+aco_cuda_optimized.cu(1548): error: expected a declaration
+          do { cudaError_t err = cudaEventRecord(start_update, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1548 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1551): error: this declaration has no storage class or type specifier
+          evaporatePheromones << <(42 + (256 - 1)) / 256, 256, 0, compute_stream >> > (dev_pheromon);
+          ^
+
+aco_cuda_optimized.cu(1551): error: declaration is incompatible with "void evaporatePheromones(double *)" (declared at line 538)
+          evaporatePheromones << <(42 + (256 - 1)) / 256, 256, 0, compute_stream >> > (dev_pheromon);
+          ^
+
+aco_cuda_optimized.cu(1551): error: expected a ";"
+          evaporatePheromones << <(42 + (256 - 1)) / 256, 256, 0, compute_stream >> > (dev_pheromon);
+                              ^
+
+aco_cuda_optimized.cu(1554): error: this declaration has no storage class or type specifier
+          depositPheromones << <(42 + (256 - 1)) / 256, 256, 0, compute_stream >> > (dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+          ^
+
+aco_cuda_optimized.cu(1554): error: declaration is incompatible with "void depositPheromones(const double *, const int *, double *, double *)" (declared at line 549)
+          depositPheromones << <(42 + (256 - 1)) / 256, 256, 0, compute_stream >> > (dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+          ^
+
+aco_cuda_optimized.cu(1554): error: expected a ";"
+          depositPheromones << <(42 + (256 - 1)) / 256, 256, 0, compute_stream >> > (dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+                            ^
+
+aco_cuda_optimized.cu(1556): error: expected a declaration
+          do { cudaError_t err = cudaEventRecord(stop, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1556 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1557): error: expected a declaration
+          do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1557 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1558): error: expected a declaration
+          do { cudaError_t err = cudaEventElapsedTime(&iter_time, start, stop); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1558 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1559): error: this declaration has no storage class or type specifier
+          kernel_time += iter_time;
+          ^
+
+aco_cuda_optimized.cu(1559): error: expected a ";"
+          kernel_time += iter_time;
+                      ^
+
+aco_cuda_optimized.cu(1560): error: expected a declaration
+          do { cudaError_t err = cudaEventElapsedTime(&iter_time, start_update, stop); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1560 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1561): error: this declaration has no storage class or type specifier
+          updatePheromones_time += iter_time;
+          ^
+
+aco_cuda_optimized.cu(1561): error: expected a ";"
+          updatePheromones_time += iter_time;
+                                ^
+
+aco_cuda_optimized.cu(1562): error: expected a declaration
+      }
+      ^
+
+aco_cuda_optimized.cu(1567): warning #12-D: parsing restarts here after previous syntax error
+      double best_fitness;
+                         ^
+
+aco_cuda_optimized.cu(1570): error: expected a declaration
+      do { cudaError_t err = cudaMemcpyAsync(&best_fitness, dev_min, sizeof(double), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1570 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+aco_cuda_optimized.cu(1571): error: expected a declaration
+      do { cudaError_t err = cudaMemcpyAsync(&low_fitness, dev_max, sizeof(double), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1571 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+aco_cuda_optimized.cu(1573): error: expected a declaration
+      do { cudaError_t err = cudaMemcpyAsync(&hash_fails, dev_hash_fail, sizeof(int), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1573 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+aco_cuda_optimized.cu(1575): error: expected a declaration
+      do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1575 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+aco_cuda_optimized.cu(1577): error: this declaration has no storage class or type specifier
+      metrics.min_fitness = best_fitness;
+      ^
+
+aco_cuda_optimized.cu(1577): error: expected a ";"
+      metrics.min_fitness = best_fitness;
+             ^
+
+aco_cuda_optimized.cu(1578): error: this declaration has no storage class or type specifier
+      metrics.max_fitness = low_fitness;
+      ^
+
+aco_cuda_optimized.cu(1578): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.max_fitness = low_fitness;
+      ^
+
+aco_cuda_optimized.cu(1578): error: expected a ";"
+      metrics.max_fitness = low_fitness;
+             ^
+
+aco_cuda_optimized.cu(1579): error: this declaration has no storage class or type specifier
+      metrics.hash_misses = hash_fails;
+      ^
+
+aco_cuda_optimized.cu(1579): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.hash_misses = hash_fails;
+      ^
+
+aco_cuda_optimized.cu(1579): error: expected a ";"
+      metrics.hash_misses = hash_fails;
+             ^
+
+aco_cuda_optimized.cu(1580): error: this declaration has no storage class or type specifier
+      metrics.hash_hits = num_iterations * 500 - hash_fails;
+      ^
+
+aco_cuda_optimized.cu(1580): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.hash_hits = num_iterations * 500 - hash_fails;
+      ^
+
+aco_cuda_optimized.cu(1580): error: expected a ";"
+      metrics.hash_hits = num_iterations * 500 - hash_fails;
+             ^
+
+aco_cuda_optimized.cu(1584): error: expected a declaration
+      do { cudaError_t err = cudaGetDeviceProperties_v2(&prop, 0); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1584 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+      ^
+
+aco_cuda_optimized.cu(1587): error: identifier "threads_per_block" is undefined
+      int warps_per_block = (threads_per_block + warp_size - 1) / warp_size;
+                             ^
+
+aco_cuda_optimized.cu(1589): error: this declaration has no storage class or type specifier
+      metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+      ^
+
+aco_cuda_optimized.cu(1589): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+      ^
+
+aco_cuda_optimized.cu(1589): error: expected a ";"
+      metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+             ^
+
+aco_cuda_optimized.cu(1592): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start);
+      ^
+
+aco_cuda_optimized.cu(1592): error: variable "cudaEventDestroy" has already been defined (previous definition at line 1482)
+      cudaEventDestroy(start);
+      ^
+
+aco_cuda_optimized.cu(1593): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start_ant);
+      ^
+
+aco_cuda_optimized.cu(1593): error: variable "cudaEventDestroy" has already been defined (previous definition at line 1482)
+      cudaEventDestroy(start_ant);
+      ^
+
+aco_cuda_optimized.cu(1593): error: identifier "start_ant" is undefined
+      cudaEventDestroy(start_ant);
+                       ^
+
+aco_cuda_optimized.cu(1594): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(start_update);
+      ^
+
+aco_cuda_optimized.cu(1594): error: variable "cudaEventDestroy" has already been defined (previous definition at line 1482)
+      cudaEventDestroy(start_update);
+      ^
+
+aco_cuda_optimized.cu(1594): error: identifier "start_update" is undefined
+      cudaEventDestroy(start_update);
+                       ^
+
+aco_cuda_optimized.cu(1595): error: this declaration has no storage class or type specifier
+      cudaEventDestroy(stop);
+      ^
+
+aco_cuda_optimized.cu(1595): error: variable "cudaEventDestroy" has already been defined (previous definition at line 1482)
+      cudaEventDestroy(stop);
+      ^
+
+aco_cuda_optimized.cu(1598): error: this declaration has no storage class or type specifier
+      metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+      ^
+
+aco_cuda_optimized.cu(1598): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+      ^
+
+aco_cuda_optimized.cu(1598): error: expected a ";"
+      metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+             ^
+
+aco_cuda_optimized.cu(1599): error: this declaration has no storage class or type specifier
+      metrics.kernel_time_ms = kernel_time;
+      ^
+
+aco_cuda_optimized.cu(1599): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.kernel_time_ms = kernel_time;
+      ^
+
+aco_cuda_optimized.cu(1599): error: expected a ";"
+      metrics.kernel_time_ms = kernel_time;
+             ^
+
+aco_cuda_optimized.cu(1600): error: this declaration has no storage class or type specifier
+      metrics.computeProbabilities_time_ms = computeProbabilities_time;
+      ^
+
+aco_cuda_optimized.cu(1600): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.computeProbabilities_time_ms = computeProbabilities_time;
+      ^
+
+aco_cuda_optimized.cu(1600): error: expected a ";"
+      metrics.computeProbabilities_time_ms = computeProbabilities_time;
+             ^
+
+aco_cuda_optimized.cu(1601): error: this declaration has no storage class or type specifier
+      metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+      ^
+
+aco_cuda_optimized.cu(1601): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+      ^
+
+aco_cuda_optimized.cu(1601): error: expected a ";"
+      metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+             ^
+
+aco_cuda_optimized.cu(1602): error: this declaration has no storage class or type specifier
+      metrics.updatePheromones_time_ms = updatePheromones_time;
+      ^
+
+aco_cuda_optimized.cu(1602): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.updatePheromones_time_ms = updatePheromones_time;
+      ^
+
+aco_cuda_optimized.cu(1602): error: expected a ";"
+      metrics.updatePheromones_time_ms = updatePheromones_time;
+             ^
+
+aco_cuda_optimized.cu(1603): error: this declaration has no storage class or type specifier
+      metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+      ^
+
+aco_cuda_optimized.cu(1603): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+      ^
+
+aco_cuda_optimized.cu(1603): error: expected a ";"
+      metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+             ^
+
+aco_cuda_optimized.cu(1605): error: identifier "num_iterations" is undefined
+      size_t total_data_transferred = (5 * 42 * sizeof(double)) * 3 * num_iterations + (42 * 500 * sizeof(int)) * num_iterations + (500 * sizeof(double)) * num_iterations;
+                                                                      ^
+
+aco_cuda_optimized.cu(1606): error: this declaration has no storage class or type specifier
+      metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+      ^
+
+aco_cuda_optimized.cu(1606): error: variable "metrics" has already been defined (previous definition at line 1577)
+      metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+      ^
+
+aco_cuda_optimized.cu(1606): error: expected a ";"
+      metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+             ^
+
+aco_cuda_optimized.cu(1608): error: expected a declaration
+      return metrics;
+      ^
+
+aco_cuda_optimized.cu(1609): error: expected a declaration
+  }
+  ^
+
+aco_cuda_optimized.cu(1633): warning #12-D: parsing restarts here after previous syntax error
+      do { cudaError_t err = cudaMemcpyAsync(dev_hash_fail, &fail_init, sizeof(int), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1633 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                                                  ^
+
+aco_cuda_optimized.cu(1645): error: expected a declaration
+      for (int iter = 0; iter < num_iterations; ++iter) {
+      ^
+
+aco_cuda_optimized.cu(1666): warning #12-D: parsing restarts here after previous syntax error
+          computeProbabilities_time += iter_time;
+                                                ^
+
+aco_cuda_optimized.cu(1667): error: expected a declaration
+          do { cudaError_t err = cudaEventRecord(start_ant, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1667 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1669): error: this declaration has no storage class or type specifier
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+          ^
+
+aco_cuda_optimized.cu(1669): error: declaration is incompatible with "void antColonyOptimization(double *, int *, double *, HashEntry *, double *, double *, int *)" (declared at line 350)
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+          ^
+
+aco_cuda_optimized.cu(1669): error: expected a ";"
+          antColonyOptimization << <ant_blocks, threads_per_block, sharedev_mem, compute_stream >> > (dev_norm_matrix, dev_agent_node, dev_OF, 
+                                ^
+
+aco_cuda_optimized.cu(1673): warning #12-D: parsing restarts here after previous syntax error
+              dev_max, dev_min, dev_hash_fail); 
+                                              ^
+
+aco_cuda_optimized.cu(1702): error: expected a declaration
+          do { cudaError_t err = cudaEventRecord(stop, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1702 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1703): error: expected a declaration
+          do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1703 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1704): error: expected a declaration
+          do { cudaError_t err = cudaEventElapsedTime(&iter_time, start_ant, stop); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1704 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1705): error: this declaration has no storage class or type specifier
+          antColonyOptimization_time += iter_time;
+          ^
+
+aco_cuda_optimized.cu(1705): error: variable "antColonyOptimization_time" has already been defined (previous definition at line 1547)
+          antColonyOptimization_time += iter_time;
+          ^
+
+aco_cuda_optimized.cu(1705): error: expected a ";"
+          antColonyOptimization_time += iter_time;
+                                     ^
+
+aco_cuda_optimized.cu(1706): error: expected a declaration
+          do { cudaError_t err = cudaEventRecord(start_update, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1706 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1708): error: this declaration has no storage class or type specifier
+          updatePheromones << <(42 + (256-1)) / 256, 256, 0, compute_stream >> > (dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter); 
+          ^
+
+aco_cuda_optimized.cu(1708): error: declaration is incompatible with "void updatePheromones(const double *, const int *, double *, double *)" (declared at line 502)
+          updatePheromones << <(42 + (256-1)) / 256, 256, 0, compute_stream >> > (dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter); 
+          ^
+
+aco_cuda_optimized.cu(1708): error: expected a ";"
+          updatePheromones << <(42 + (256-1)) / 256, 256, 0, compute_stream >> > (dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter); 
+                           ^
+
+aco_cuda_optimized.cu(1710): error: expected a declaration
+          do { cudaError_t err = cudaEventRecord(stop, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1710 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+aco_cuda_optimized.cu(1711): error: expected a declaration
+          do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_optimized.cu" << ":" << 1711 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+          ^
+
+Error limit reached.
+100 errors detected in the compilation of "aco_cuda_optimized.cu".
+Compilation terminated.
+aco_cuda_optimized.cu
+========== COMPILATION END ========== 
+Exit code: 4 

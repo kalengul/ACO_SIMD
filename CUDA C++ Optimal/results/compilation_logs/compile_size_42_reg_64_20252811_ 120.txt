@@ -1,0 +1,89 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=64 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=64 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1384): warning #940-D: missing return statement at end of non-void function "calculate_max_parametr_size_in_gpu_memory"
+  }
+  ^
+
+aco_cuda_optimized.cu(1583): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1596): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run", i);
+                                 ^
+
+aco_cuda_optimized.cu(1609): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Parallel Run", i);
+                                 ^
+
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(876): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_optimized.cu(1373): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_optimized.cu(1384): warning #940-D: missing return statement at end of non-void function "calculate_max_parametr_size_in_gpu_memory"
+  }
+  ^
+
+aco_cuda_optimized.cu(1520): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_optimized.cu(1521): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+aco_cuda_optimized.cu(1583): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1596): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run", i);
+                                 ^
+
+aco_cuda_optimized.cu(1609): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Parallel Run", i);
+                                 ^
+
+^C^C

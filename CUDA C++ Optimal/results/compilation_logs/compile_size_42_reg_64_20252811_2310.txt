@@ -1,0 +1,193 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=64 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=64 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1042): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_optimized.cu(1196): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_optimized.cu(1321): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_optimized.cu(1627): warning #940-D: missing return statement at end of non-void function "calculate_max_parametr_size_in_gpu_memory"
+  }
+  ^
+
+aco_cuda_optimized.cu(1835): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "4 function ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1847): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1860): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run", i);
+                                 ^
+
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1042): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_optimized.cu(965): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_optimized.cu(969): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_optimized.cu(1196): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_optimized.cu(1087): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_optimized.cu(1091): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_optimized.cu(1321): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_optimized.cu(1243): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_optimized.cu(1616): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_optimized.cu(1627): warning #940-D: missing return statement at end of non-void function "calculate_max_parametr_size_in_gpu_memory"
+  }
+  ^
+
+aco_cuda_optimized.cu(1771): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_optimized.cu(1772): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+aco_cuda_optimized.cu(1835): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "4 function ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1847): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO", i);
+                                 ^
+
+aco_cuda_optimized.cu(1860): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run", i);
+                                 ^
+
+aco_cuda_optimized.cu(535): warning #177-D: variable "EVAPORATE_THREADS" was declared but never referenced
+  const int EVAPORATE_THREADS = 256;
+            ^
+
+aco_cuda_optimized.cu(536): warning #177-D: variable "DEPOSIT_THREADS" was declared but never referenced
+  const int DEPOSIT_THREADS = 128;
+            ^
+
+aco_cuda_optimized.cu(863): warning #550-D: variable "dev_hashTable" was set but never used
+  static HashEntry* dev_hashTable = nullptr;
+                    ^
+
+ptxas info    : Overriding maximum register limit 256 for '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_S3_S3_S4_S3_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z17depositPheromonesPKdPKiPdS3_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19evaporatePheromonesPd' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z16updatePheromonesPKdPKiPdS3_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z21antColonyOptimizationPdS_PiS_S_S_S0_S_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z20computeProbabilitiesPKdS0_Pd' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  64 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_S3_S3_S4_S3_' for 'sm_70'
+ptxas info    : Function properties for _Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_S3_S3_S4_S3_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 38 registers, used 1 barriers, 48 bytes cumulative stack size, 20480 bytes smem, 456 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26updateAndComputePheromonesPKdPKiPdS3_S3_' for 'sm_70'
+ptxas info    : Function properties for _Z26updateAndComputePheromonesPKdPKiPdS3_S3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 34 registers, used 1 barriers, 20480 bytes smem, 392 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z17depositPheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z17depositPheromonesPKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 16 registers, used 1 barriers, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19evaporatePheromonesPd' for 'sm_70'
+ptxas info    : Function properties for _Z19evaporatePheromonesPd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 22 registers, used 0 barriers, 360 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z16updatePheromonesPKdPKiPdS3_' for 'sm_70'
+ptxas info    : Function properties for _Z16updatePheromonesPKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 28 registers, used 0 barriers, 384 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z21antColonyOptimizationPdS_PiS_S_S_S0_S_' for 'sm_70'
+ptxas info    : Function properties for _Z21antColonyOptimizationPdS_PiS_S_S_S0_S_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 64 registers, used 1 barriers, 48 bytes cumulative stack size, 416 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z20computeProbabilitiesPKdS0_Pd' for 'sm_70'
+ptxas info    : Function properties for _Z20computeProbabilitiesPKdS0_Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 34 registers, used 1 barriers, 20480 bytes smem, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_70'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_optimized.cu
+tmpxft_00003aa8_00000000-10_aco_cuda_optimized.cudafe1.cpp
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_optimized.cu(1627) : warning C4715: 'calculate_max_parametr_size_in_gpu_memory': not all control paths return a value
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_optimized.cu(1042) : warning C4700: uninitialized local variable 'hash_fails' used
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_optimized.cu(1196) : warning C4700: uninitialized local variable 'hash_fails' used
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\aco_cuda_optimized.cu(1321) : warning C4700: uninitialized local variable 'hash_fails' used
+========== COMPILATION END ========== 
+Exit code: 0 

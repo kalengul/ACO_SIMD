@@ -1,0 +1,57 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_optimized.exe aco_cuda_optimized.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_optimized.cu(246): warning #68-D: integer conversion resulted in a change of sign
+          if (hashTable[idx].key == -1) return -1.0;
+                                    ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_optimized.cu(257): warning #68-D: integer conversion resulted in a change of sign
+          unsigned long long old = atomicCAS(&hashTable[idx].key, -1, key);
+                                                                  ^
+
+aco_cuda_optimized.cu(258): warning #68-D: integer conversion resulted in a change of sign
+          if (old == -1 || old == key) {
+                     ^
+
+aco_cuda_optimized.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_optimized.cu(1616): error: no instance of overloaded function "updateAndComputePheromones" matches the argument list
+            argument types are: (double *, double *, double *, int *, double *, HashEntry *, double *, double *, int *)
+          updateAndComputePheromones << <unified_blocks, unified_threads, shared_mem_size, compute_stream >> > (
+          ^
+aco_cuda_optimized.cu(846): note #3322-D: number of parameters of function "updateAndComputePheromones(double *, double *, HashEntry *, double *, double *, int *)" does not match the call
+  __declspec(__global__) void updateAndComputePheromones(
+                              ^
+aco_cuda_optimized.cu(583): note #3322-D: number of parameters of function "updateAndComputePheromones(const double *, const int *, double *, double *, double *)" does not match the call
+  __declspec(__global__) void updateAndComputePheromones(const double* __restrict OF, const int* __restrict agent_node, double* __restrict pheromon, double* __restrict kol_enter, double* __restrict norm_matrix_probability) {
+                              ^
+
+aco_cuda_optimized.cu(1782): warning #940-D: missing return statement at end of non-void function "calculate_max_parametr_size_in_gpu_memory"
+  }
+  ^
+
+aco_cuda_optimized.cu(1990): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "4 function ACO 4start", i);
+                                 ^
+
+aco_cuda_optimized.cu(2002): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Original ACO 3start", i);
+                                 ^
+
+aco_cuda_optimized.cu(2015): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Combined Run 2start", i);
+                                 ^
+
+aco_cuda_optimized.cu(2028): warning #2464-D: conversion from a string literal to "char *" is deprecated
+          print_metrics(metrics, "Unified Run 1start", i);
+                                 ^
+
+1 error detected in the compilation of "aco_cuda_optimized.cu".
+aco_cuda_optimized.cu
+========== COMPILATION END ========== 
+Exit code: 2 

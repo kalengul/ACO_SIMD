@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <string>
 #include <fstream>
-#include <windows.h>
 #include <iomanip>
 #include <queue>
 #include <mutex>
@@ -17,6 +16,8 @@
 #include <sstream>
 #include "cuda_module.h"
 
+#include <immintrin.h>
+
 // Исправляем конфликт имен с Windows макросами
 #undef max
 #undef min
@@ -24,14 +25,14 @@
 // Константы
 #define MAX_VALUE_SIZE 4
 #define PARAMETR_SIZE 1344
-#define PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
+#define SET_PARAMETR_SIZE_ONE_X 21    // Количество параметров на оди x 21 (6)
 #define ANT_SIZE 500
 #define MAX_THREAD_CUDA 256
 #define NAME_FILE_GRAPH "Parametr_Graph/test1344_4.txt"
 #define KOL_ITERATION 500
 
 #define KOL_PROGREV 0
-#define KOL_PROGON_STATISTICS 10
+#define KOL_PROGON_STATISTICS 50
 
 #define PARAMETR_RO 0.999
 #define PARAMETR_Q 1.0
@@ -46,12 +47,12 @@
 
 #define GO_HYBRID_OMP 0
 #define GO_HYBRID_OMP_NON_HASH 0
-#define GO_HYBRID_BALANCED_OMP 1 
-#define GO_HYBRID_BALANCED_OMP_NON_HASH 1
-#define GO_HYBRID_BALANCED_DYNAMIC_OMP 1 
-#define GO_HYBRID_BALANCED_DYNAMIC_OMP_NON_HASH 1
+#define GO_HYBRID_BALANCED_OMP 0 
+#define GO_HYBRID_BALANCED_OMP_NON_HASH 0
+#define GO_HYBRID_BALANCED_DYNAMIC_OMP 0
+#define GO_HYBRID_BALANCED_DYNAMIC_OMP_NON_HASH 0
 #define GO_HYBRID_BALANCED_DYNAMIC_OMP_PARALLEL 1
-#define GO_HYBRID_BALANCED_DYNAMIC_OMP_PARALLEL_NON_HASH 1
+#define GO_HYBRID_BALANCED_DYNAMIC_OMP_PARALLEL_NON_HASH 0
 
 #define BALANCED_TIME_GPU_FUNCTION 1
 #define BALANCED_TIME_GPU 0
@@ -78,6 +79,7 @@
 #define ZERO_HASH_RESULT -1.0
 #define ZERO_HASH 100000000000
 #define MAX_PROBES 10000 // Maximum number of probes for collision resolution
+#define HASH_TABLE_SHARDS 16
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -133,8 +135,10 @@ struct ACOData {
 
     // Время выполнения
     double Time_CPU_all = 0.0, Time_CPU_prob = 0.0, Time_CPU_wait = 0.0, Time_CPU_update = 0.0;
-    double Time_GPU_all = 0.0, Time_GPU = 0.0, Time_GPU_function = 0.0;
-    double Time_OMP_all = 0.0, Time_OMP_function = 0.0;
+    double Time_GPU_all = 0.0, Time_GPU = 0.0, Time_GPU_wait = 0.0, Time_GPU_function = 0.0;
+    double Time_OMP_all = 0.0, Time_OMP_wait = 0.0, Time_OMP_function = 0.0;
+
+    double cpu_ants_statistics = 0.0, gpu_ants_statistics = 0.0;
 
     // Очереди для межпоточного обмена
     ThreadSafeQueue gpu_to_cpu_queue;
@@ -163,8 +167,27 @@ typedef struct {
 // Глобальная хэш-таблица для OMP
 HashEntry* hashTable = nullptr;
 
+#if (MAX_VALUE_SIZE==4)
+// AVX-оптимизированная функция вычисления параметра
+double compute_parameter(double* params, int start, int count) noexcept {
+    // Для MAX_VALUE_SIZE=4 можем использовать AVX
+    if (count == 4) {
+        __m256d vec = _mm256_loadu_pd(params + start);
+        __m256d sum_vec = _mm256_hadd_pd(vec, vec);
+        double sum = ((double*)&sum_vec)[0] + ((double*)&sum_vec)[2];
+        return params[start] * sum;
+    }
+
+    double sum = 0.0;
+    // Стандартная реализация для других случаев
+    for (int i = 1; i < count; ++i) {
+        sum += params[start + i];
+    }
+    return params[start] * sum;
+}
+#else
 // Функция для вычисления параметра x
-double go_x_non_cuda_omp(double* parametr, int start_index, int kol_parametr) {
+double go_x_non_cuda_omp(double* parametr, int start_index, int kol_parametr) noexcept {
     double sum = 0.0;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:sum)
@@ -174,17 +197,51 @@ double go_x_non_cuda_omp(double* parametr, int start_index, int kol_parametr) {
     }
     return parametr[start_index] * sum;
 }
+#endif
+
 
 #if (SHAFFERA) 
+#if (MAX_VALUE_SIZE==4)
+double BenchShafferaFunction_omp(double* params) noexcept {
+    double sum_sq = 0.0;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+
+    // AVX-оптимизация для случая, когда SET_PARAMETR_SIZE_ONE_X=4
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
+        __m256d sum_sq_vec = _mm256_setzero_pd();
+
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            __m256d x_vec = _mm256_set1_pd(x);
+            sum_sq_vec = _mm256_add_pd(sum_sq_vec, _mm256_mul_pd(x_vec, x_vec));
+        }
+
+        // Горизонтальное суммирование
+        sum_sq_vec = _mm256_hadd_pd(sum_sq_vec, sum_sq_vec);
+        sum_sq = ((double*)&sum_sq_vec)[0] + ((double*)&sum_sq_vec)[2];
+    }
+    else {
+        // Стандартная реализация для других случаев
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            sum_sq += x * x;
+        }
+    }
+
+    double r = std::sqrt(sum_sq);
+    double sin_r = std::sin(r);
+    return 0.5 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * sum_sq);
+}
+#else 
 // Функция для целевой функции Шаффера с 100 переменными
-double BenchShafferaFunction_omp(double* parametr) {
+double BenchShafferaFunction_omp(double* parametr) noexcept {
     double r_squared = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:r_squared)
 #endif
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         r_squared += x * x; // Сумма квадратов
     }
 
@@ -193,6 +250,183 @@ double BenchShafferaFunction_omp(double* parametr) {
     return 1.0 / 2.0 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * r_squared);
 }
 #endif
+#endif
+#if (RASTRIGIN)
+#if (MAX_VALUE_SIZE==4)
+double BenchShafferaFunction_omp(double* params) noexcept {
+    double sum = 0.0;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+    constexpr double two_pi = 2.0 * M_PI;
+
+    // AVX-оптимизация для RASTRIGIN
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
+        __m256d sum_vec = _mm256_setzero_pd();
+        __m256d ten_vec = _mm256_set1_pd(10.0);
+        __m256d two_pi_vec = _mm256_set1_pd(two_pi);
+
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            __m256d x_vec = _mm256_set1_pd(x);
+            __m256d x_sq = _mm256_mul_pd(x_vec, x_vec);
+
+            // 10.0 * cos(2π * x)
+            __m256d cos_arg = _mm256_mul_pd(two_pi_vec, x_vec);
+            // Используем стандартный cos
+            alignas(32) double cos_args[4];
+            alignas(32) double cos_vals[4];
+            _mm256_store_pd(cos_args, cos_arg);
+            for (int j = 0; j < 4; ++j) {
+                cos_vals[j] = std::cos(cos_args[j]);
+            }
+            __m256d cos_val = _mm256_load_pd(cos_vals);
+            __m256d term = _mm256_mul_pd(ten_vec, cos_val);
+
+            // x² - 10*cos(2π*x) + 10
+            __m256d result = _mm256_add_pd(_mm256_sub_pd(x_sq, term), ten_vec);
+            sum_vec = _mm256_add_pd(sum_vec, result);
+        }
+
+        // Горизонтальное суммирование
+        sum_vec = _mm256_hadd_pd(sum_vec, sum_vec);
+        sum = ((double*)&sum_vec)[0] + ((double*)&sum_vec)[2];
+    }
+    else {
+        // Стандартная реализация
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            sum += x * x - 10.0 * std::cos(two_pi * x) + 10.0;
+        }
+    }
+    return sum;
+}
+#else
+// Растригин-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
+    }
+    return sum;
+}
+#endif
+#endif
+#if (ACKLEY)
+#if (MAX_VALUE_SIZE==4)
+double BenchShafferaFunction_omp(double* params) noexcept {
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+    double sum_sq = 0.0;
+    double sum_cos = 0.0;
+
+    // AVX-оптимизация для ACKLEY
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
+        __m256d sum_sq_vec = _mm256_setzero_pd();
+        __m256d sum_cos_vec = _mm256_setzero_pd();
+        __m256d two_pi_vec = _mm256_set1_pd(2.0 * M_PI);
+
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            __m256d x_vec = _mm256_set1_pd(x);
+
+            // Сумма квадратов
+            sum_sq_vec = _mm256_add_pd(sum_sq_vec, _mm256_mul_pd(x_vec, x_vec));
+
+            // Сумма косинусов
+            __m256d cos_arg = _mm256_mul_pd(two_pi_vec, x_vec);
+            alignas(32) double cos_args[4];
+            alignas(32) double cos_vals[4];
+            _mm256_store_pd(cos_args, cos_arg);
+            for (int j = 0; j < 4; ++j) {
+                cos_vals[j] = std::cos(cos_args[j]);
+            }
+            __m256d cos_val = _mm256_load_pd(cos_vals);
+            sum_cos_vec = _mm256_add_pd(sum_cos_vec, cos_val);
+        }
+
+        // Горизонтальное суммирование
+        sum_sq_vec = _mm256_hadd_pd(sum_sq_vec, sum_sq_vec);
+        sum_sq = ((double*)&sum_sq_vec)[0] + ((double*)&sum_sq_vec)[2];
+
+        sum_cos_vec = _mm256_hadd_pd(sum_cos_vec, sum_cos_vec);
+        sum_cos = ((double*)&sum_cos_vec)[0] + ((double*)&sum_cos_vec)[2];
+    }
+    else {
+        // Стандартная реализация
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            sum_sq += x * x;
+            sum_cos += std::cos(2.0 * M_PI * x);
+        }
+    }
+
+    double n = static_cast<double>(num_vars);
+    return -20.0 * std::exp(-0.2 * std::sqrt(sum_sq / n)) - std::exp(sum_cos / n) + 20.0 + M_E;
+}
+#else
+// Акли-функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double first_sum = 0.0;
+    double second_sum = 0.0;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:first_sum, second_sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        first_sum += x * x;
+        second_sum += cos(2 * M_PI * x);
+    }
+    double exp_term_1 = exp(-0.2 * sqrt(first_sum / num_variables));
+    double exp_term_2 = exp(second_sum / num_variables);
+    return -20 * exp_term_1 - exp_term_2 + M_E + 20;
+}
+#endif
+#endif
+#if (SPHERE)
+#if (MAX_VALUE_SIZE==4)
+double BenchShafferaFunction_omp(double* params) noexcept {
+    double sum_sq = 0.0;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+
+    // AVX-оптимизация для SPHERE
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
+        __m256d sum_sq_vec = _mm256_setzero_pd();
+
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            __m256d x_vec = _mm256_set1_pd(x);
+            sum_sq_vec = _mm256_add_pd(sum_sq_vec, _mm256_mul_pd(x_vec, x_vec));
+        }
+
+        // Горизонтальное суммирование
+        sum_sq_vec = _mm256_hadd_pd(sum_sq_vec, sum_sq_vec);
+        sum_sq = ((double*)&sum_sq_vec)[0] + ((double*)&sum_sq_vec)[2];
+    }
+    else {
+        // Стандартная реализация
+        for (int i = 0; i < num_vars; ++i) {
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+            sum_sq += x * x;
+        }
+    }
+    return sum_sq;
+}
+#else
+// Сферическая функция
+double BenchShafferaFunction_omp(double* parametr) {
+    double sum = 0.0;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+#pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < num_variables; ++i) {
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        sum += x * x;
+    }
+    return sum;
+}
+#endif
+#endif
+
+
 #if (DELT4)
 // Михаэлевич-Викинский
 double BenchShafferaFunction_omp(double* parametr) {
@@ -201,9 +435,9 @@ double BenchShafferaFunction_omp(double* parametr) {
     double sum = 0.0;
     double second_sum = 0.0;
     double r_cos = 1.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_if += x;
         r_squared += x * x; // Сумма квадратов
         sum += x * x - 10 * cos(2 * M_PI * x) + 10;
@@ -236,10 +470,10 @@ double BenchShafferaFunction_omp(double* parametr) {
 double BenchShafferaFunction_omp(double* parametr) {
     double r_cos = 1.0;
     double r_squared = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #pragma omp parallel for reduction(+:r_squared, r_cos)
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         r_cos *= cos(x);
         r_squared += x * x;
     }
@@ -248,58 +482,15 @@ double BenchShafferaFunction_omp(double* parametr) {
     return OF * OF; // Возвращаем OF в квадрате
 }
 #endif
-#if (RASTRIGIN)
-// Растригин-функция
-double BenchShafferaFunction_omp(double* parametr) {
-    double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
-#pragma omp parallel for reduction(+:sum)
-    for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-        sum += x * x - 10 * cos(2 * M_PI * x) + 10;
-    }
-    return sum;
-}
-#endif
-#if (ACKLEY)
-// Акли-функция
-double BenchShafferaFunction_omp(double* parametr) {
-    double first_sum = 0.0;
-    double second_sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
-#pragma omp parallel for reduction(+:first_sum, second_sum)
-    for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-        first_sum += x * x;
-        second_sum += cos(2 * M_PI * x);
-    }
-    double exp_term_1 = exp(-0.2 * sqrt(first_sum / num_variables));
-    double exp_term_2 = exp(second_sum / num_variables);
-    return -20 * exp_term_1 - exp_term_2 + M_E + 20;
-}
-#endif
-#if (SPHERE)
-// Сферическая функция
-double BenchShafferaFunction_omp(double* parametr) {
-    double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
-#pragma omp parallel for reduction(+:sum)
-    for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
-        sum += x * x;
-    }
-    return sum;
-}
-#endif
 #if (GRIEWANK)
 // Гриванк-функция
 double BenchShafferaFunction_omp(double* parametr) {
     double sum = 0.0;
     double prod = 1.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #pragma omp parallel for reduction(+:sum, prod)
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum += x * x;
         prod *= cos(x / sqrt(i + 1));
     }
@@ -311,10 +502,10 @@ double BenchShafferaFunction_omp(double* parametr) {
 double BenchShafferaFunction_omp(double* parametr) {
     double sum1 = 0.0;
     double sum2 = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #pragma omp parallel for reduction(+:sum1, sum2)
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum1 += pow(x, 2);
         sum2 += 0.5 * i * x;
     }
@@ -325,10 +516,10 @@ double BenchShafferaFunction_omp(double* parametr) {
 // Швейфель-функция
 double BenchShafferaFunction_omp(double* parametr) {
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #pragma omp parallel for reduction(+:sum)
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum -= x * sin(sqrt(abs(x)));
     }
     return sum;
@@ -337,13 +528,13 @@ double BenchShafferaFunction_omp(double* parametr) {
 #if (LEVY)
 // Леви-функция
 double BenchShafferaFunction_omp(double* parametr) {
-    double w_first = 1 + (go_x_non_cuda_omp(parametr, 0, PARAMETR_SIZE_ONE_X) - 1) / 4;
-    double w_last = 1 + (go_x_non_cuda_omp(parametr, PARAMETR_SIZE - PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_first = 1 + (go_x_non_cuda_omp(parametr, 0, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
+    double w_last = 1 + (go_x_non_cuda_omp(parametr, PARAMETR_SIZE - SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #pragma omp parallel for reduction(+:sum)
     for (int i = 1; i <= num_variables - 1; ++i) {
-        double wi = 1 + (go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X) - 1) / 4;
+        double wi = 1 + (go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X) - 1) / 4;
         sum += pow(wi - 1, 2) * (1 + 10 * pow(sin(M_PI * wi), 2)) +
             pow(wi - wi * w_i_prev, 2) * (1 + pow(sin(2 * M_PI * wi), 2));
     }
@@ -354,10 +545,10 @@ double BenchShafferaFunction_omp(double* parametr) {
 // Михаэлевич-Викинский
 double BenchShafferaFunction_omp(double* parametr) {
     double sum = 0.0;
-    int num_variables = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    int num_variables = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 #pragma omp parallel for reduction(+:sum)
     for (int i = 0; i < num_variables; ++i) {
-        double x = go_x_non_cuda_omp(parametr, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = go_x_non_cuda_omp(parametr, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum -= sin(x) * pow(sin((i + 1) * x * x / M_PI), 20);
     }
     return sum;
@@ -593,25 +784,6 @@ void print_performance_breakdown(const ACOData& aco, std::ostream& os = std::cou
     os << "  - Function: " << aco.Time_OMP_function << " ms" << std::endl;
 }
 
-//Функции для взаимодействия с OMP хэш-таблицей
-// ----------------- Инициализация хэш-таблицы -----------------
-void initializeHashTable_non_cuda(HashEntry* hashTable, int size) {
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < size; i++) {
-        hashTable[i].key = ZERO_HASH;
-        hashTable[i].value = 0.0;
-    }
-}
-
-// ----------------- Очистка хэш-таблицы -----------------
-void clearHashTable(HashEntry* hashTable, int size) {
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < size; i++) {
-        hashTable[i].key = ZERO_HASH;
-        hashTable[i].value = 0.0;
-    }
-}
-
 // ----------------- Быстрая хэш-функция -----------------
 inline unsigned long long fastHashFunction(unsigned long long key) {
     // Упрощенная и более эффективная хэш-функция
@@ -648,6 +820,251 @@ inline unsigned long long generateKeySimple(const int* agent_path) {
     }
 
     return key;
+}
+
+// Структура для атомарной хэш-таблицы
+typedef struct {
+    std::atomic<unsigned long long> key;
+    std::atomic<double> value;
+    std::atomic<int> timestamp;
+} AtomicHashEntry;
+
+// Глобальная атомарная хэш-таблица для OMP
+AtomicHashEntry* atomicHashTable = nullptr;
+
+// Структура для шардированной хэш-таблицы
+struct ShardedHashTable {
+    AtomicHashEntry** tables;
+    int num_shards;
+    int size_per_shard;
+
+    ShardedHashTable(int shards, int size_per_shard) : num_shards(shards), size_per_shard(size_per_shard) {
+        tables = new AtomicHashEntry * [shards];
+        for (int i = 0; i < shards; i++) {
+            tables[i] = new AtomicHashEntry[size_per_shard];
+        }
+    }
+
+    ~ShardedHashTable() {
+        for (int i = 0; i < num_shards; i++) {
+            delete[] tables[i];
+        }
+        delete[] tables;
+    }
+};
+
+// Глобальная шардированная хэш-таблица
+ShardedHashTable* shardedHashTable = nullptr;
+
+// ----------------- Инициализация атомарной хэш-таблицы -----------------
+void initializeAtomicHashTable(AtomicHashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key.store(ZERO_HASH, std::memory_order_relaxed);
+        hashTable[i].value.store(0.0, std::memory_order_relaxed);
+        hashTable[i].timestamp.store(0, std::memory_order_relaxed);
+    }
+}
+
+// ----------------- Инициализация шардированной хэш-таблицы -----------------
+void initializeShardedHashTable(ShardedHashTable* table) {
+#pragma omp parallel for schedule(static)
+    for (int shard = 0; shard < table->num_shards; shard++) {
+        for (int i = 0; i < table->size_per_shard; i++) {
+            table->tables[shard][i].key.store(ZERO_HASH, std::memory_order_relaxed);
+            table->tables[shard][i].value.store(0.0, std::memory_order_relaxed);
+            table->tables[shard][i].timestamp.store(0, std::memory_order_relaxed);
+        }
+    }
+}
+
+// ----------------- Функция для определения шарда -----------------
+inline int get_shard(const int* agent_path) {
+    // Простая хэш-функция для определения шарда
+    unsigned long long hash = 0;
+    for (int i = 0; i < PARAMETR_SIZE; i++) {
+        hash = hash * 31 + agent_path[i];
+    }
+    return hash % HASH_TABLE_SHARDS;
+}
+
+// ----------------- Atomic hash lookup -----------------
+double atomic_hash_lookup(AtomicHashEntry* hashTable, const int* agent_path, int iteration) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    // Atomic read with acquire semantics
+    for (int i = 0; i < std::min(MAX_PROBES, 8); ++i) {
+        unsigned long long current_idx = (idx + i) & mask;
+        unsigned long long current_key = hashTable[current_idx].key.load(std::memory_order_acquire);
+
+        if (current_key == ZERO_HASH) {
+            return ZERO_HASH_RESULT;
+        }
+        if (current_key == key) {
+            // Update timestamp - this is safe as it's just metadata
+            hashTable[current_idx].timestamp.store(iteration, std::memory_order_relaxed);
+            double value = hashTable[current_idx].value.load(std::memory_order_relaxed);
+
+            // Ensure we read the value after confirming the key
+            std::atomic_thread_fence(std::memory_order_acquire);
+
+            return value;
+        }
+    }
+
+    return ZERO_HASH_RESULT;
+}
+
+// ----------------- Sharded hash lookup -----------------
+double sharded_hash_lookup(ShardedHashTable& table, const int* agent_path, int iteration) {
+    int shard = get_shard(agent_path);
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key) % table.size_per_shard;
+    AtomicHashEntry* hash_table = table.tables[shard];
+
+    // Atomic read with acquire semantics
+    for (int i = 0; i < std::min(MAX_PROBES, 8); ++i) {
+        unsigned long long current_idx = (idx + i) % table.size_per_shard;
+        unsigned long long current_key = hash_table[current_idx].key.load(std::memory_order_acquire);
+
+        if (current_key == ZERO_HASH) {
+            return ZERO_HASH_RESULT;
+        }
+        if (current_key == key) {
+            // Update timestamp
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_relaxed);
+            double value = hash_table[current_idx].value.load(std::memory_order_relaxed);
+
+            std::atomic_thread_fence(std::memory_order_acquire);
+            return value;
+        }
+    }
+
+    return ZERO_HASH_RESULT;
+}
+
+// ----------------- Thread-safe hash store -----------------
+bool atomic_hash_store(AtomicHashEntry* hashTable, const int* agent_path, double value, int iteration) {
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key);
+    const unsigned long long mask = HASH_TABLE_SIZE - 1;
+
+    // Double-check pattern to avoid race conditions
+    for (int i = 0; i < std::min(MAX_PROBES, 4); ++i) {
+        unsigned long long current_idx = (idx + i) & mask;
+
+        // First, check if the key already exists (fast path)
+        unsigned long long current_key = hashTable[current_idx].key.load(std::memory_order_acquire);
+        if (current_key == key) {
+            // Key exists, just update the value and timestamp
+            hashTable[current_idx].value.store(value, std::memory_order_relaxed);
+            hashTable[current_idx].timestamp.store(iteration, std::memory_order_release);
+            return true;
+        }
+
+        // Try to acquire the slot with CAS
+        unsigned long long expected = ZERO_HASH;
+        if (hashTable[current_idx].key.compare_exchange_strong(expected, key,
+            std::memory_order_acq_rel, std::memory_order_acquire)) {
+            // Successfully acquired the slot
+            hashTable[current_idx].value.store(value, std::memory_order_relaxed);
+            hashTable[current_idx].timestamp.store(iteration, std::memory_order_release);
+
+            // Ensure all writes are visible to other threads
+            std::atomic_thread_fence(std::memory_order_release);
+            return true;
+        }
+
+        // If CAS failed but the key matches, update the existing entry
+        if (expected == key) {
+            hashTable[current_idx].value.store(value, std::memory_order_relaxed);
+            hashTable[current_idx].timestamp.store(iteration, std::memory_order_release);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ----------------- Sharded hash store -----------------
+bool sharded_hash_store(ShardedHashTable& table, const int* agent_path, double value, int iteration) {
+    int shard = get_shard(agent_path);
+    unsigned long long key = generateKey(agent_path);
+    unsigned long long idx = fastHashFunction(key) % table.size_per_shard;
+    AtomicHashEntry* hash_table = table.tables[shard];
+
+    // Double-check pattern to avoid race conditions
+    for (int i = 0; i < std::min(MAX_PROBES, 4); ++i) {
+        unsigned long long current_idx = (idx + i) % table.size_per_shard;
+
+        // First, check if the key already exists (fast path)
+        unsigned long long current_key = hash_table[current_idx].key.load(std::memory_order_acquire);
+        if (current_key == key) {
+            // Key exists, just update the value and timestamp
+            hash_table[current_idx].value.store(value, std::memory_order_relaxed);
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_release);
+            return true;
+        }
+
+        // Try to acquire the slot with CAS
+        unsigned long long expected = ZERO_HASH;
+        if (hash_table[current_idx].key.compare_exchange_strong(expected, key,
+            std::memory_order_acq_rel, std::memory_order_acquire)) {
+            // Successfully acquired the slot
+            hash_table[current_idx].value.store(value, std::memory_order_relaxed);
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_release);
+
+            std::atomic_thread_fence(std::memory_order_release);
+            return true;
+        }
+
+        // If CAS failed but the key matches, update the existing entry
+        if (expected == key) {
+            hash_table[current_idx].value.store(value, std::memory_order_relaxed);
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_release);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ----------------- Обновленные функции для OMP -----------------
+double getCachedResultAtomic(AtomicHashEntry* hashTable, const int* agent_path, int iteration) {
+    return atomic_hash_lookup(hashTable, agent_path, iteration);
+}
+
+bool saveToCacheAtomic(AtomicHashEntry* hashTable, const int* agent_path, double value, int iteration) {
+    return atomic_hash_store(hashTable, agent_path, value, iteration);
+}
+
+double getCachedResultSharded(ShardedHashTable& table, const int* agent_path, int iteration) {
+    return sharded_hash_lookup(table, agent_path, iteration);
+}
+
+bool saveToCacheSharded(ShardedHashTable& table, const int* agent_path, double value, int iteration) {
+    return sharded_hash_store(table, agent_path, value, iteration);
+}
+
+//Функции для взаимодействия с OMP хэш-таблицей
+// ----------------- Инициализация хэш-таблицы -----------------
+void initializeHashTable_non_cuda(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key = ZERO_HASH;
+        hashTable[i].value = 0.0;
+    }
+}
+
+// ----------------- Очистка хэш-таблицы -----------------
+void clearHashTable(HashEntry* hashTable, int size) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < size; i++) {
+        hashTable[i].key = ZERO_HASH;
+        hashTable[i].value = 0.0;
+    }
 }
 
 // ----------------- Поиск в хэш-таблице -----------------
@@ -937,6 +1354,73 @@ bool aco_initialize_from_file(ACOData* aco, const std::string& filename) {
     return aco_initialize(aco, parametr_value, pheromon_value, kol_enter_value);
 }
 
+#if (MAX_VALUE_SIZE==4)
+// AVX2-оптимизированное вычисление матрицы вероятностей для MAX_VALUE_SIZE=4
+void calculate_probabilities(ACOData* aco) {
+    const int total_params = PARAMETR_SIZE;
+#pragma omp parallel for schedule(static)
+    for (int param = 0; param < total_params; ++param) {
+        const int base = param * MAX_VALUE_SIZE;
+
+        // Загружаем 4 значения феромонов в AVX-регистр
+        __m256d pheromone_vec = _mm256_loadu_pd(&aco->current_pheromon[base]);
+        __m256d visits_vec = _mm256_loadu_pd(&aco->current_kol_enter[base]);
+
+        // Вычисляем сумму феромонов (горизонтальное суммирование)
+        __m256d sum_pheromone_vec = _mm256_hadd_pd(pheromone_vec, pheromone_vec);
+        double total_pheromone = ((double*)&sum_pheromone_vec)[0] + ((double*)&sum_pheromone_vec)[2];
+
+        if (total_pheromone <= 0.0) {
+            // Равномерное распределение
+            __m256d uniform_probs = _mm256_set_pd(1.0, 0.75, 0.5, 0.25);
+            _mm256_storeu_pd(&aco->norm_matrix_probability[base], uniform_probs);
+            continue;
+        }
+
+        // Вычисление вероятностей с использованием AVX
+        __m256d inv_total_pheromone = _mm256_set1_pd(1.0 / total_pheromone);
+        __m256d norm_pheromone = _mm256_mul_pd(pheromone_vec, inv_total_pheromone);
+
+        // Вычисляем вероятности: 1.0/visits + norm_pheromone
+        __m256d inv_visits = _mm256_div_pd(_mm256_set1_pd(1.0), visits_vec);
+        __m256d temp_probs = _mm256_add_pd(inv_visits, norm_pheromone);
+
+        // Заменяем NaN/Inf на 0.0
+        __m256d zero_vec = _mm256_setzero_pd();
+        __m256d valid_mask = _mm256_and_pd(
+            _mm256_cmp_pd(visits_vec, zero_vec, _CMP_GT_OQ),
+            _mm256_cmp_pd(pheromone_vec, zero_vec, _CMP_GT_OQ)
+        );
+        temp_probs = _mm256_blendv_pd(zero_vec, temp_probs, valid_mask);
+
+        // Суммируем вероятности
+        __m256d sum_probs_vec = _mm256_hadd_pd(temp_probs, temp_probs);
+        double sum_probs = ((double*)&sum_probs_vec)[0] + ((double*)&sum_probs_vec)[2];
+
+        if (sum_probs > 0.0) {
+            // Нормализуем и вычисляем кумулятивные вероятности
+            __m256d inv_sum_probs = _mm256_set1_pd(1.0 / sum_probs);
+            __m256d norm_probs = _mm256_mul_pd(temp_probs, inv_sum_probs);
+
+            // Вычисляем кумулятивную сумму
+            double cumulative = 0.0;
+            double probs[4];
+            _mm256_storeu_pd(probs, norm_probs);
+
+            for (int i = 0; i < 4; ++i) {
+                cumulative += probs[i];
+                aco->norm_matrix_probability[base + i] = cumulative;
+            }
+            aco->norm_matrix_probability[base + 3] = 1.0; // Гарантируем, что последнее значение = 1.0
+        }
+        else {
+            // Равномерное распределение при нулевых вероятностях
+            __m256d uniform_probs = _mm256_set_pd(1.0, 0.75, 0.5, 0.25);
+            _mm256_storeu_pd(&aco->norm_matrix_probability[base], uniform_probs);
+        }
+    }
+}
+#else
 void calculate_probabilities(ACOData* aco) {
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -976,7 +1460,79 @@ void calculate_probabilities(ACOData* aco) {
         }
     }
 }
+#endif
+#if (MAX_VALUE_SIZE==4)
+// AVX2-оптимизированное обновление феромонов (оптимизированное по памяти)
+void update_pheromones_async(ACOData* aco, int iteration) {
+    const int total_cells = PARAMETR_SIZE * MAX_VALUE_SIZE;
+    const int num_agents = ANT_SIZE;
 
+    // Испарение феромонов с AVX
+    __m256d ro_vec = _mm256_set1_pd(PARAMETR_RO);
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < total_cells; i += 4) {
+        if (i + 3 < total_cells) {
+            __m256d pheromone_vec = _mm256_loadu_pd(&aco->current_pheromon[i]);
+            __m256d evaporated = _mm256_mul_pd(pheromone_vec, ro_vec);
+            _mm256_storeu_pd(&aco->current_pheromon[i], evaporated);
+        }
+        else {
+            // Обработка оставшихся элементов
+            for (int j = i; j < total_cells; ++j) {
+                aco->current_pheromon[j] *= PARAMETR_RO;
+            }
+        }
+    }
+
+    // Обновление посещений и феромонов с оптимизацией памяти
+#pragma omp parallel
+    {
+        // Используем фиксированные массивы вместо векторов для избежания динамического выделения
+        const int local_size = total_cells;
+        double* local_pheromone = new double[local_size]();
+        int* local_visits = new int[local_size]();
+
+#pragma omp for nowait
+        for (int agent = 0; agent < num_agents; ++agent) {
+            double score = aco->antOF[agent];
+            double add_value = 0.0;
+
+#if OPTIMIZE_MIN_1
+            add_value = (MAX_PARAMETR_VALUE_TO_MIN_OPT > score) ? PARAMETR_Q * (MAX_PARAMETR_VALUE_TO_MIN_OPT - score) : 0.0;
+#elif OPTIMIZE_MIN_2
+            add_value = (score == 0) ? (PARAMETR_Q / 0.0000001) : (PARAMETR_Q / score);
+#elif OPTIMIZE_MAX
+            add_value = PARAMETR_Q * score;
+#endif
+
+            const int* path = &aco->ant_parametr[agent * PARAMETR_SIZE];
+
+            for (int param = 0; param < PARAMETR_SIZE; ++param) {
+                int choice = path[param];
+                int idx = param * MAX_VALUE_SIZE + choice;
+                local_visits[idx]++;
+
+                if (add_value > 0.0) {
+                    local_pheromone[idx] += add_value;
+                }
+            }
+        }
+
+        // Слияние локальных данных
+#pragma omp critical
+        {
+            for (int i = 0; i < total_cells; ++i) {
+                aco->current_kol_enter[i] += local_visits[i];
+                aco->current_pheromon[i] += local_pheromone[i];
+            }
+        }
+
+        // Освобождаем память
+        delete[] local_pheromone;
+        delete[] local_visits;
+    }
+}
+#else
 void update_pheromones_async(ACOData* aco, int iteration) {
     const int TOTAL_CELLS = PARAMETR_SIZE * MAX_VALUE_SIZE;
 
@@ -1032,10 +1588,93 @@ void update_pheromones_async(ACOData* aco, int iteration) {
         }
     }
 }
-
+#endif
 // ========================= GO_HYBRID_OMP РЕЖИМ =========================
 
 // Параллельная обработка муравьев на CPU с использованием OpenMP
+#if (MAX_VALUE_SIZE==4)
+// AVX2-оптимизированная генерация агентов (оптимизированная по памяти)
+void calculate_ant_paths_omp_atomic(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf, int& kol_hash_fail) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+    minOf = 1e9;
+    maxOf = -1e9;
+    int local_kol_hash_fail = 0;
+
+#pragma omp parallel reduction(min:minOf) reduction(max:maxOf) reduction(+:local_kol_hash_fail)
+    {
+        std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num());
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+#pragma omp for schedule(static)
+        for (int ant_index = 0; ant_index < num_ants; ant_index++) {
+            int global_ant_index = start_ant + ant_index;
+            double agent[PARAMETR_SIZE] = { 0 };
+            int value_index = 0; // Значение по умолчанию (первый элемент)
+            // AVX-оптимизированная генерация пути муравья
+            for (int param_index = 0; param_index < PARAMETR_SIZE; param_index++) {
+                if (value_index != 3) {
+                    double random_value = dist(rng);
+                    const int prob_base = param_index * MAX_VALUE_SIZE;
+
+                    // Загружаем 4 вероятности в AVX-регистр
+                    __m256d prob_vec = _mm256_loadu_pd(&aco->norm_matrix_probability[prob_base]);
+
+                    // Сравниваем случайное значение с вероятностями
+                    __m256d rand_vec = _mm256_set1_pd(random_value);
+                    __m256d cmp_result = _mm256_cmp_pd(rand_vec, prob_vec, _CMP_LE_OQ);
+
+                    int mask = _mm256_movemask_pd(cmp_result);
+
+
+                    // Находим первый установленный бит
+                    if (mask != 0) {
+                        value_index = __builtin_ctz(mask);
+                    }
+                }
+                else {
+                    value_index = 0;
+                }
+
+                int path_index = global_ant_index * PARAMETR_SIZE + param_index;
+                ant_paths[path_index] = value_index;
+                agent[param_index] = aco->parametr_value[param_index * MAX_VALUE_SIZE + value_index];
+            }
+
+            // Проверка кэша и вычисление целевой функции
+            double cached_result = getCachedResultOptimized_non_cuda(hashTable,
+                &ant_paths[global_ant_index * PARAMETR_SIZE], global_ant_index);
+
+            if (cached_result < 0) {
+                // Вычисляем новое значение
+                antOF[global_ant_index] = BenchShafferaFunction_omp(agent);
+
+                // Сохраняем в кэш
+#pragma omp critical(hash_write)
+                {
+                    saveToCacheOptimized_non_cuda(hashTable,
+                        &ant_paths[global_ant_index * PARAMETR_SIZE], global_ant_index, antOF[global_ant_index]);
+                }
+            }
+            else {
+                // Используем кэшированное значение
+                local_kol_hash_fail++;
+                antOF[global_ant_index] = cached_result;
+            }
+                // Обновление минимумов/максимумов
+                if (antOF[global_ant_index] < minOf) {
+                    minOf = antOF[global_ant_index];
+                }
+                if (antOF[global_ant_index] > maxOf) {
+                    maxOf = antOF[global_ant_index];
+                }
+        }
+    }
+
+    kol_hash_fail += local_kol_hash_fail;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
+}
+#else
 void calculate_ant_paths_omp_atomic(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf, int& kol_hash_fail) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -1043,7 +1682,7 @@ void calculate_ant_paths_omp_atomic(ACOData* aco, int start_ant, int num_ants, s
     maxOf = -1e9;
     int local_kol_hash_fail = 0;
 
-#pragma omp parallel reduction(+:local_kol_hash_fail)
+#pragma omp parallel reduction(min:minOf) reduction(max:maxOf) reduction(+:local_kol_hash_fail)
     {
         uint64_t seed = std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num();
 
@@ -1070,11 +1709,7 @@ void calculate_ant_paths_omp_atomic(ACOData* aco, int start_ant, int num_ants, s
             }
             double cachedResult = -1.0;
             
-
-#pragma omp critical (hash_lookup)
-            {
-                cachedResult = getCachedResultOptimized_non_cuda(hashTable, &ant_paths[global_ant_index * PARAMETR_SIZE], global_ant_index);
-            }
+            cachedResult = getCachedResultOptimized_non_cuda(hashTable, &ant_paths[global_ant_index * PARAMETR_SIZE], global_ant_index);
 
             //std::cout << cachedResult << ", ";
             if (cachedResult < 0) {
@@ -1090,7 +1725,6 @@ void calculate_ant_paths_omp_atomic(ACOData* aco, int start_ant, int num_ants, s
                 local_kol_hash_fail++;
                 antOF[global_ant_index] = cachedResult;
             }
-            
             // Обновление минимумов/максимумов
             if (antOF[global_ant_index] < minOf) {
                 minOf = antOF[global_ant_index];
@@ -1105,18 +1739,179 @@ void calculate_ant_paths_omp_atomic(ACOData* aco, int start_ant, int num_ants, s
     auto end_time = std::chrono::high_resolution_clock::now();
     aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
 }
+#endif
+#if (MAX_VALUE_SIZE==4)
+// AVX2-оптимизированная генерация агентов (оптимизированная по памяти)
 void calculate_ant_paths_omp_atomic_non_hash(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+    minOf = 1e9;
+    maxOf = -1e9;
+
+#pragma omp parallel reduction(min:minOf) reduction(max:maxOf)
+    {
+        std::mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num());
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+#pragma omp for schedule(static)
+        for (int ant_index = 0; ant_index < num_ants; ant_index++) {
+            int global_ant_index = start_ant + ant_index;
+            double agent[PARAMETR_SIZE] = { 0 };
+            int value_index = 0; // Значение по умолчанию (первый элемент)
+            // AVX-оптимизированная генерация пути муравья
+            for (int param_index = 0; param_index < PARAMETR_SIZE; param_index++) {
+                if (value_index != 3) {
+                    double random_value = dist(rng);
+                    const int prob_base = param_index * MAX_VALUE_SIZE;
+
+                    // Загружаем 4 вероятности в AVX-регистр
+                    __m256d prob_vec = _mm256_loadu_pd(&aco->norm_matrix_probability[prob_base]);
+
+                    // Сравниваем случайное значение с вероятностями
+                    __m256d rand_vec = _mm256_set1_pd(random_value);
+                    __m256d cmp_result = _mm256_cmp_pd(rand_vec, prob_vec, _CMP_LE_OQ);
+
+                    int mask = _mm256_movemask_pd(cmp_result);
+
+
+                    // Находим первый установленный бит
+                    if (mask != 0) {
+                        value_index = __builtin_ctz(mask);
+                    }
+                }
+                else {
+                    value_index = 0;
+                }
+
+                int path_index = global_ant_index * PARAMETR_SIZE + param_index;
+                ant_paths[path_index] = value_index;
+                agent[param_index] = aco->parametr_value[param_index * MAX_VALUE_SIZE + value_index];
+            }
+
+            // Вычисляем новое значение
+            antOF[global_ant_index] = BenchShafferaFunction_omp(agent);
+                // Обновление минимумов/максимумов
+                if (antOF[global_ant_index] < minOf) {
+                    minOf = antOF[global_ant_index];
+                }
+                if (antOF[global_ant_index] > maxOf) {
+                    maxOf = antOF[global_ant_index];
+                }
+
+        }
+    }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
+}
+#else
+void calculate_ant_paths_omp_atomic_non_hash(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    minOf = 1e9;
+    maxOf = -1e9;
+
+#pragma omp parallel reduction(min:minOf) reduction(max:maxOf)
+    {
+        uint64_t seed = std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num();
+
+#pragma omp for  schedule(static)
+        for (int ant_index = 0; ant_index < num_ants; ant_index++) {
+            int global_ant_index = start_ant + ant_index;
+            double agent[PARAMETR_SIZE] = { 0 };
+            bool valid_solution = true;
+
+            // Генерация пути муравья
+            for (int param_index = 0; param_index < PARAMETR_SIZE; param_index++) {
+                double randomValue = unified_fast_random(seed);
+                int value_index = 0;
+
+                while (valid_solution && value_index < MAX_VALUE_SIZE &&
+                    randomValue > aco->norm_matrix_probability[MAX_VALUE_SIZE * param_index + value_index]) {
+                    value_index++;
+                }
+
+                int path_index = global_ant_index * PARAMETR_SIZE + param_index;
+                ant_paths[path_index] = value_index;
+                agent[param_index] = aco->parametr_value[param_index * MAX_VALUE_SIZE + value_index];
+                valid_solution = (value_index != MAX_VALUE_SIZE - 1);
+            }
+            antOF[global_ant_index] = BenchShafferaFunction_omp(agent);
+
+                // Обновление минимумов/максимумов
+                if (antOF[global_ant_index] < minOf) {
+                    minOf = antOF[global_ant_index];
+                }
+                if (antOF[global_ant_index] > maxOf) {
+                    maxOf = antOF[global_ant_index];
+                }
+
+        }
+    }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
+}
+#endif
+void calculate_ant_paths_atomic(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf, int& kol_hash_fail) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     minOf = 1e9;
     maxOf = -1e9;
     int local_kol_hash_fail = 0;
 
-#pragma omp parallel reduction(+:local_kol_hash_fail)
-    {
         uint64_t seed = std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num();
 
-#pragma omp for  schedule(static)
+        for (int ant_index = 0; ant_index < num_ants; ant_index++) {
+            int global_ant_index = start_ant + ant_index;
+            double agent[PARAMETR_SIZE] = { 0 };
+            bool valid_solution = true;
+
+            // Генерация пути муравья
+            for (int param_index = 0; param_index < PARAMETR_SIZE; param_index++) {
+                double randomValue = unified_fast_random(seed);
+                int value_index = 0;
+
+                while (valid_solution && value_index < MAX_VALUE_SIZE &&
+                    randomValue > aco->norm_matrix_probability[MAX_VALUE_SIZE * param_index + value_index]) {
+                    value_index++;
+                }
+
+                int path_index = global_ant_index * PARAMETR_SIZE + param_index;
+                ant_paths[path_index] = value_index;
+                agent[param_index] = aco->parametr_value[param_index * MAX_VALUE_SIZE + value_index];
+                valid_solution = (value_index != MAX_VALUE_SIZE - 1);
+            }
+            double cachedResult = -1.0;
+
+            cachedResult = getCachedResultOptimized_non_cuda(hashTable, &ant_paths[global_ant_index * PARAMETR_SIZE], global_ant_index);
+            //std::cout << cachedResult << ", ";
+            if (cachedResult < 0) {
+                antOF[global_ant_index] = BenchShafferaFunction_omp(agent);
+                saveToCacheOptimized_non_cuda(hashTable, &ant_paths[global_ant_index * PARAMETR_SIZE], global_ant_index, antOF[global_ant_index]);
+            }
+            else {
+                local_kol_hash_fail++;
+                antOF[global_ant_index] = cachedResult;
+            }
+
+            // Обновление минимумов/максимумов
+            if (antOF[global_ant_index] < minOf) {
+                minOf = antOF[global_ant_index];
+            }
+            if (antOF[global_ant_index] > maxOf) {
+                maxOf = antOF[global_ant_index];
+            }
+        }
+    kol_hash_fail += local_kol_hash_fail;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
+}
+void calculate_ant_paths_atomic_non_hash(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+    minOf = 1e9;
+    maxOf = -1e9;
+    int local_kol_hash_fail = 0;
+        uint64_t seed = std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num();
         for (int ant_index = 0; ant_index < num_ants; ant_index++) {
             int global_ant_index = start_ant + ant_index;
             double agent[PARAMETR_SIZE] = { 0 };
@@ -1147,8 +1942,129 @@ void calculate_ant_paths_omp_atomic_non_hash(ACOData* aco, int start_ant, int nu
                 maxOf = antOF[global_ant_index];
             }
         }
+    auto end_time = std::chrono::high_resolution_clock::now();
+    aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
+}
+
+// ----------------- Обновленные функции расчета путей муравьев -----------------
+void calculate_ant_paths_omp_atomic_new(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths,  std::vector<double>& antOF, double& minOf, double& maxOf, int& kol_hash_fail) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    minOf = 1e9;
+    maxOf = -1e9;
+    int local_kol_hash_fail = 0;
+
+#pragma omp parallel reduction(min:minOf) reduction(max:maxOf) reduction(+:local_kol_hash_fail)
+    {
+        uint64_t seed = std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num();
+
+#pragma omp for schedule(static)
+        for (int ant_index = 0; ant_index < num_ants; ant_index++) {
+            int global_ant_index = start_ant + ant_index;
+            double agent[PARAMETR_SIZE] = { 0 };
+            bool valid_solution = true;
+
+            // Генерация пути муравья
+            for (int param_index = 0; param_index < PARAMETR_SIZE; param_index++) {
+                double randomValue = unified_fast_random(seed);
+                int value_index = 0;
+
+                while (valid_solution && value_index < MAX_VALUE_SIZE &&
+                    randomValue > aco->norm_matrix_probability[MAX_VALUE_SIZE * param_index + value_index]) {
+                    value_index++;
+                }
+
+                int path_index = global_ant_index * PARAMETR_SIZE + param_index;
+                ant_paths[path_index] = value_index;
+                agent[param_index] = aco->parametr_value[param_index * MAX_VALUE_SIZE + value_index];
+                valid_solution = (value_index != MAX_VALUE_SIZE - 1);
+            }
+
+            double cachedResult = getCachedResultAtomic(atomicHashTable, &ant_paths[global_ant_index * PARAMETR_SIZE], aco->current_iteration.load());
+
+            if (cachedResult == ZERO_HASH_RESULT) {
+                antOF[global_ant_index] = BenchShafferaFunction_omp(agent);
+                saveToCacheAtomic(atomicHashTable, &ant_paths[global_ant_index * PARAMETR_SIZE],
+                    antOF[global_ant_index], aco->current_iteration.load());
+            }
+            else {
+                local_kol_hash_fail++;
+                antOF[global_ant_index] = cachedResult;
+            }
+
+            // Обновление минимумов/максимумов
+            if (antOF[global_ant_index] < minOf) {
+                minOf = antOF[global_ant_index];
+            }
+            if (antOF[global_ant_index] > maxOf) {
+                maxOf = antOF[global_ant_index];
+            }
+        }
     }
 
+    kol_hash_fail += local_kol_hash_fail;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
+}
+
+// ----------------- Обновленная функция для шардированной таблицы -----------------
+void calculate_ant_paths_omp_sharded(ACOData* aco, int start_ant, int num_ants, std::vector<int>& ant_paths, std::vector<double>& antOF, double& minOf, double& maxOf, int& kol_hash_fail) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    minOf = 1e9;
+    maxOf = -1e9;
+    int local_kol_hash_fail = 0;
+
+#pragma omp parallel reduction(min:minOf) reduction(max:maxOf) reduction(+:local_kol_hash_fail)
+    {
+        uint64_t seed = std::chrono::steady_clock::now().time_since_epoch().count() + omp_get_thread_num();
+
+#pragma omp for schedule(static)
+        for (int ant_index = 0; ant_index < num_ants; ant_index++) {
+            int global_ant_index = start_ant + ant_index;
+            double agent[PARAMETR_SIZE] = { 0 };
+            bool valid_solution = true;
+
+            // Генерация пути муравья
+            for (int param_index = 0; param_index < PARAMETR_SIZE; param_index++) {
+                double randomValue = unified_fast_random(seed);
+                int value_index = 0;
+
+                while (valid_solution && value_index < MAX_VALUE_SIZE &&
+                    randomValue > aco->norm_matrix_probability[MAX_VALUE_SIZE * param_index + value_index]) {
+                    value_index++;
+                }
+
+                int path_index = global_ant_index * PARAMETR_SIZE + param_index;
+                ant_paths[path_index] = value_index;
+                agent[param_index] = aco->parametr_value[param_index * MAX_VALUE_SIZE + value_index];
+                valid_solution = (value_index != MAX_VALUE_SIZE - 1);
+            }
+
+            double cachedResult = getCachedResultSharded(*shardedHashTable, &ant_paths[global_ant_index * PARAMETR_SIZE],
+                aco->current_iteration.load());
+
+            if (cachedResult == ZERO_HASH_RESULT) {
+                antOF[global_ant_index] = BenchShafferaFunction_omp(agent);
+                saveToCacheSharded(*shardedHashTable, &ant_paths[global_ant_index * PARAMETR_SIZE],
+                    antOF[global_ant_index], aco->current_iteration.load());
+            }
+            else {
+                local_kol_hash_fail++;
+                antOF[global_ant_index] = cachedResult;
+            }
+
+            // Обновление минимумов/максимумов
+            if (antOF[global_ant_index] < minOf) {
+                minOf = antOF[global_ant_index];
+            }
+            if (antOF[global_ant_index] > maxOf) {
+                maxOf = antOF[global_ant_index];
+            }
+        }
+    }
+
+    kol_hash_fail += local_kol_hash_fail;
     auto end_time = std::chrono::high_resolution_clock::now();
     aco->Time_OMP_function += std::chrono::duration<double, std::milli>(end_time - start_time).count();
 }
@@ -1159,12 +2075,14 @@ void OMP_thread_function(ACOData* aco) {
 #endif
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!queue_pop(&aco->cpu_to_OMP_queue, cpu_data)) {
             break;
         }
+        auto end_time_wait = std::chrono::high_resolution_clock::now();
+        aco->Time_OMP_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
         std::cout << "   [OMP ant Thread] queue_pop(&aco->cpu_to_OMP_queue, cpu_data)" << std::endl;
 #endif
@@ -1192,6 +2110,7 @@ void OMP_thread_function(ACOData* aco) {
         omp_data.kol_hash_fail = kol_hash_fail;
         omp_data.ants_count = cpu_data.ants_count;
 
+        start_time_wait = std::chrono::high_resolution_clock::now();
         queue_push(&aco->OMP_to_cpu_queue, omp_data);
 #if (PRINT_INFORMATION)
         std::cout << "   [OMP ant Thread] queue_push(&aco->OMP_to_cpu_queue, omp_data)" << std::endl;
@@ -1211,12 +2130,14 @@ void OMP_thread_function_non_hash(ACOData* aco) {
 #endif
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!queue_pop(&aco->cpu_to_OMP_queue, cpu_data)) {
             break;
         }
+        auto end_time_wait = std::chrono::high_resolution_clock::now();
+        aco->Time_OMP_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
         std::cout << "[OMP ant Thread] queue_pop(&aco->cpu_to_OMP_queue, cpu_data)" << std::endl;
 #endif
@@ -1243,6 +2164,7 @@ void OMP_thread_function_non_hash(ACOData* aco) {
         omp_data.maxOf = maxOf;
         omp_data.kol_hash_fail = 0;
         omp_data.ants_count = cpu_data.ants_count;
+        start_time_wait = std::chrono::high_resolution_clock::now();
 
         queue_push(&aco->OMP_to_cpu_queue, omp_data);
 #if (PRINT_INFORMATION)
@@ -1263,12 +2185,14 @@ void OMP_thread_function_parallel(ACOData* aco) {
     std::cout << "   [OMP ant Thread] Started" << std::endl;
 #endif
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!aco->cpu_to_OMP_queue_current.empty()) {
             cpu_data = std::move(aco->cpu_to_OMP_queue_current.front());
             aco->cpu_to_OMP_queue_current.pop();
+            auto end_time_wait = std::chrono::high_resolution_clock::now();
+            aco->Time_OMP_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
             std::cout << "   [OMP ant Thread] queue_pop(&aco->cpu_to_OMP_queue, cpu_data)" << std::endl;
 #endif
@@ -1295,7 +2219,8 @@ void OMP_thread_function_parallel(ACOData* aco) {
             omp_data.maxOf = maxOf;
             omp_data.kol_hash_fail = kol_hash_fail;
             omp_data.ants_count = cpu_data.ants_count;
-            
+
+            start_time_wait = std::chrono::high_resolution_clock::now();
             aco->OMP_to_cpu_queue_current.push(omp_data);
 
 #if (PRINT_INFORMATION)
@@ -1317,12 +2242,14 @@ void OMP_thread_function_parallel_non_hash(ACOData* aco) {
     std::cout << "   [OMP ant Thread] Started" << std::endl;
 #endif
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!aco->cpu_to_OMP_queue_current.empty()) {
             cpu_data = std::move(aco->cpu_to_OMP_queue_current.front());
             aco->cpu_to_OMP_queue_current.pop();
+            auto end_time_wait = std::chrono::high_resolution_clock::now();
+            aco->Time_OMP_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
             std::cout << "   [OMP ant Thread] queue_pop(&aco->cpu_to_OMP_queue, cpu_data)" << std::endl;
 #endif
@@ -1349,6 +2276,7 @@ void OMP_thread_function_parallel_non_hash(ACOData* aco) {
             omp_data.kol_hash_fail = 0;
             omp_data.ants_count = cpu_data.ants_count;
 
+            start_time_wait = std::chrono::high_resolution_clock::now();
             aco->OMP_to_cpu_queue_current.push(omp_data);
 
 #if (PRINT_INFORMATION)
@@ -1398,7 +2326,7 @@ void cpu_thread_function_OMP(ACOData* aco) {
             << ", OMP ants: " << cpu_data_omp.ants_count << std::endl;
 #endif
 
-        auto start_time_wait = std::chrono::high_resolution_clock::now();
+        
         queue_push(&aco->cpu_to_gpu_queue, cpu_data_gpu);
         queue_push(&aco->cpu_to_OMP_queue, cpu_data_omp);
 
@@ -1410,7 +2338,7 @@ void cpu_thread_function_OMP(ACOData* aco) {
         const int MAX_WAIT_MS = 30000; // 30 секунд максимум
 
         auto wait_start = std::chrono::steady_clock::now();
-
+        auto start_time_wait = std::chrono::high_resolution_clock::now();
         // Ожидаем результаты от обоих устройств с таймаутом
         while ((!gpu_received || !omp_received) && !aco->stop_requested.load()) {
             auto current_time = std::chrono::steady_clock::now();
@@ -1481,9 +2409,7 @@ void cpu_thread_function_OMP(ACOData* aco) {
 
         // Проверяем корректность данных
         if (gpu_data.ants_count + OMP_data.ants_count != ANT_SIZE) {
-            std::cerr << "[CPU Hybrid] ERROR: Total ants count mismatch! GPU: "
-                << gpu_data.ants_count << ", OMP: " << OMP_data.ants_count
-                << ", Expected: " << ANT_SIZE << std::endl;
+            std::cerr << "[CPU Hybrid] ERROR: Total ants count mismatch! GPU: " << gpu_data.ants_count << ", OMP: " << OMP_data.ants_count << ", Expected: " << ANT_SIZE << std::endl;
         }
 
         // Объединяем результаты в общие массивы
@@ -1576,8 +2502,9 @@ void dynamic_cpu_thread_function_OMP(ACOData* aco) {
             << " - GPU ants: " << cpu_data_gpu.ants_count
             << ", OMP ants: " << cpu_data_omp.ants_count << std::endl;
 #endif
-
-        auto start_time_wait = std::chrono::high_resolution_clock::now();
+        aco->cpu_ants_statistics += cpu_data_omp.ants_count;
+        aco->gpu_ants_statistics += cpu_data_gpu.ants_count;
+        
         queue_push(&aco->cpu_to_gpu_queue, cpu_data_gpu);
         queue_push(&aco->cpu_to_OMP_queue, cpu_data_omp);
 
@@ -1589,7 +2516,7 @@ void dynamic_cpu_thread_function_OMP(ACOData* aco) {
         const int MAX_WAIT_MS = 30000; // 30 секунд максимум
 
         auto wait_start = std::chrono::steady_clock::now();
-
+        auto start_time_wait = std::chrono::high_resolution_clock::now();
         // Ожидаем результаты от обоих устройств с таймаутом
         while ((!gpu_received || !omp_received) && !aco->stop_requested.load()) {
             auto current_time = std::chrono::steady_clock::now();
@@ -1655,9 +2582,7 @@ void dynamic_cpu_thread_function_OMP(ACOData* aco) {
 
         // Проверяем корректность данных
         if (gpu_data.ants_count + OMP_data.ants_count != ANT_SIZE) {
-            std::cerr << "[CPU Hybrid] ERROR: Total ants count mismatch! GPU: "
-                << gpu_data.ants_count << ", OMP: " << OMP_data.ants_count
-                << ", Expected: " << ANT_SIZE << std::endl;
+            std::cerr << "[CPU Hybrid] ERROR: Total ants count mismatch! GPU: " << gpu_data.ants_count << ", OMP: " << OMP_data.ants_count << ", Expected: " << ANT_SIZE << std::endl;
         }
 
         // Объединяем результаты в общие массивы
@@ -1793,7 +2718,6 @@ void dynamic_cpu_thread_function_OMP_parallel(ACOData* aco) {
     while (iteration < KOL_ITERATION*2 && !aco->stop_requested) {
         auto start_time_prob = std::chrono::high_resolution_clock::now();
         calculate_probabilities(aco);
-
         end_time = std::chrono::high_resolution_clock::now();
         aco->Time_CPU_prob += std::chrono::duration<double, std::milli>(end_time - start_time_prob).count();
 
@@ -1822,12 +2746,15 @@ void dynamic_cpu_thread_function_OMP_parallel(ACOData* aco) {
             aco->cpu_to_gpu_queue_current.push(cpu_data_gpu); 
             go_push_gpu = false;
         }
-        
+        aco->cpu_ants_statistics += cpu_data_omp.ants_count;
+        aco->gpu_ants_statistics += cpu_data_gpu.ants_count;
 
         IterationData gpu_data;
         IterationData OMP_data;
 
         if (!aco->OMP_to_cpu_queue_current.empty()) {
+            end_time = std::chrono::high_resolution_clock::now();
+            aco->Time_CPU_wait += std::chrono::duration<double, std::milli>(end_time - start_time_wait).count();
             OMP_data = std::move(aco->OMP_to_cpu_queue_current.front());
             aco->OMP_to_cpu_queue_current.pop();
             if (OMP_data.ants_count > 0) {
@@ -1847,9 +2774,12 @@ void dynamic_cpu_thread_function_OMP_parallel(ACOData* aco) {
 #if (PRINT_INFORMATION)
             std::cout << "[CPU Hybrid] OMP_to_cpu_queue_current.pop() " << OMP_data.ants_count << " ants go_push_OMP=" << go_push_OMP << ", " << go_push_OMP_balansed << std::endl;
 #endif
+            start_time_wait = std::chrono::high_resolution_clock::now();
         }
 
         if (!aco->gpu_to_cpu_queue_current.empty()) {
+            end_time = std::chrono::high_resolution_clock::now();
+            aco->Time_CPU_wait += std::chrono::duration<double, std::milli>(end_time - start_time_wait).count();
             gpu_data = std::move(aco->gpu_to_cpu_queue_current.front());
             aco->gpu_to_cpu_queue_current.pop();
             if (gpu_data.ants_count > 0) {
@@ -1869,6 +2799,7 @@ void dynamic_cpu_thread_function_OMP_parallel(ACOData* aco) {
 #if (PRINT_INFORMATION)
             std::cout << "[CPU Hybrid] gpu_to_cpu_queue_current.pop() " << gpu_data.ants_count << " ants go_push_gpu=" << go_push_gpu << ", " << go_push_gpu_balansed << std::endl;
 #endif
+            start_time_wait = std::chrono::high_resolution_clock::now();
         }
 
 #if (PRINT_INFORMATION)
@@ -1879,6 +2810,7 @@ void dynamic_cpu_thread_function_OMP_parallel(ACOData* aco) {
             go_push_gpu_balansed = false;
             end_time = std::chrono::high_resolution_clock::now();
             aco->Time_CPU_wait += std::chrono::duration<double, std::milli>(end_time - start_time_wait).count();
+            
 #if (PRINT_INFORMATION)
             std::cout << "Balance: aco->Time_GPU_function=" << aco->Time_GPU_function << " aco->Time_OMP_function=" << aco->Time_OMP_function << std::endl;
 #endif
@@ -1959,6 +2891,7 @@ void dynamic_cpu_thread_function_OMP_parallel(ACOData* aco) {
 #if (PRINT_INFORMATION)
                 std::cout << "Balance: Last_Time_GPU_function=" << Last_Time_GPU_function << " Last_Time_OMP_function=" << Last_Time_OMP_function << std::endl;
 #endif
+                start_time_wait = std::chrono::high_resolution_clock::now();
             }
         }
         
@@ -2051,12 +2984,14 @@ void gpu_thread_function(ACOData* aco) {
 #endif
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!queue_pop(&aco->cpu_to_gpu_queue, cpu_data)) {
             break;
         }
+        auto end_time_wait = std::chrono::high_resolution_clock::now();
+        aco->Time_GPU_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
         std::cout << "[GPU Thread] queue_pop(&aco->cpu_to_gpu_queue, cpu_data)" << std::endl;
 #endif
@@ -2114,7 +3049,7 @@ void gpu_thread_function(ACOData* aco) {
             << ", Max: " << gpu_data.maxOf
             << ", Hash fails: " << gpu_data.kol_hash_fail << std::endl;
 #endif
-
+        start_time_wait = std::chrono::high_resolution_clock::now();
         queue_push(&aco->gpu_to_cpu_queue, gpu_data);
 #if (PRINT_INFORMATION)
         std::cout << "[GPU Thread] queue_push(&aco->gpu_to_cpu_queue, gpu_data)" << std::endl;
@@ -2135,13 +3070,14 @@ void gpu_thread_function_non_hash(ACOData* aco) {
 #endif
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!queue_pop(&aco->cpu_to_gpu_queue, cpu_data)) {
             break;
         }
-
+        auto end_time_wait = std::chrono::high_resolution_clock::now();
+        aco->Time_GPU_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
         active_cuda_tasks.fetch_add(1);
 
         // ВХОДНЫЕ ДАННЫЕ ДЛЯ GPU - только norm_matrix_probability
@@ -2190,12 +3126,9 @@ void gpu_thread_function_non_hash(ACOData* aco) {
         aco->Time_GPU_function += gpu_data.Time_function;
 
 #if (PRINT_INFORMATION)
-        std::cout << "[GPU Thread] Iteration " << gpu_data.iteration
-            << " completed. Min: " << gpu_data.minOf
-            << ", Max: " << gpu_data.maxOf
-            << ", Hash fails: " << gpu_data.kol_hash_fail << std::endl;
+        std::cout << "[GPU Thread] Iteration " << gpu_data.iteration << " completed. Min: " << gpu_data.minOf << ", Max: " << gpu_data.maxOf << ", Hash fails: " << gpu_data.kol_hash_fail << std::endl;
 #endif
-
+        start_time_wait = std::chrono::high_resolution_clock::now();
         queue_push(&aco->gpu_to_cpu_queue, gpu_data);
     }
 
@@ -2214,12 +3147,14 @@ void gpu_thread_function_parallel(ACOData* aco) {
 #endif
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!aco->cpu_to_gpu_queue_current.empty()) {
             cpu_data = std::move(aco->cpu_to_gpu_queue_current.front());
             aco->cpu_to_gpu_queue_current.pop();
+            auto end_time_wait = std::chrono::high_resolution_clock::now();
+            aco->Time_GPU_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
             std::cout << "   [GPU ant Thread] queue_pop(&aco->cpu_to_gpu_queue, cpu_data)" << std::endl;
 #endif
@@ -2237,9 +3172,9 @@ void gpu_thread_function_parallel(ACOData* aco) {
 #endif
             // ВЫЗЫВАЕМ CUDA - передаем буферы для результатов
             cuda_run_iteration(
-                cpu_data.norm_matrix_probability.data(), // Вход: вероятности
-                ant_parametr_result.data(),              // Выход: параметры муравьев
-                antOF_result.data(),                     // Выход: значения функции
+                cpu_data.norm_matrix_probability.data(),
+                ant_parametr_result.data(),              
+                antOF_result.data(),                   
                 cpu_data.ants_count,
                 &minOf_result,
                 &maxOf_result,
@@ -2271,6 +3206,7 @@ void gpu_thread_function_parallel(ACOData* aco) {
                 << ", Max: " << gpu_data.maxOf
                 << ", Hash fails: " << gpu_data.kol_hash_fail << std::endl;
 #endif
+            start_time_wait = std::chrono::high_resolution_clock::now();
             aco->gpu_to_cpu_queue_current.push(gpu_data);
 #if (PRINT_INFORMATION)
                 std::cout << "   [GPU ant Thread] queue_push(&aco->gpu_to_cpu_queue, gpu_data)" << std::endl;
@@ -2291,12 +3227,14 @@ void gpu_thread_function_parallel_non_hash(ACOData* aco) {
 #endif
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
+    auto start_time_wait = std::chrono::high_resolution_clock::now();
     while (!aco->stop_requested.load()) {
         IterationData cpu_data;
         if (!aco->cpu_to_gpu_queue_current.empty()) {
             cpu_data = std::move(aco->cpu_to_gpu_queue_current.front());
             aco->cpu_to_gpu_queue_current.pop();
+            auto end_time_wait = std::chrono::high_resolution_clock::now();
+            aco->Time_GPU_wait += std::chrono::duration<double, std::milli>(end_time_wait - start_time_wait).count();
 #if (PRINT_INFORMATION)
             std::cout << "   [GPU ant Thread] queue_pop(&aco->cpu_to_gpu_queue, cpu_data)" << std::endl;
 #endif
@@ -2354,6 +3292,7 @@ void gpu_thread_function_parallel_non_hash(ACOData* aco) {
         }
     }
     auto end_time = std::chrono::high_resolution_clock::now();
+    start_time_wait = std::chrono::high_resolution_clock::now();
     aco->Time_GPU_all = std::chrono::duration<double, std::milli>(end_time - start_time).count();
 
 
@@ -2434,14 +3373,16 @@ int start_hybrid() {
 #endif
 
     std::cout << "Time Hybrid OMP;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
-        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; "
-        << aco.Time_CPU_update << "; " << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
+        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
+        << aco.global_minOf << "; " << aco.global_maxOf << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
-        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; "
-        << aco.Time_CPU_update << "; " << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
+        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
+        << aco.global_minOf << "; " << aco.global_maxOf << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
     aco_cleanup(&aco);
@@ -2500,14 +3441,16 @@ int start_hybrid_non_hash() {
 #endif
 
     std::cout << "Time Hybrid OMP non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
-        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; "
-        << aco.Time_CPU_update << "; " << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
+        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
+        << aco.global_minOf << "; " << aco.global_maxOf << "; "
         << aco.kol_hash_fail << "; " << std::endl;
-    logFile << "Time Hybrid OMP  non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
-        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; "
-        << aco.Time_CPU_update << "; " << aco.global_minOf << "; " << aco.global_maxOf << "; "
+    logFile << "Time Hybrid OMP non hash;" << duration << "; " << duration_iteration << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
+        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
+        << aco.global_minOf << "; " << aco.global_maxOf << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
     aco_cleanup(&aco);
@@ -2672,17 +3615,21 @@ int start_balanced_hybrid() {
     std::cout << "=== BALANCED HYBRID COMPLETED ===" << std::endl;
     std::cout << "Total time: " << duration << " ms" << std::endl;
 #endif
+    aco.cpu_ants_statistics = aco.cpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    aco.gpu_ants_statistics = aco.gpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
     std::cout << "Time Hybrid OMP parallel 1/2;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP parallel 1/2;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
 
@@ -2737,17 +3684,21 @@ int start_balanced_hybrid_non_hash() {
     std::cout << "=== BALANCED HYBRID COMPLETED ===" << std::endl;
     std::cout << "Total time: " << duration << " ms" << std::endl;
 #endif
+    aco.cpu_ants_statistics = aco.cpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    aco.gpu_ants_statistics = aco.gpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
     std::cout << "Time Hybrid OMP parallel 1/2 non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
-        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; "<< aco.Time_CPU_update << "; " 
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " 
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
+        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP parallel 1/2 non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
-        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; "<< aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
+        << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
     aco_cleanup(&aco);
@@ -2806,17 +3757,21 @@ int start_balanced_hybrid_dynamic() {
     std::cout << "=== BALANCED HYBRID COMPLETED ===" << std::endl;
     std::cout << "Total time: " << duration << " ms" << std::endl;
 #endif
+    aco.cpu_ants_statistics = aco.cpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    aco.gpu_ants_statistics = aco.gpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
     std::cout << "Time Hybrid OMP parallel dynamic;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP parallel dynamic;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
 
@@ -2871,17 +3826,21 @@ int start_balanced_hybrid_dynamic_non_hash() {
     std::cout << "=== BALANCED HYBRID COMPLETED ===" << std::endl;
     std::cout << "Total time: " << duration << " ms" << std::endl;
 #endif
+    aco.cpu_ants_statistics = aco.cpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    aco.gpu_ants_statistics = aco.gpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
     std::cout << "Time Hybrid OMP parallel dynamic non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP parallel dynamic non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
     aco_cleanup(&aco);
@@ -2940,17 +3899,22 @@ int start_balanced_hybrid_dynamic_parallel() {
     std::cout << "=== BALANCED PARALLEL HYBRID COMPLETED ===" << std::endl;
     std::cout << "Total time: " << duration << " ms" << std::endl;
 #endif
+    aco.cpu_ants_statistics = aco.cpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    aco.gpu_ants_statistics = aco.gpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    
     std::cout << "Time Hybrid OMP parallel thread non blocked dynamic;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP parallel thread non blocked dynamic;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
 
@@ -3005,17 +3969,21 @@ int start_balanced_hybrid_dynamic_parallel_non_hash() {
     std::cout << "=== BALANCED PARALLEL HYBRID COMPLETED ===" << std::endl;
     std::cout << "Total time: " << duration << " ms" << std::endl;
 #endif
+    aco.cpu_ants_statistics = aco.cpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
+    aco.gpu_ants_statistics = aco.gpu_ants_statistics / (ANT_SIZE * KOL_ITERATION);
     std::cout << "Time Hybrid OMP parallel thread non blocked dynamic non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
     logFile << "Time Hybrid OMP parallel thread non blocked dynamic non hash;" << duration << "; " << duration_iteration << "; "
-        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; "
+        << aco.Time_GPU_all << "; " << aco.Time_GPU << "; " << aco.Time_GPU_function << "; " << aco.Time_GPU_wait << "; "
         << aco.Time_CPU_all << "; " << aco.Time_CPU_prob << "; " << aco.Time_CPU_wait << "; " << aco.Time_CPU_update << "; "
-        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; "
+        << aco.Time_OMP_all << "; " << aco.Time_OMP_function << "; " << aco.Time_OMP_wait << "; "
         << aco.global_minOf << "; " << aco.global_maxOf << "; "
+        << aco.cpu_ants_statistics << "; " << aco.gpu_ants_statistics << "; "
         << aco.kol_hash_fail << "; " << std::endl;
 
     aco_cleanup(&aco);
@@ -3126,7 +4094,7 @@ int main() {
     // Вывод информации о константах
     std::cout << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
-        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
         << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
@@ -3149,7 +4117,7 @@ int main() {
         << std::endl;
     logFile << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
-        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
         << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "

@@ -1,0 +1,39 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o rtx3060_optimizations.exe rtx3060_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+rtx3060_optimizations.cu(376): error: identifier "global_params_buffer" is undefined
+      double* agent_params = &global_params_buffer[ant_id * 42];
+                              ^
+
+rtx3060_optimizations.cu(397): error: identifier "getCachedResult" is undefined
+          double cached = getCachedResult(hashTable, agent_node, ant_id);
+                          ^
+
+rtx3060_optimizations.cu(408): error: no instance of overloaded function "atomicMax" matches the argument list
+            argument types are: (double *__restrict__, double)
+              atomicMax(maxOf_dev, OF[ant_id]);
+              ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\sm_32_atomic_functions.h(101): note #3326-D: function "atomicMax(unsigned long long *, unsigned long long)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) unsigned long long atomicMax(unsigned long long *address, unsigned long long val) { }
+                                                            ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\sm_32_atomic_functions.h(91): note #3326-D: function "atomicMax(long long *, long long)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) long long atomicMax(long long *address, long long val) { }
+                                                   ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\device_atomic_functions.h(109): note #3326-D: function "atomicMax(unsigned int *, unsigned int)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) unsigned int atomicMax(unsigned int *address, unsigned int val) { }
+                                                      ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\device_atomic_functions.h(107): note #3326-D: function "atomicMax(int *, int)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) int atomicMax(int *address, int val) { }
+                                             ^
+
+rtx3060_optimizations.cu(491): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+3 errors detected in the compilation of "rtx3060_optimizations.cu".
+rtx3060_optimizations.cu
+========== COMPILATION END ========== 
+Exit code: 2 

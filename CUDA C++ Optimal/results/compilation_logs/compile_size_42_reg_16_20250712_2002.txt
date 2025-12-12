@@ -1,0 +1,435 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o rtx3060_optimizations.exe rtx3060_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\parametrs.h(19): warning C4005: 'KOL_ITERATION': macro redefinition
+rtx3060_optimizations.cu(7): note: see previous definition of 'KOL_ITERATION'
+C:\Programs\ACO_Cluster\CUDA C++ Optimal\parametrs.h(57): warning C4005: 'SPHERE': macro redefinition
+rtx3060_optimizations.cu(9): note: see previous definition of 'SPHERE'
+rtx3060_optimizations.cu(42): error: namespace "std" has no member "ofstream"
+  std::ofstream logFile("log.txt");
+       ^
+
+rtx3060_optimizations.cu(44): error: name must be a namespace name
+  namespace cg = cooperative_groups;
+                 ^
+
+rtx3060_optimizations.cu(303): error: name followed by "::" must be a class or namespace name
+      cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cg::this_thread_block());
+      ^
+
+rtx3060_optimizations.cu(303): error: expected an identifier
+      cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cg::this_thread_block());
+                            ^
+
+rtx3060_optimizations.cu(303): error: expected a ";"
+      cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cg::this_thread_block());
+                            ^
+
+rtx3060_optimizations.cu(312): error: name followed by "::" must be a class or namespace name
+      sum_pheromon = cg::reduce(warp, sum_pheromon, cg::plus<double>());
+                     ^
+
+rtx3060_optimizations.cu(312): error: identifier "warp" is undefined
+      sum_pheromon = cg::reduce(warp, sum_pheromon, cg::plus<double>());
+                                ^
+
+rtx3060_optimizations.cu(312): error: name followed by "::" must be a class or namespace name
+      sum_pheromon = cg::reduce(warp, sum_pheromon, cg::plus<double>());
+                                                    ^
+
+rtx3060_optimizations.cu(312): error: expected an identifier
+      sum_pheromon = cg::reduce(warp, sum_pheromon, cg::plus<double>());
+                                                             ^
+
+rtx3060_optimizations.cu(312): error: expected a ")"
+      sum_pheromon = cg::reduce(warp, sum_pheromon, cg::plus<double>());
+                                                             ^
+
+rtx3060_optimizations.cu(330): error: identifier "__fdivide" is undefined
+      double inv_sum_prob = (sum_prob > 1e-10) ? __fdivide(1.0, sum_prob) : 0.0;
+                                                 ^
+
+rtx3060_optimizations.cu(362): error: identifier "curandStatePhilox4_32_10_t" is undefined
+      curandStatePhilox4_32_10_t state;
+      ^
+
+rtx3060_optimizations.cu(364): error: identifier "curand_init" is undefined
+          curand_init(clock64() + warp_id, 0, 0, &state);
+          ^
+
+rtx3060_optimizations.cu(369): error: identifier "curand_init" is undefined
+      curand_init(seed, lane_id, 0, &state);
+      ^
+
+rtx3060_optimizations.cu(373): error: identifier "curand_uniform4" is undefined
+          float4 rand_vals = curand_uniform4(&state);
+                             ^
+
+rtx3060_optimizations.cu(435): error: identifier "saveToCache" is undefined
+              saveToCache(hashTable, agent_node, warp_id, OF[warp_id]);
+              ^
+
+rtx3060_optimizations.cu(530): error: name followed by "::" must be a class or namespace name
+      cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cg::this_thread_block());
+      ^
+
+rtx3060_optimizations.cu(530): error: expected an identifier
+      cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cg::this_thread_block());
+                            ^
+
+rtx3060_optimizations.cu(530): error: expected a ";"
+      cg::thread_block_tile<32> warp = cg::tiled_partition<32>(cg::this_thread_block());
+                            ^
+
+rtx3060_optimizations.cu(534): error: name followed by "::" must be a class or namespace name
+          kol_delta[k] = cg::reduce(warp, kol_delta[k], cg::plus<double>());
+                         ^
+
+rtx3060_optimizations.cu(534): error: identifier "warp" is undefined
+          kol_delta[k] = cg::reduce(warp, kol_delta[k], cg::plus<double>());
+                                    ^
+
+rtx3060_optimizations.cu(534): error: name followed by "::" must be a class or namespace name
+          kol_delta[k] = cg::reduce(warp, kol_delta[k], cg::plus<double>());
+                                                        ^
+
+rtx3060_optimizations.cu(534): error: expected an identifier
+          kol_delta[k] = cg::reduce(warp, kol_delta[k], cg::plus<double>());
+                                                                 ^
+
+rtx3060_optimizations.cu(534): error: expected a ")"
+          kol_delta[k] = cg::reduce(warp, kol_delta[k], cg::plus<double>());
+                                                                 ^
+
+rtx3060_optimizations.cu(535): error: name followed by "::" must be a class or namespace name
+          pheromon_delta[k] = cg::reduce(warp, pheromon_delta[k], cg::plus<double>());
+                              ^
+
+rtx3060_optimizations.cu(535): error: name followed by "::" must be a class or namespace name
+          pheromon_delta[k] = cg::reduce(warp, pheromon_delta[k], cg::plus<double>());
+                                                                  ^
+
+rtx3060_optimizations.cu(535): error: expected an identifier
+          pheromon_delta[k] = cg::reduce(warp, pheromon_delta[k], cg::plus<double>());
+                                                                           ^
+
+rtx3060_optimizations.cu(535): error: expected a ")"
+          pheromon_delta[k] = cg::reduce(warp, pheromon_delta[k], cg::plus<double>());
+                                                                           ^
+
+rtx3060_optimizations.cu(570): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaStreamCreate(&compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 570 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                               ^
+
+rtx3060_optimizations.cu(570): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaStreamCreate(&compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 570 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                ^
+
+rtx3060_optimizations.cu(571): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaEventCreate(&kernel_start); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 571 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                            ^
+
+rtx3060_optimizations.cu(571): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaEventCreate(&kernel_start); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 571 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                             ^
+
+rtx3060_optimizations.cu(572): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaEventCreate(&kernel_stop); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 572 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                           ^
+
+rtx3060_optimizations.cu(572): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaEventCreate(&kernel_stop); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 572 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                            ^
+
+rtx3060_optimizations.cu(578): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocHost((void**)&dev_parametr_value, matrix_size); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 578 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                      ^
+
+rtx3060_optimizations.cu(578): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocHost((void**)&dev_parametr_value, matrix_size); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 578 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                       ^
+
+rtx3060_optimizations.cu(579): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocHost((void**)&dev_pheromon, matrix_size); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 579 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                ^
+
+rtx3060_optimizations.cu(579): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocHost((void**)&dev_pheromon, matrix_size); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 579 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                 ^
+
+rtx3060_optimizations.cu(580): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocHost((void**)&dev_kol_enter, matrix_size); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 580 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                 ^
+
+rtx3060_optimizations.cu(580): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocHost((void**)&dev_kol_enter, matrix_size); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 580 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                  ^
+
+rtx3060_optimizations.cu(589): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&d_parametr_value, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 589 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                             ^
+
+rtx3060_optimizations.cu(589): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&d_parametr_value, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 589 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                              ^
+
+rtx3060_optimizations.cu(590): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&d_pheromon, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 590 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                       ^
+
+rtx3060_optimizations.cu(590): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&d_pheromon, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 590 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                        ^
+
+rtx3060_optimizations.cu(591): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&d_kol_enter, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 591 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                        ^
+
+rtx3060_optimizations.cu(591): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&d_kol_enter, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 591 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                         ^
+
+rtx3060_optimizations.cu(592): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&dev_norm_matrix, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 592 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                            ^
+
+rtx3060_optimizations.cu(592): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&dev_norm_matrix, matrix_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 592 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                             ^
+
+rtx3060_optimizations.cu(593): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&dev_agent_node, agent_node_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 593 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                               ^
+
+rtx3060_optimizations.cu(593): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&dev_agent_node, agent_node_size, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 593 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                ^
+
+rtx3060_optimizations.cu(594): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&dev_OF, 500 * sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 594 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                            ^
+
+rtx3060_optimizations.cu(594): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&dev_OF, 500 * sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 594 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                             ^
+
+rtx3060_optimizations.cu(595): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&dev_max, sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 595 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                       ^
+
+rtx3060_optimizations.cu(595): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&dev_max, sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 595 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                        ^
+
+rtx3060_optimizations.cu(596): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&dev_min, sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 596 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                       ^
+
+rtx3060_optimizations.cu(596): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&dev_min, sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 596 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                        ^
+
+rtx3060_optimizations.cu(597): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMallocAsync(&dev_hash_fail, sizeof(int), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 597 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                          ^
+
+rtx3060_optimizations.cu(597): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMallocAsync(&dev_hash_fail, sizeof(int), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 597 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                           ^
+
+rtx3060_optimizations.cu(600): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemcpyAsync(d_parametr_value, dev_parametr_value, matrix_size, cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 601 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                        ^
+
+rtx3060_optimizations.cu(600): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemcpyAsync(d_parametr_value, dev_parametr_value, matrix_size, cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 601 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                                         ^
+
+rtx3060_optimizations.cu(602): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemcpyAsync(d_pheromon, dev_pheromon, matrix_size, cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 603 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                            ^
+
+rtx3060_optimizations.cu(602): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemcpyAsync(d_pheromon, dev_pheromon, matrix_size, cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 603 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                             ^
+
+rtx3060_optimizations.cu(604): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemcpyAsync(d_kol_enter, dev_kol_enter, matrix_size, cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 605 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                              ^
+
+rtx3060_optimizations.cu(604): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemcpyAsync(d_kol_enter, dev_kol_enter, matrix_size, cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 605 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                               ^
+
+rtx3060_optimizations.cu(608): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaFreeHost(dev_parametr_value); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 608 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                              ^
+
+rtx3060_optimizations.cu(608): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaFreeHost(dev_parametr_value); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 608 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                               ^
+
+rtx3060_optimizations.cu(609): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaFreeHost(dev_pheromon); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 609 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                        ^
+
+rtx3060_optimizations.cu(609): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaFreeHost(dev_pheromon); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 609 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                         ^
+
+rtx3060_optimizations.cu(610): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaFreeHost(dev_kol_enter); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 610 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                         ^
+
+rtx3060_optimizations.cu(610): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaFreeHost(dev_kol_enter); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 610 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                          ^
+
+rtx3060_optimizations.cu(626): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemsetAsync(dev_OF, 0, 500 * sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 626 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                              ^
+
+rtx3060_optimizations.cu(626): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemsetAsync(dev_OF, 0, 500 * sizeof(double), compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 626 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                               ^
+
+rtx3060_optimizations.cu(630): error: no instance of overloaded function "cudaMemPrefetchAsync" matches the argument list
+            argument types are: (double *, const size_t, int, int)
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_parametr_value, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 630 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                             ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin/../include\cuda_runtime.h(659): note #3326-D: function template "cudaMemPrefetchAsync(T *, size_t, cudaMemLocation, unsigned int, cudaStream_t)" does not match because argument #3 does not match parameter
+  static __inline __declspec(__host__) cudaError_t cudaMemPrefetchAsync(
+                                                   ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(7808): note #3326-D: function "cudaMemPrefetchAsync(const void *, size_t, int, cudaStream_t)" does not match because argument #4 does not match parameter
+  extern __declspec(__host__) cudaError_t __stdcall cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0);
+                                                    ^
+
+rtx3060_optimizations.cu(630): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_parametr_value, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 630 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                 ^
+
+rtx3060_optimizations.cu(630): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_parametr_value, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 630 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                  ^
+
+rtx3060_optimizations.cu(631): error: no instance of overloaded function "cudaMemPrefetchAsync" matches the argument list
+            argument types are: (double *, const size_t, int, int)
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_pheromon, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 631 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                             ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin/../include\cuda_runtime.h(659): note #3326-D: function template "cudaMemPrefetchAsync(T *, size_t, cudaMemLocation, unsigned int, cudaStream_t)" does not match because argument #3 does not match parameter
+  static __inline __declspec(__host__) cudaError_t cudaMemPrefetchAsync(
+                                                   ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(7808): note #3326-D: function "cudaMemPrefetchAsync(const void *, size_t, int, cudaStream_t)" does not match because argument #4 does not match parameter
+  extern __declspec(__host__) cudaError_t __stdcall cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0);
+                                                    ^
+
+rtx3060_optimizations.cu(631): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_pheromon, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 631 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                           ^
+
+rtx3060_optimizations.cu(631): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_pheromon, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 631 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                            ^
+
+rtx3060_optimizations.cu(632): error: no instance of overloaded function "cudaMemPrefetchAsync" matches the argument list
+            argument types are: (double *, const size_t, int, int)
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_kol_enter, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 632 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                             ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin/../include\cuda_runtime.h(659): note #3326-D: function template "cudaMemPrefetchAsync(T *, size_t, cudaMemLocation, unsigned int, cudaStream_t)" does not match because argument #3 does not match parameter
+  static __inline __declspec(__host__) cudaError_t cudaMemPrefetchAsync(
+                                                   ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\cuda_runtime_api.h(7808): note #3326-D: function "cudaMemPrefetchAsync(const void *, size_t, int, cudaStream_t)" does not match because argument #4 does not match parameter
+  extern __declspec(__host__) cudaError_t __stdcall cudaMemPrefetchAsync(const void *devPtr, size_t count, int dstDevice, cudaStream_t stream = 0);
+                                                    ^
+
+rtx3060_optimizations.cu(632): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_kol_enter, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 632 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                            ^
+
+rtx3060_optimizations.cu(632): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemPrefetchAsync(dev_kol_enter, matrix_size, 0, ((int)-1)); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 632 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                             ^
+
+rtx3060_optimizations.cu(635): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 635 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                   ^
+
+rtx3060_optimizations.cu(635): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 635 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                    ^
+
+rtx3060_optimizations.cu(644): error: name followed by "::" must be a class or namespace name
+      auto total_start = std::chrono::high_resolution_clock::now();
+                              ^
+
+rtx3060_optimizations.cu(665): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemcpyAsync(dev_max, &max_init, sizeof(double), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 666 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                         ^
+
+rtx3060_optimizations.cu(665): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemcpyAsync(dev_max, &max_init, sizeof(double), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 666 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                          ^
+
+rtx3060_optimizations.cu(667): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemcpyAsync(dev_min, &min_init, sizeof(double), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 668 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                         ^
+
+rtx3060_optimizations.cu(667): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemcpyAsync(dev_min, &min_init, sizeof(double), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 668 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                          ^
+
+rtx3060_optimizations.cu(669): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaMemcpyAsync(dev_hash_fail, &fail_init, sizeof(int), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 670 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                             ^
+
+rtx3060_optimizations.cu(669): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaMemcpyAsync(dev_hash_fail, &fail_init, sizeof(int), cudaMemcpyHostToDevice, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 670 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                                                              ^
+
+rtx3060_optimizations.cu(671): error: namespace "std" has no member "cerr"
+      do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 671 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                   ^
+
+rtx3060_optimizations.cu(671): error: namespace "std" has no member "endl"
+      do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 671 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                    ^
+
+rtx3060_optimizations.cu(682): error: namespace "std" has no member "cerr"
+          do { cudaError_t err = cudaEventRecord(kernel_start, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 682 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                               ^
+
+rtx3060_optimizations.cu(682): error: namespace "std" has no member "endl"
+          do { cudaError_t err = cudaEventRecord(kernel_start, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 682 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                ^
+
+rtx3060_optimizations.cu(701): error: namespace "std" has no member "cerr"
+          do { cudaError_t err = cudaEventRecord(kernel_stop, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 701 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                              ^
+
+rtx3060_optimizations.cu(701): error: namespace "std" has no member "endl"
+          do { cudaError_t err = cudaEventRecord(kernel_stop, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 701 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                               ^
+
+rtx3060_optimizations.cu(702): error: namespace "std" has no member "cerr"
+          do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 702 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                       ^
+
+rtx3060_optimizations.cu(702): error: namespace "std" has no member "endl"
+          do { cudaError_t err = cudaStreamSynchronize(compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 702 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                        ^
+
+rtx3060_optimizations.cu(703): error: namespace "std" has no member "cerr"
+          do { cudaError_t err = cudaEventElapsedTime(&iter_time, kernel_start, kernel_stop); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 703 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                             ^
+
+rtx3060_optimizations.cu(703): error: namespace "std" has no member "endl"
+          do { cudaError_t err = cudaEventElapsedTime(&iter_time, kernel_start, kernel_stop); if (err != cudaSuccess) { std::cerr << "CUDA error at " << "rtx3060_optimizations.cu" << ":" << 703 << " - " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                                                                                                                                                                                                              ^
+
+Error limit reached.
+100 errors detected in the compilation of "rtx3060_optimizations.cu".
+Compilation terminated.
+rtx3060_optimizations.cu
+========== COMPILATION END ========== 
+Exit code: 4 

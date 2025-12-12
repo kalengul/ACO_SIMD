@@ -1,0 +1,81 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_4layers_v100.exe aco_cuda_global_4layers_v100.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_4layers_v100.cu(231): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_4layers_v100.cu(110): warning #177-D: variable "bits_per_value" was declared but never referenced
+      const int bits_per_value = 2;
+                ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_4layers_v100.cu(231): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+aco_cuda_global_4layers_v100.cu(290): warning #177-D: variable "base_idx" was declared but never referenced
+          const int base_idx = param_idx * 4;
+                    ^
+
+aco_cuda_global_4layers_v100.cu(441): warning #550-D: variable "s_agent_params" was set but never used
+      __declspec(__shared__) double s_agent_params[128][16];
+                                    ^
+
+aco_cuda_global_4layers_v100.cu(34): warning #177-D: variable "V100_MAX_THREADS_PER_SM" was declared but never referenced
+  const int V100_MAX_THREADS_PER_SM = 2048;
+            ^
+
+aco_cuda_global_4layers_v100.cu(35): warning #177-D: variable "V100_MAX_THREADS_PER_BLOCK" was declared but never referenced
+  const int V100_MAX_THREADS_PER_BLOCK = 1024;
+            ^
+
+aco_cuda_global_4layers_v100.cu(36): warning #177-D: variable "V100_SHARED_MEM_PER_BLOCK" was declared but never referenced
+  const int V100_SHARED_MEM_PER_BLOCK = 96 * 1024;  
+            ^
+
+aco_cuda_global_4layers_v100.cu(37): warning #177-D: variable "V100_L2_CACHE_SIZE" was declared but never referenced
+  const int V100_L2_CACHE_SIZE = 6144 * 1024;  
+            ^
+
+aco_cuda_global_4layers_v100.cu(42): warning #177-D: variable "OPTIMAL_WARPS_PER_BLOCK" was declared but never referenced
+  const int OPTIMAL_WARPS_PER_BLOCK = OPTIMAL_BLOCK_SIZE / V100_WARP_SIZE;
+            ^
+
+ptxas warning : For profile sm_86 adjusting per thread register count of 16 to lower bound of 24
+ptxas info    : Overriding maximum register limit 256 for '_Z26antColonyOptimization_v100PKfS0_PiPfP9HashEntryS2_S2_S1_S2_j' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z25computeProbabilities_v100PKfS0_Pf' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z22depositPheromones_v100PKfPKiPfS3_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z24evaporatePheromones_v100Pf' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z24initializeHashTable_v100P9HashEntry' with  24 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z26antColonyOptimization_v100PKfS0_PiPfP9HashEntryS2_S2_S1_S2_j' for 'sm_86'
+ptxas info    : Function properties for _Z26antColonyOptimization_v100PKfS0_PiPfP9HashEntryS2_S2_S1_S2_j
+    136 bytes stack frame, 160 bytes spill stores, 136 bytes spill loads
+ptxas info    : Used 24 registers, used 0 barriers, 136 bytes cumulative stack size, 428 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z25computeProbabilities_v100PKfS0_Pf' for 'sm_86'
+ptxas info    : Function properties for _Z25computeProbabilities_v100PKfS0_Pf
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 8192 bytes smem, 376 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z22depositPheromones_v100PKfPKiPfS3_' for 'sm_86'
+ptxas info    : Function properties for _Z22depositPheromones_v100PKfPKiPfS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 8192 bytes smem, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z24evaporatePheromones_v100Pf' for 'sm_86'
+ptxas info    : Function properties for _Z24evaporatePheromones_v100Pf
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 13 registers, used 0 barriers, 360 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z24initializeHashTable_v100P9HashEntry' for 'sm_86'
+ptxas info    : Function properties for _Z24initializeHashTable_v100P9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 12 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_global_4layers_v100.cu
+tmpxft_00003a68_00000000-10_aco_cuda_global_4layers_v100.cudafe1.cpp
+========== COMPILATION END ========== 
+Exit code: 0 

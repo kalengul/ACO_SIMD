@@ -1,0 +1,26 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_global_4layers.exe aco_cuda_global_4layers.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_4layers.cu(171): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_4layers.cu(888): error: "total_start" has already been declared in the current scope
+      auto total_start = std::chrono::high_resolution_clock::now();
+           ^
+
+aco_cuda_global_4layers.cu(895): error: "total_end" has already been declared in the current scope
+      auto total_end = std::chrono::high_resolution_clock::now();
+           ^
+
+aco_cuda_global_4layers.cu(896): error: "total_duration" has already been declared in the current scope
+      auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+           ^
+
+3 errors detected in the compilation of "aco_cuda_global_4layers.cu".
+aco_cuda_global_4layers.cu
+========== COMPILATION END ========== 
+Exit code: 2 

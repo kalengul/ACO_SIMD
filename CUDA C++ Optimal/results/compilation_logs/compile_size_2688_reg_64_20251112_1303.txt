@@ -1,0 +1,48 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=2688, MAXREGCOUNT=64 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o rtx3060_optimizations.exe rtx3060_optimizations.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=64 -Xptxas "-O3,-v" --resource-usage 
+ 
+rtx3060_optimizations.cu(491): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+rtx3060_optimizations.cu(491): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z23updatePheromones_AmperePKdPKiPdS3_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z28antColonyOptimization_AmperePKdS0_PiPdP9HashEntryS2_S2_S1_' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z27computeProbabilities_AmperePKdS0_Pd' with  64 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26evaporatePheromones_AmperePd' with  64 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_86'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z23updatePheromones_AmperePKdPKiPdS3_' for 'sm_86'
+ptxas info    : Function properties for _Z23updatePheromones_AmperePKdPKiPdS3_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 43 registers, used 1 barriers, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z28antColonyOptimization_AmperePKdS0_PiPdP9HashEntryS2_S2_S1_' for 'sm_86'
+ptxas info    : Function properties for _Z28antColonyOptimization_AmperePKdS0_PiPdP9HashEntryS2_S2_S1_
+    21568 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 64 registers, used 0 barriers, 21568 bytes cumulative stack size, 416 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z27computeProbabilities_AmperePKdS0_Pd' for 'sm_86'
+ptxas info    : Function properties for _Z27computeProbabilities_AmperePKdS0_Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 34 registers, used 0 barriers, 376 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z26evaporatePheromones_AmperePd' for 'sm_86'
+ptxas info    : Function properties for _Z26evaporatePheromones_AmperePd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 20 registers, used 0 barriers, 360 bytes cmem[0], 8 bytes cmem[2]
+rtx3060_optimizations.cu
+tmpxft_00002d8c_00000000-10_rtx3060_optimizations.cudafe1.cpp
+========== COMPILATION END ========== 
+Exit code: 0 
