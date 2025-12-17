@@ -1,0 +1,342 @@
+===================================================
+    CUDA ACO Benchmark Launcher
+===================================================
+Checking CUDA availability...
+Checking GPU information...
+GPU Information:
+name, memory.total [MiB], driver_version
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Cleaning previous builds...
+Setting GPU architecture...
+Using ARCH: sm_70 (V100)
+
+===================================================
+Testing with PARAMETR_SIZE=1617
+===================================================
+Updating parameter file with PARAMETR_SIZE=1617...
+Updating parametrs.h with PARAMETR_SIZE=1617 and NAME_FILE_GRAPH=Parametr_Graph/test1617.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=1617
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=1617
+PARAM_SIZE=1617 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=1617, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_1617_block_500_20251215_122553.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Mon Dec 15 12:26:00 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 9.44143 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 7980613 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 12936 bytes (12.6328 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 64680 bytes (63.1641 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 1617; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 500; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test1617.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 1; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 12936 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 1617
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 500
+  Total matrix elements: 8085
+  Total agent nodes: 808500
+Expected matrix memory: 64680 bytes
+Expected agent memory: 3234000 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting 4 function ACO runs ===
+Run 4 function ACO 4start0: Time=4391.15ms Kernel=4385.24ms Probabilities=3.09045ms Ant=4245.74ms Update=126.837ms Memory=5.91504ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363952 MIN=0.303326 MAX=0.697793 
+Run 4 function ACO 4start1: Time=4389.49ms Kernel=4383.51ms Probabilities=3.07611ms Ant=4244.43ms Update=126.307ms Memory=5.97461ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.36409 MIN=0.303656 MAX=0.68743 
+Run 4 function ACO 4start2: Time=5600.4ms Kernel=4383.45ms Probabilities=3.06587ms Ant=4244.61ms Update=126.355ms Memory=1216.95ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285367 MIN=0.303293 MAX=0.705621 
+Run 4 function ACO 4start3: Time=4390.29ms Kernel=4384.3ms Probabilities=3.15291ms Ant=4244.86ms Update=126.415ms Memory=5.98828ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364024 MIN=0.303312 MAX=0.687414 
+Run 4 function ACO 4start4: Time=5498.33ms Kernel=4383.04ms Probabilities=3.04334ms Ant=4244.4ms Update=126.253ms Memory=1115.3ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.290664 MIN=0.283826 MAX=0.687424 
+Run 4 function ACO 4start5: Time=4390.1ms Kernel=4384ms Probabilities=3.16008ms Ant=4244.67ms Update=126.396ms Memory=6.09229ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364039 MIN=0.304487 MAX=0.706528 
+Run 4 function ACO 4start6: Time=5605.08ms Kernel=4388.78ms Probabilities=3.06075ms Ant=4249.85ms Update=126.551ms Memory=1216.3ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285128 MIN=0.303433 MAX=0.702939 
+Run 4 function ACO 4start7: Time=4397.57ms Kernel=4391.6ms Probabilities=3.12731ms Ant=4251.94ms Update=126.834ms Memory=5.9751ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363421 MIN=0.303347 MAX=0.705661 
+Run 4 function ACO 4start8: Time=5129.39ms Kernel=4388.67ms Probabilities=3.0628ms Ant=4249.74ms Update=126.449ms Memory=740.724ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.311571 MIN=0.303385 MAX=0.70243 
+Run 4 function ACO 4start9: Time=4389.76ms Kernel=4383.79ms Probabilities=3.11502ms Ant=4244.62ms Update=126.323ms Memory=5.96973ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364067 MIN=0.293132 MAX=0.687431 
+Run 4 function ACO 4start10: Time=4388.95ms Kernel=4383.39ms Probabilities=3.03822ms Ant=4244.89ms Update=126.263ms Memory=5.5542ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364135 MIN=0.303366 MAX=0.699562 
+Run 4 function ACO 4start11: Time=4392.02ms Kernel=4386.03ms Probabilities=3.12321ms Ant=4246.75ms Update=126.336ms Memory=5.99463ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.36388 MIN=0.283261 MAX=0.704147 
+Run 4 function ACO 4start12: Time=4389.04ms Kernel=4383.43ms Probabilities=3.04641ms Ant=4244.87ms Update=126.224ms Memory=5.6084ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364127 MIN=0.303303 MAX=0.689852 
+Run 4 function ACO 4start13: Time=4391.67ms Kernel=4385.79ms Probabilities=3.37307ms Ant=4246.55ms Update=126.337ms Memory=5.88428ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363909 MIN=0.303455 MAX=0.703818 
+Run 4 function ACO 4start14: Time=4389.08ms Kernel=4383.28ms Probabilities=3.09454ms Ant=4244.33ms Update=126.28ms Memory=5.7959ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364124 MIN=0.303424 MAX=0.705848 
+Run 4 function ACO 4start15: Time=4390.92ms Kernel=4385.2ms Probabilities=3.0587ms Ant=4246.61ms Update=126.206ms Memory=5.72705ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363971 MIN=0.303348 MAX=0.706311 
+Run 4 function ACO 4start16: Time=4389.89ms Kernel=4384ms Probabilities=3.15394ms Ant=4244.75ms Update=126.346ms Memory=5.89355ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364056 MIN=0.303363 MAX=0.68741 
+Run 4 function ACO 4start17: Time=5348.57ms Kernel=4383.06ms Probabilities=3.05153ms Ant=4244.5ms Update=126.24ms Memory=965.51ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.298803 MIN=0.303317 MAX=0.687418 
+Run 4 function ACO 4start18: Time=4389.85ms Kernel=4383.88ms Probabilities=3.14472ms Ant=4244.6ms Update=126.346ms Memory=5.97803ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.36406 MIN=0.306053 MAX=0.704359 
+Run 4 function ACO 4start19: Time=5629.14ms Kernel=4382.6ms Probabilities=3.03208ms Ant=4244.09ms Update=126.267ms Memory=1246.54ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.28391 MIN=0.286289 MAX=0.687423 
+Run 4 function ACO 4start20: Time=4389.63ms Kernel=4383.64ms Probabilities=3.11195ms Ant=4244.47ms Update=126.354ms Memory=5.98877ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364078 MIN=0.303309 MAX=0.688568 
+Run 4 function ACO 4start21: Time=5590ms Kernel=4382.82ms Probabilities=3.04232ms Ant=4244.32ms Update=126.237ms Memory=1207.17ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285898 MIN=0.303375 MAX=0.705398 
+Run 4 function ACO 4start22: Time=4389.74ms Kernel=4383.77ms Probabilities=3.12833ms Ant=4244.57ms Update=126.367ms Memory=5.97559ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364069 MIN=0.303406 MAX=0.687424 
+Run 4 function ACO 4start23: Time=5642.01ms Kernel=4383.09ms Probabilities=3.06485ms Ant=4244.59ms Update=126.241ms Memory=1258.91ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.283262 MIN=0.303448 MAX=0.68743 
+Run 4 function ACO 4start24: Time=4390.04ms Kernel=4384ms Probabilities=3.14267ms Ant=4244.55ms Update=126.394ms Memory=6.0415ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364044 MIN=0.303295 MAX=0.704338 
+Run 4 function ACO 4start25: Time=5562.95ms Kernel=4382.59ms Probabilities=3.03617ms Ant=4244.09ms Update=126.256ms Memory=1180.36ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.287288 MIN=0.303315 MAX=0.70556 
+Run 4 function ACO 4start26: Time=4389.6ms Kernel=4383.66ms Probabilities=3.09864ms Ant=4244.57ms Update=126.319ms Memory=5.93652ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364081 MIN=0.303343 MAX=0.687511 
+Run 4 function ACO 4start27: Time=5632.75ms Kernel=4383.12ms Probabilities=3.04641ms Ant=4244.54ms Update=126.256ms Memory=1249.63ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.283728 MIN=0.303314 MAX=0.705456 
+Run 4 function ACO 4start28: Time=4389.78ms Kernel=4383.82ms Probabilities=3.12628ms Ant=4244.57ms Update=126.376ms Memory=5.95215ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364066 MIN=0.303318 MAX=0.698497 
+Run 4 function ACO 4start29: Time=5611.27ms Kernel=4382.87ms Probabilities=3.02593ms Ant=4244.41ms Update=126.221ms Memory=1228.4ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.284814 MIN=0.303944 MAX=0.704066 
+Run 4 function ACO 4start30: Time=4390.08ms Kernel=4384.04ms Probabilities=3.15291ms Ant=4244.64ms Update=126.378ms Memory=6.03809ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364041 MIN=0.303371 MAX=0.68743 
+Run 4 function ACO 4start31: Time=5633.69ms Kernel=4382.66ms Probabilities=3.01979ms Ant=4244.21ms Update=126.227ms Memory=1251.03ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.28368 MIN=0.303318 MAX=0.702652 
+Run 4 function ACO 4start32: Time=4389.64ms Kernel=4383.65ms Probabilities=3.15905ms Ant=4244.29ms Update=126.511ms Memory=5.99023ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364077 MIN=0.303304 MAX=0.705018 
+Run 4 function ACO 4start33: Time=5593.03ms Kernel=4382.89ms Probabilities=3.03003ms Ant=4244.35ms Update=126.248ms Memory=1210.14ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285743 MIN=0.303298 MAX=0.705775 
+Run 4 function ACO 4start34: Time=4852.5ms Kernel=4386.17ms Probabilities=3.06894ms Ant=4247.38ms Update=126.259ms Memory=466.331ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.329349 MIN=0.303663 MAX=0.691509 
+Run 4 function ACO 4start35: Time=5132.93ms Kernel=4385.37ms Probabilities=3.07304ms Ant=4246.58ms Update=126.273ms Memory=747.555ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.311356 MIN=0.303613 MAX=0.687418 
+Run 4 function ACO 4start36: Time=4389.82ms Kernel=4383.88ms Probabilities=3.11707ms Ant=4244.71ms Update=126.382ms Memory=5.93945ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364062 MIN=0.294802 MAX=0.701265 
+Run 4 function ACO 4start37: Time=5605.99ms Kernel=4383.31ms Probabilities=3.03515ms Ant=4244.74ms Update=126.278ms Memory=1222.68ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285082 MIN=0.304279 MAX=0.697362 
+Run 4 function ACO 4start38: Time=4389.02ms Kernel=4383.29ms Probabilities=3.05358ms Ant=4244.61ms Update=126.267ms Memory=5.7251ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364129 MIN=0.303445 MAX=0.706477 
+Run 4 function ACO 4start39: Time=5017.28ms Kernel=4382.71ms Probabilities=3.0372ms Ant=4244.2ms Update=126.213ms Memory=634.568ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.318533 MIN=0.303308 MAX=0.702623 
+Run 4 function ACO 4start40: Time=4391.56ms Kernel=4385.55ms Probabilities=3.13448ms Ant=4246.15ms Update=126.416ms Memory=6.00781ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363918 MIN=0.303491 MAX=0.706247 
+Run 4 function ACO 4start41: Time=4388.9ms Kernel=4383.31ms Probabilities=3.03003ms Ant=4244.8ms Update=126.257ms Memory=5.58691ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364139 MIN=0.303668 MAX=0.700352 
+Run 4 function ACO 4start42: Time=4391.64ms Kernel=4385.82ms Probabilities=3.11195ms Ant=4246.47ms Update=126.653ms Memory=5.8208ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363911 MIN=0.303375 MAX=0.705846 
+Run 4 function ACO 4start43: Time=4388.21ms Kernel=4382.59ms Probabilities=3.03617ms Ant=4244.14ms Update=126.203ms Memory=5.62402ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364196 MIN=0.303425 MAX=0.694847 
+Run 4 function ACO 4start44: Time=4391.19ms Kernel=4385.36ms Probabilities=3.07304ms Ant=4246.42ms Update=126.334ms Memory=5.83301ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363948 MIN=0.303337 MAX=0.706531 
+Run 4 function ACO 4start45: Time=4388.46ms Kernel=4382.74ms Probabilities=3.05256ms Ant=4244.11ms Update=126.245ms Memory=5.71533ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364175 MIN=0.303312 MAX=0.687414 
+Run 4 function ACO 4start46: Time=4390.28ms Kernel=4384.62ms Probabilities=3.05153ms Ant=4245.71ms Update=126.609ms Memory=5.65967ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364024 MIN=0.303312 MAX=0.687431 
+Run 4 function ACO 4start47: Time=4389.49ms Kernel=4383.63ms Probabilities=3.09762ms Ant=4244.53ms Update=126.312ms Memory=5.86279ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.36409 MIN=0.304471 MAX=0.68743 
+Run 4 function ACO 4start48: Time=4810.85ms Kernel=4384.4ms Probabilities=3.12629ms Ant=4245.37ms Update=126.342ms Memory=426.449ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.332201 MIN=0.303536 MAX=0.687426 
+Run 4 function ACO 4start49: Time=4389.66ms Kernel=4383.67ms Probabilities=3.12219ms Ant=4244.45ms Update=126.363ms Memory=5.99121ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364076 MIN=0.30338 MAX=0.701865 
+4function ACO total execution time: 237986 ms
+
+=== Starting main ACO runs ===
+Run Original ACO 3start0: Time=4389.3ms Kernel=4383.67ms Probabilities=3.05153ms Ant=4246.65ms Update=124.843ms Memory=5.63232ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364106 MIN=0.303312 MAX=0.705982 
+Run Original ACO 3start1: Time=4392.59ms Kernel=4386.59ms Probabilities=3.16008ms Ant=4249.06ms Update=124.965ms Memory=6.00049ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363833 MIN=0.303932 MAX=0.687418 
+Run Original ACO 3start2: Time=4389.37ms Kernel=4383.71ms Probabilities=3.07816ms Ant=4246.71ms Update=124.84ms Memory=5.66211ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364099 MIN=0.303332 MAX=0.704083 
+Run Original ACO 3start3: Time=4440.88ms Kernel=4386.1ms Probabilities=3.11502ms Ant=4248.58ms Update=125.178ms Memory=54.7852ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.359876 MIN=0.303292 MAX=0.689763 
+Run Original ACO 3start4: Time=4389.88ms Kernel=4384.08ms Probabilities=3.11605ms Ant=4246.9ms Update=124.795ms Memory=5.80273ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364057 MIN=0.303318 MAX=0.693881 
+Run Original ACO 3start5: Time=4392.01ms Kernel=4385.94ms Probabilities=3.09761ms Ant=4248.92ms Update=124.805ms Memory=6.07275ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363881 MIN=0.303327 MAX=0.687431 
+Run Original ACO 3start6: Time=4390.78ms Kernel=4384.82ms Probabilities=3.16827ms Ant=4247.16ms Update=124.995ms Memory=5.95703ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363983 MIN=0.303368 MAX=0.704675 
+Run Original ACO 3start7: Time=4893.4ms Kernel=4383.76ms Probabilities=3.07713ms Ant=4246.74ms Update=124.848ms Memory=509.646ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.326597 MIN=0.303855 MAX=0.687355 
+Run Original ACO 3start8: Time=4392.82ms Kernel=4386.62ms Probabilities=3.19285ms Ant=4248.72ms Update=125.044ms Memory=6.20215ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363814 MIN=0.303316 MAX=0.687422 
+Run Original ACO 3start9: Time=4389.18ms Kernel=4383.49ms Probabilities=3.08533ms Ant=4246.49ms Update=124.786ms Memory=5.69043ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364115 MIN=0.303291 MAX=0.699995 
+Run Original ACO 3start10: Time=4392.3ms Kernel=4386.39ms Probabilities=3.12936ms Ant=4248.97ms Update=124.95ms Memory=5.91113ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363857 MIN=0.303951 MAX=0.70226 
+Run Original ACO 3start11: Time=4389.5ms Kernel=4383.81ms Probabilities=3.07099ms Ant=4246.8ms Update=124.832ms Memory=5.68164ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364089 MIN=0.303341 MAX=0.70239 
+Run Original ACO 3start12: Time=4392.18ms Kernel=4386.16ms Probabilities=3.14472ms Ant=4247.98ms Update=125.551ms Memory=6.02295ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363867 MIN=0.303304 MAX=0.688665 
+Run Original ACO 3start13: Time=4389.52ms Kernel=4383.78ms Probabilities=3.114ms Ant=4246.55ms Update=124.836ms Memory=5.74512ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364087 MIN=0.303327 MAX=0.70652 
+Run Original ACO 3start14: Time=4391.7ms Kernel=4385.96ms Probabilities=3.07509ms Ant=4248.92ms Update=124.832ms Memory=5.74512ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363906 MIN=0.303383 MAX=0.687404 
+Run Original ACO 3start15: Time=4390.3ms Kernel=4384.38ms Probabilities=3.14165ms Ant=4246.91ms Update=124.96ms Memory=5.92139ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364023 MIN=0.303291 MAX=0.705344 
+Run Original ACO 3start16: Time=5468.07ms Kernel=4383.64ms Probabilities=3.05768ms Ant=4246.66ms Update=124.81ms Memory=1084.44ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.292273 MIN=0.303607 MAX=0.687424 
+Run Original ACO 3start17: Time=4390.3ms Kernel=4384.31ms Probabilities=3.1867ms Ant=4246.84ms Update=124.915ms Memory=5.98535ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364023 MIN=0.288221 MAX=0.697847 
+Run Original ACO 3start18: Time=5589.93ms Kernel=4383.61ms Probabilities=3.07713ms Ant=4246.57ms Update=124.833ms Memory=1206.32ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285901 MIN=0.303296 MAX=0.693705 
+Run Original ACO 3start19: Time=4390.49ms Kernel=4384.44ms Probabilities=3.19285ms Ant=4246.81ms Update=124.93ms Memory=6.05078ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364007 MIN=0.306581 MAX=0.706432 
+Run Original ACO 3start20: Time=5659.87ms Kernel=4383.51ms Probabilities=3.07406ms Ant=4246.6ms Update=124.832ms Memory=1276.36ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.282368 MIN=0.30349 MAX=0.705667 
+Run Original ACO 3start21: Time=4390.03ms Kernel=4384.01ms Probabilities=3.18875ms Ant=4246.43ms Update=124.963ms Memory=6.01855ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364045 MIN=0.303571 MAX=0.691093 
+Run Original ACO 3start22: Time=5603.57ms Kernel=4383.48ms Probabilities=3.06587ms Ant=4246.57ms Update=124.763ms Memory=1220.09ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.285205 MIN=0.303362 MAX=0.701589 
+Run Original ACO 3start23: Time=4390.37ms Kernel=4384.29ms Probabilities=3.20923ms Ant=4246.59ms Update=124.982ms Memory=6.08154ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364017 MIN=0.28744 MAX=0.68743 
+Run Original ACO 3start24: Time=5006.07ms Kernel=4383.26ms Probabilities=3.07611ms Ant=4246.31ms Update=124.783ms Memory=622.812ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.319246 MIN=0.303299 MAX=0.706501 
+Run Original ACO 3start25: Time=5629.62ms Kernel=4388.25ms Probabilities=3.2123ms Ant=4249.69ms Update=125.345ms Memory=1241.36ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.283886 MIN=0.303445 MAX=0.696694 
+Run Original ACO 3start26: Time=4979.88ms Kernel=4385.23ms Probabilities=3.17134ms Ant=4247.65ms Update=124.919ms Memory=594.65ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.320925 MIN=0.303308 MAX=0.693383 
+Run Original ACO 3start27: Time=4390.82ms Kernel=4384.74ms Probabilities=3.20206ms Ant=4247.07ms Update=124.973ms Memory=6.07471ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.36398 MIN=0.304062 MAX=0.68743 
+Run Original ACO 3start28: Time=5615.1ms Kernel=4383.71ms Probabilities=3.0884ms Ant=4246.75ms Update=124.821ms Memory=1231.38ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.28462 MIN=0.304571 MAX=0.68742 
+Run Original ACO 3start29: Time=4390.59ms Kernel=4384.52ms Probabilities=3.20104ms Ant=4246.87ms Update=124.929ms Memory=6.06982ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363998 MIN=0.303296 MAX=0.706383 
+Run Original ACO 3start30: Time=5595.83ms Kernel=4383.52ms Probabilities=3.0628ms Ant=4246.55ms Update=124.764ms Memory=1212.31ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.2856 MIN=0.303688 MAX=0.706532 
+Run Original ACO 3start31: Time=4389.64ms Kernel=4383.85ms Probabilities=3.12117ms Ant=4246.82ms Update=124.825ms Memory=5.79248ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364077 MIN=0.303364 MAX=0.687431 
+Run Original ACO 3start32: Time=4998.79ms Kernel=4383.53ms Probabilities=3.07918ms Ant=4246.53ms Update=124.771ms Memory=615.255ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.319711 MIN=0.303334 MAX=0.687398 
+Run Original ACO 3start33: Time=4392.35ms Kernel=4386.19ms Probabilities=3.18977ms Ant=4248.31ms Update=125.024ms Memory=6.15137ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363853 MIN=0.303304 MAX=0.698787 
+Run Original ACO 3start34: Time=4388.93ms Kernel=4383.31ms Probabilities=3.07304ms Ant=4246.37ms Update=124.791ms Memory=5.62402ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364136 MIN=0.303481 MAX=0.706532 
+Run Original ACO 3start35: Time=4392.81ms Kernel=4386.71ms Probabilities=3.20104ms Ant=4248.83ms Update=125.071ms Memory=6.104ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363814 MIN=0.305182 MAX=0.70587 
+Run Original ACO 3start36: Time=4389.14ms Kernel=4383.47ms Probabilities=3.05256ms Ant=4246.47ms Update=124.813ms Memory=5.66748ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364119 MIN=0.303633 MAX=0.696369 
+Run Original ACO 3start37: Time=4392.4ms Kernel=4386.36ms Probabilities=3.1652ms Ant=4248.36ms Update=125.308ms Memory=6.04199ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363849 MIN=0.303876 MAX=0.687422 
+Run Original ACO 3start38: Time=4389.41ms Kernel=4383.57ms Probabilities=3.10478ms Ant=4246.36ms Update=124.79ms Memory=5.8457ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364096 MIN=0.303315 MAX=0.706508 
+Run Original ACO 3start39: Time=4393.25ms Kernel=4387.44ms Probabilities=3.08942ms Ant=4250.05ms Update=125.208ms Memory=5.81885ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363778 MIN=0.303399 MAX=0.687424 
+Run Original ACO 3start40: Time=4389ms Kernel=4383.29ms Probabilities=3.06997ms Ant=4246.3ms Update=124.812ms Memory=5.70117ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364131 MIN=0.304687 MAX=0.687429 
+Run Original ACO 3start41: Time=5464.95ms Kernel=4383.71ms Probabilities=3.06792ms Ant=4246.76ms Update=124.785ms Memory=1081.24ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.29244 MIN=0.303589 MAX=0.703423 
+Run Original ACO 3start42: Time=4390.49ms Kernel=4384.49ms Probabilities=3.2123ms Ant=4246.84ms Update=124.955ms Memory=6.00244ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364007 MIN=0.303305 MAX=0.703019 
+Run Original ACO 3start43: Time=5593.87ms Kernel=4383.33ms Probabilities=3.07509ms Ant=4246.42ms Update=124.714ms Memory=1210.54ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.2857 MIN=0.303291 MAX=0.687429 
+Run Original ACO 3start44: Time=4390.04ms Kernel=4384.07ms Probabilities=3.17954ms Ant=4246.53ms Update=124.943ms Memory=5.97607ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364044 MIN=0.303297 MAX=0.687428 
+Run Original ACO 3start45: Time=5655.78ms Kernel=4383.45ms Probabilities=3.06792ms Ant=4246.47ms Update=124.799ms Memory=1272.32ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.282573 MIN=0.305621 MAX=0.687429 
+Run Original ACO 3start46: Time=4389.56ms Kernel=4383.77ms Probabilities=3.12936ms Ant=4246.63ms Update=124.836ms Memory=5.79395ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364084 MIN=0.305898 MAX=0.68743 
+Run Original ACO 3start47: Time=5575.59ms Kernel=4383.85ms Probabilities=3.09249ms Ant=4246.87ms Update=124.787ms Memory=1191.74ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.286637 MIN=0.303565 MAX=0.691965 
+Run Original ACO 3start48: Time=4390.1ms Kernel=4384.17ms Probabilities=3.16008ms Ant=4246.71ms Update=124.949ms Memory=5.93213ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.364039 MIN=0.303381 MAX=0.702639 
+Run Original ACO 3start49: Time=5009.08ms Kernel=4383.35ms Probabilities=3.07406ms Ant=4246.34ms Update=124.83ms Memory=625.725ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.319054 MIN=0.306038 MAX=0.706532 
+Original ACO total execution time: 235674 ms
+
+=== Starting combined ACO runs ===
+Run Combined Run 2start0: Time=4396.22ms Kernel=4384.04ms Probabilities=133.689ms Ant=4245.43ms Update=0ms Memory=12.1777ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370383 MIN=0.304854 MAX=0.68742 
+Run Combined Run 2start1: Time=4389.63ms Kernel=4381.78ms Probabilities=133.105ms Ant=4244.13ms Update=0ms Memory=7.84863ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370939 MIN=0.303362 MAX=0.68743 
+Run Combined Run 2start2: Time=4390.47ms Kernel=4383.69ms Probabilities=133.023ms Ant=4246ms Update=0ms Memory=6.77881ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370869 MIN=0.303305 MAX=0.687413 
+Run Combined Run 2start3: Time=4388.84ms Kernel=4381.94ms Probabilities=133.119ms Ant=4244.29ms Update=0ms Memory=6.89941ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.371006 MIN=0.292207 MAX=0.687416 
+Run Combined Run 2start4: Time=4504.3ms Kernel=4384.29ms Probabilities=133.216ms Ant=4246.22ms Update=0ms Memory=120.007ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.361496 MIN=0.303767 MAX=0.704799 
+Run Combined Run 2start5: Time=4388.66ms Kernel=4381.74ms Probabilities=133.104ms Ant=4243.91ms Update=0ms Memory=6.92334ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.371022 MIN=0.304765 MAX=0.693666 
+Run Combined Run 2start6: Time=4391.33ms Kernel=4383.8ms Probabilities=133.066ms Ant=4246.1ms Update=0ms Memory=7.52637ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370796 MIN=0.303402 MAX=0.687431 
+Run Combined Run 2start7: Time=4389.08ms Kernel=4381.93ms Probabilities=133.142ms Ant=4244.06ms Update=0ms Memory=7.15527ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370986 MIN=0.303434 MAX=0.696632 
+Run Combined Run 2start8: Time=5351.55ms Kernel=4381.68ms Probabilities=133.037ms Ant=4244.05ms Update=0ms Memory=969.873ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.304264 MIN=0.303622 MAX=0.687428 
+Run Combined Run 2start9: Time=4389.62ms Kernel=4381.97ms Probabilities=133.305ms Ant=4243.89ms Update=0ms Memory=7.65186ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.37094 MIN=0.303789 MAX=0.704321 
+Run Combined Run 2start10: Time=5613.7ms Kernel=4381.6ms Probabilities=133.09ms Ant=4243.92ms Update=0ms Memory=1232.1ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.290056 MIN=0.303291 MAX=0.687406 
+Run Combined Run 2start11: Time=4389.19ms Kernel=4381.61ms Probabilities=133.147ms Ant=4243.69ms Update=0ms Memory=7.58008ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370976 MIN=0.303543 MAX=0.696874 
+Run Combined Run 2start12: Time=5649.04ms Kernel=4381.88ms Probabilities=133.034ms Ant=4244.25ms Update=0ms Memory=1267.16ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.288241 MIN=0.303306 MAX=0.701949 
+Run Combined Run 2start13: Time=4389.43ms Kernel=4381.97ms Probabilities=133.174ms Ant=4244ms Update=0ms Memory=7.46631ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370956 MIN=0.304219 MAX=0.687422 
+Run Combined Run 2start14: Time=5029.12ms Kernel=4381.84ms Probabilities=133.136ms Ant=4244.14ms Update=0ms Memory=647.275ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.323772 MIN=0.303381 MAX=0.687431 
+Run Combined Run 2start15: Time=5588.13ms Kernel=4386.18ms Probabilities=133.279ms Ant=4247.74ms Update=0ms Memory=1201.96ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.291383 MIN=0.303304 MAX=0.705212 
+Run Combined Run 2start16: Time=5013.87ms Kernel=4385.3ms Probabilities=133.207ms Ant=4247.06ms Update=0ms Memory=628.57ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.324756 MIN=0.303921 MAX=0.692875 
+Run Combined Run 2start17: Time=4390.5ms Kernel=4382.58ms Probabilities=133.294ms Ant=4244.52ms Update=0ms Memory=7.91748ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370866 MIN=0.305342 MAX=0.687427 
+Run Combined Run 2start18: Time=5589.44ms Kernel=4382.31ms Probabilities=133.128ms Ant=4244.59ms Update=0ms Memory=1207.13ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.291315 MIN=0.304572 MAX=0.687431 
+Run Combined Run 2start19: Time=4390.15ms Kernel=4382.53ms Probabilities=133.179ms Ant=4244.54ms Update=0ms Memory=7.62402ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370895 MIN=0.303301 MAX=0.687431 
+Run Combined Run 2start20: Time=5610.11ms Kernel=4381.78ms Probabilities=133.176ms Ant=4244.02ms Update=0ms Memory=1228.33ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.290242 MIN=0.28847 MAX=0.706498 
+Run Combined Run 2start21: Time=4390.02ms Kernel=4382.36ms Probabilities=133.278ms Ant=4244.29ms Update=0ms Memory=7.65918ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370907 MIN=0.303322 MAX=0.705735 
+Run Combined Run 2start22: Time=5578.2ms Kernel=4381.93ms Probabilities=133.146ms Ant=4244.24ms Update=0ms Memory=1196.27ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.291902 MIN=0.303291 MAX=0.687381 
+Run Combined Run 2start23: Time=4389.56ms Kernel=4382.15ms Probabilities=133.17ms Ant=4244.35ms Update=0ms Memory=7.41113ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370945 MIN=0.304517 MAX=0.701626 
+Run Combined Run 2start24: Time=5611.7ms Kernel=4381.77ms Probabilities=133.105ms Ant=4244.11ms Update=0ms Memory=1229.93ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.290159 MIN=0.303395 MAX=0.691197 
+Run Combined Run 2start25: Time=4390.49ms Kernel=4382.82ms Probabilities=133.288ms Ant=4244.75ms Update=0ms Memory=7.67334ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370866 MIN=0.303321 MAX=0.703485 
+Run Combined Run 2start26: Time=5729.43ms Kernel=4381.89ms Probabilities=133.153ms Ant=4244.17ms Update=0ms Memory=1347.55ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.284197 MIN=0.303432 MAX=0.691242 
+Run Combined Run 2start27: Time=4390.21ms Kernel=4382.57ms Probabilities=133.27ms Ant=4244.51ms Update=0ms Memory=7.63867ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.37089 MIN=0.303366 MAX=0.706488 
+Run Combined Run 2start28: Time=5359.12ms Kernel=4382.03ms Probabilities=133.118ms Ant=4244.32ms Update=0ms Memory=977.089ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.303835 MIN=0.303484 MAX=0.70552 
+Run Combined Run 2start29: Time=4389.83ms Kernel=4382.32ms Probabilities=133.167ms Ant=4244.51ms Update=0ms Memory=7.51221ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370922 MIN=0.303329 MAX=0.706532 
+Run Combined Run 2start30: Time=5725.93ms Kernel=4381.92ms Probabilities=133.053ms Ant=4244.28ms Update=0ms Memory=1344.01ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.284371 MIN=0.303319 MAX=0.687358 
+Run Combined Run 2start31: Time=4390.02ms Kernel=4382.36ms Probabilities=133.246ms Ant=4244.28ms Update=0ms Memory=7.65869ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370906 MIN=0.303406 MAX=0.706495 
+Run Combined Run 2start32: Time=5608.4ms Kernel=4381.59ms Probabilities=133.125ms Ant=4243.89ms Update=0ms Memory=1226.81ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.29033 MIN=0.30363 MAX=0.687428 
+Run Combined Run 2start33: Time=4389.31ms Kernel=4382.02ms Probabilities=133.217ms Ant=4244.04ms Update=0ms Memory=7.28906ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370967 MIN=0.303386 MAX=0.68743 
+Run Combined Run 2start34: Time=5614.75ms Kernel=4382.1ms Probabilities=133.123ms Ant=4244.42ms Update=0ms Memory=1232.65ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.290002 MIN=0.303293 MAX=0.701675 
+Run Combined Run 2start35: Time=4389.89ms Kernel=4382.39ms Probabilities=133.273ms Ant=4244.32ms Update=0ms Memory=7.49707ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370918 MIN=0.303426 MAX=0.706472 
+Run Combined Run 2start36: Time=5625.46ms Kernel=4382.04ms Probabilities=133.126ms Ant=4244.32ms Update=0ms Memory=1243.43ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.289449 MIN=0.303294 MAX=0.687428 
+Run Combined Run 2start37: Time=4389.3ms Kernel=4381.99ms Probabilities=133.189ms Ant=4244.04ms Update=0ms Memory=7.31543ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370967 MIN=0.304201 MAX=0.687426 
+Run Combined Run 2start38: Time=5129.14ms Kernel=4382.15ms Probabilities=133.119ms Ant=4244.39ms Update=0ms Memory=746.997ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.317458 MIN=0.304494 MAX=0.703747 
+Run Combined Run 2start39: Time=4390.98ms Kernel=4383.56ms Probabilities=133.272ms Ant=4245.39ms Update=0ms Memory=7.42139ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370825 MIN=0.283259 MAX=0.687431 
+Run Combined Run 2start40: Time=4388.5ms Kernel=4381.49ms Probabilities=133.154ms Ant=4243.78ms Update=0ms Memory=7.01758ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.371035 MIN=0.304063 MAX=0.705175 
+Run Combined Run 2start41: Time=4417.55ms Kernel=4386.09ms Probabilities=133.066ms Ant=4248.08ms Update=0ms Memory=31.4614ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.368595 MIN=0.303291 MAX=0.706059 
+Run Combined Run 2start42: Time=4481.67ms Kernel=4384.94ms Probabilities=133.201ms Ant=4246.59ms Update=0ms Memory=96.7378ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.363321 MIN=0.299416 MAX=0.692217 
+Run Combined Run 2start43: Time=4395.06ms Kernel=4384.25ms Probabilities=133.123ms Ant=4246.2ms Update=0ms Memory=10.8179ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370481 MIN=0.303587 MAX=0.687431 
+Run Combined Run 2start44: Time=4389.09ms Kernel=4381.98ms Probabilities=133.1ms Ant=4244.26ms Update=0ms Memory=7.11426ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370985 MIN=0.303291 MAX=0.687362 
+Run Combined Run 2start45: Time=4390.78ms Kernel=4383.99ms Probabilities=133.09ms Ant=4246.35ms Update=0ms Memory=6.78809ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370842 MIN=0.303291 MAX=0.700899 
+Run Combined Run 2start46: Time=4388.69ms Kernel=4381.74ms Probabilities=133.117ms Ant=4243.91ms Update=0ms Memory=6.95264ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.371019 MIN=0.303292 MAX=0.68743 
+Run Combined Run 2start47: Time=4666.75ms Kernel=4381.72ms Probabilities=133.063ms Ant=4244.08ms Update=0ms Memory=285.036ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.348912 MIN=0.303301 MAX=0.68743 
+Run Combined Run 2start48: Time=4391.23ms Kernel=4383.65ms Probabilities=133.268ms Ant=4245.44ms Update=0ms Memory=7.58447ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.370804 MIN=0.303412 MAX=0.705947 
+Run Combined Run 2start49: Time=4388.86ms Kernel=4382.1ms Probabilities=133.12ms Ant=4244.44ms Update=0ms Memory=6.75146ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.371005 MIN=0.304237 MAX=0.68743 
+Combined ACO total execution time: 238816 ms
+
+=== Starting 4 function ACO runs transposed ===
+Run 4 function ACO 4start transposed0: Time=1841.02ms Kernel=516.813ms Probabilities=3.42735ms Ant=433.866ms Update=70.3305ms Memory=1324.21ms HitRate=55.2% Occupancy=100% memory_throughput_gbs=0.868087 MIN=0.306362 MAX=0.687431 
+Run 4 function ACO 4start transposed1: Time=524.867ms Kernel=518.61ms Probabilities=3.65058ms Ant=434.599ms Update=70.4749ms Memory=6.25653ms HitRate=55.1268% Occupancy=100% memory_throughput_gbs=3.0449 MIN=0.304213 MAX=0.687273 
+Run 4 function ACO 4start transposed2: Time=527.749ms Kernel=517.894ms Probabilities=3.42427ms Ant=434.911ms Update=70.3028ms Memory=9.85529ms HitRate=55.092% Occupancy=100% memory_throughput_gbs=3.02827 MIN=0.321328 MAX=0.687125 
+Run 4 function ACO 4start transposed3: Time=528.768ms Kernel=521.882ms Probabilities=3.85128ms Ant=436.284ms Update=70.6346ms Memory=6.88684ms HitRate=55.1064% Occupancy=100% memory_throughput_gbs=3.02243 MIN=0.306198 MAX=0.687425 
+Run 4 function ACO 4start transposed4: Time=528.382ms Kernel=522.044ms Probabilities=3.63726ms Ant=437.704ms Update=70.4053ms Memory=6.33777ms HitRate=55.1612% Occupancy=100% memory_throughput_gbs=3.02465 MIN=0.304426 MAX=0.68743 
+Run 4 function ACO 4start transposed5: Time=529.164ms Kernel=523.501ms Probabilities=3.41199ms Ant=440.506ms Update=70.2527ms Memory=5.66364ms HitRate=55.0896% Occupancy=100% memory_throughput_gbs=3.02017 MIN=0.304426 MAX=0.687429 
+Run 4 function ACO 4start transposed6: Time=537.077ms Kernel=531.474ms Probabilities=3.42939ms Ant=448.738ms Update=70.1872ms Memory=5.60309ms HitRate=54.9932% Occupancy=100% memory_throughput_gbs=2.97568 MIN=0.321328 MAX=0.685382 
+Run 4 function ACO 4start transposed7: Time=2514.52ms Kernel=2508.96ms Probabilities=3.41608ms Ant=2416.11ms Update=80.262ms Memory=5.56323ms HitRate=54.9932% Occupancy=100% memory_throughput_gbs=0.635576 MIN=0.303686 MAX=0.687254 
+Run 4 function ACO 4start transposed8: Time=5731.5ms Kernel=5725.57ms Probabilities=3.47445ms Ant=5617.4ms Update=95.068ms Memory=5.92822ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278839 MIN=0.303441 MAX=0.687411 
+Run 4 function ACO 4start transposed9: Time=5729.12ms Kernel=5723.41ms Probabilities=3.46421ms Ant=5615.9ms Update=94.683ms Memory=5.71631ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278955 MIN=0.306592 MAX=0.687414 
+Run 4 function ACO 4start transposed10: Time=5731.46ms Kernel=5725.56ms Probabilities=3.5236ms Ant=5617.45ms Update=94.7607ms Memory=5.90576ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278841 MIN=0.307421 MAX=0.687147 
+Run 4 function ACO 4start transposed11: Time=6616.86ms Kernel=5722.68ms Probabilities=3.44271ms Ant=5615.27ms Update=94.6778ms Memory=894.176ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.24153 MIN=0.314427 MAX=0.683828 
+Run 4 function ACO 4start transposed12: Time=5729.25ms Kernel=5723.47ms Probabilities=3.47343ms Ant=5615.64ms Update=94.7014ms Memory=5.77783ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278949 MIN=0.306311 MAX=0.687377 
+Run 4 function ACO 4start transposed13: Time=5943.43ms Kernel=5724.82ms Probabilities=3.48264ms Ant=5617.01ms Update=94.7034ms Memory=218.609ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.268897 MIN=0.313 MAX=0.704136 
+Run 4 function ACO 4start transposed14: Time=5729.21ms Kernel=5723.52ms Probabilities=3.45192ms Ant=5616ms Update=94.6993ms Memory=5.68652ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278951 MIN=0.32021 MAX=0.687426 
+Run 4 function ACO 4start transposed15: Time=5730.87ms Kernel=5725.04ms Probabilities=3.52053ms Ant=5617.14ms Update=94.7793ms Memory=5.82471ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.27887 MIN=0.307328 MAX=0.687315 
+Run 4 function ACO 4start transposed16: Time=5728.29ms Kernel=5722.67ms Probabilities=3.41506ms Ant=5615.39ms Update=94.6287ms Memory=5.62451ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278996 MIN=0.304025 MAX=0.687406 
+Run 4 function ACO 4start transposed17: Time=5730.93ms Kernel=5725.12ms Probabilities=3.49698ms Ant=5617.21ms Update=94.7802ms Memory=5.80469ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278867 MIN=0.303602 MAX=0.687066 
+Run 4 function ACO 4start transposed18: Time=5847.58ms Kernel=5723.38ms Probabilities=3.41711ms Ant=5616.09ms Update=94.6379ms Memory=124.194ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.273304 MIN=0.303616 MAX=0.687393 
+Run 4 function ACO 4start transposed19: Time=5729.24ms Kernel=5723.36ms Probabilities=3.5236ms Ant=5615.4ms Update=94.7853ms Memory=5.88135ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.27895 MIN=0.321327 MAX=0.687429 
+Run 4 function ACO 4start transposed20: Time=5730.23ms Kernel=5724.42ms Probabilities=3.48674ms Ant=5616.78ms Update=94.7065ms Memory=5.80469ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278901 MIN=0.303897 MAX=0.68743 
+Run 4 function ACO 4start transposed21: Time=5728.13ms Kernel=5722.44ms Probabilities=3.45397ms Ant=5615ms Update=94.6328ms Memory=5.68945ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.279004 MIN=0.303578 MAX=0.687429 
+Run 4 function ACO 4start transposed22: Time=5730.58ms Kernel=5724.7ms Probabilities=3.50824ms Ant=5616.85ms Update=94.7382ms Memory=5.87695ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278884 MIN=0.303777 MAX=0.704563 
+Run 4 function ACO 4start transposed23: Time=7113.74ms Kernel=5722.37ms Probabilities=3.43759ms Ant=5615.13ms Update=94.6307ms Memory=1391.37ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.224659 MIN=0.303524 MAX=0.687363 
+Run 4 function ACO 4start transposed24: Time=5729.14ms Kernel=5723.25ms Probabilities=3.51848ms Ant=5615.42ms Update=94.7536ms Memory=5.89844ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278954 MIN=0.319181 MAX=0.687405 
+Run 4 function ACO 4start transposed25: Time=5730.44ms Kernel=5724.61ms Probabilities=3.47035ms Ant=5616.91ms Update=94.7198ms Memory=5.83252ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278891 MIN=0.303849 MAX=0.696273 
+Run 4 function ACO 4start transposed26: Time=5728.9ms Kernel=5723.18ms Probabilities=3.45499ms Ant=5615.65ms Update=94.6799ms Memory=5.72412ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278966 MIN=0.321328 MAX=0.687421 
+Run 4 function ACO 4start transposed27: Time=5731.3ms Kernel=5725.47ms Probabilities=3.48981ms Ant=5617.53ms Update=94.7802ms Memory=5.83203ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278849 MIN=0.303699 MAX=0.70653 
+Run 4 function ACO 4start transposed28: Time=7066.89ms Kernel=5722.69ms Probabilities=3.40789ms Ant=5615.47ms Update=94.6522ms Memory=1344.2ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.226149 MIN=0.304311 MAX=0.686901 
+Run 4 function ACO 4start transposed29: Time=5729.54ms Kernel=5723.62ms Probabilities=3.52463ms Ant=5615.69ms Update=94.7679ms Memory=5.91064ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278935 MIN=0.30358 MAX=0.687351 
+Run 4 function ACO 4start transposed30: Time=5730.39ms Kernel=5724.44ms Probabilities=3.45602ms Ant=5616.46ms Update=95.0311ms Memory=5.94727ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278894 MIN=0.303866 MAX=0.703733 
+Run 4 function ACO 4start transposed31: Time=5728.27ms Kernel=5722.64ms Probabilities=3.43144ms Ant=5615.26ms Update=94.6297ms Memory=5.6333ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278997 MIN=0.305891 MAX=0.70004 
+Run 4 function ACO 4start transposed32: Time=5907.21ms Kernel=5725.69ms Probabilities=3.42632ms Ant=5617.68ms Update=94.9594ms Memory=181.521ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.270545 MIN=0.304138 MAX=0.686428 
+Run 4 function ACO 4start transposed33: Time=6901.12ms Kernel=5725.75ms Probabilities=3.43451ms Ant=5618.15ms Update=94.6522ms Memory=1175.38ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.231581 MIN=0.304855 MAX=0.687422 
+Run 4 function ACO 4start transposed34: Time=5728.84ms Kernel=5722.97ms Probabilities=3.51131ms Ant=5615.11ms Update=94.7526ms Memory=5.87354ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278969 MIN=0.303409 MAX=0.68741 
+Run 4 function ACO 4start transposed35: Time=5730.34ms Kernel=5724.49ms Probabilities=3.47752ms Ant=5616.76ms Update=94.6953ms Memory=5.85303ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278896 MIN=0.321334 MAX=0.687425 
+Run 4 function ACO 4start transposed36: Time=5728.46ms Kernel=5722.76ms Probabilities=3.46319ms Ant=5615.24ms Update=94.7023ms Memory=5.70215ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278988 MIN=0.30613 MAX=0.687425 
+Run 4 function ACO 4start transposed37: Time=5730.4ms Kernel=5724.6ms Probabilities=3.47343ms Ant=5616.94ms Update=94.7116ms Memory=5.80518ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278893 MIN=0.304028 MAX=0.687406 
+Run 4 function ACO 4start transposed38: Time=6490.88ms Kernel=5722.82ms Probabilities=3.41813ms Ant=5615.6ms Update=94.6451ms Memory=768.059ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.246218 MIN=0.32133 MAX=0.687402 
+Run 4 function ACO 4start transposed39: Time=5730.52ms Kernel=5724.49ms Probabilities=3.56866ms Ant=5616.43ms Update=94.7259ms Memory=6.02637ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278887 MIN=0.305182 MAX=0.687411 
+Run 4 function ACO 4start transposed40: Time=5847.17ms Kernel=5724.44ms Probabilities=3.44373ms Ant=5617.13ms Update=94.6665ms Memory=122.73ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.273323 MIN=0.305779 MAX=0.705146 
+Run 4 function ACO 4start transposed41: Time=5728.42ms Kernel=5722.79ms Probabilities=3.45909ms Ant=5615.38ms Update=94.6194ms Memory=5.62646ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278989 MIN=0.305778 MAX=0.687102 
+Run 4 function ACO 4start transposed42: Time=5730.44ms Kernel=5724.52ms Probabilities=3.48571ms Ant=5616.57ms Update=94.726ms Memory=5.91846ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278891 MIN=0.321328 MAX=0.688434 
+Run 4 function ACO 4start transposed43: Time=6638.43ms Kernel=5723.17ms Probabilities=3.43042ms Ant=5615.84ms Update=94.6389ms Memory=915.254ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.240745 MIN=0.303743 MAX=0.687144 
+Run 4 function ACO 4start transposed44: Time=5729.44ms Kernel=5723.58ms Probabilities=3.51848ms Ant=5616.08ms Update=94.6819ms Memory=5.85986ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.27894 MIN=0.304164 MAX=0.687431 
+Run 4 function ACO 4start transposed45: Time=5729.87ms Kernel=5724.21ms Probabilities=3.41711ms Ant=5616.94ms Update=94.6563ms Memory=5.66455ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278919 MIN=0.303291 MAX=0.687412 
+Run 4 function ACO 4start transposed46: Time=5728.65ms Kernel=5722.91ms Probabilities=3.49391ms Ant=5615.15ms Update=94.7198ms Memory=5.74463ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278978 MIN=0.310649 MAX=0.687411 
+Run 4 function ACO 4start transposed47: Time=5730.08ms Kernel=5724.44ms Probabilities=3.44271ms Ant=5617.09ms Update=94.6635ms Memory=5.63672ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278909 MIN=0.304379 MAX=0.687428 
+Run 4 function ACO 4start transposed48: Time=5728.17ms Kernel=5722.61ms Probabilities=3.41301ms Ant=5615.41ms Update=94.6184ms Memory=5.56396ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.279001 MIN=0.320299 MAX=0.686187 
+Run 4 function ACO 4start transposed49: Time=5730.69ms Kernel=5724.85ms Probabilities=3.50619ms Ant=5616.91ms Update=94.7546ms Memory=5.83984ms HitRate=54.6% Occupancy=100% memory_throughput_gbs=0.278879 MIN=0.306058 MAX=0.687069 
+4function ACO total execution time transposed: 255258 ms
+Program executed successfully
+End time: Mon Dec 15 12:42:15 MSK 2025
+Execution time: 974.902882799 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=1617, ANT_SIZE=500!
+Results saved in: results/
+Execution time: 974.902882799 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=1638
+===================================================
+Updating parameter file with PARAMETR_SIZE=1638...
+Updating parametrs.h with PARAMETR_SIZE=1638 and NAME_FILE_GRAPH=Parametr_Graph/test1638.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=1638
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=1638
+PARAM_SIZE=1638 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=1638, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling CUDA program with arch=sm_70...
+
+ERROR: Compilation failed!
+Compilation errors saved to: results/compilation_logs/compile_size_1638_block_500_20251215_124216.txt
+Showing last 10 lines of compilation log:
+    80 bytes stack frame, 36 bytes spill stores, 36 bytes spill loads
+ptxas info    : Used 32 registers, 424 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_70'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, 360 bytes cmem[0]
+========== COMPILATION END ==========
+Exit code: 255
+Trying simplified compilation...
+gcc: error: aco_cuda_optimized.cu: No such file or directory
+gcc: warning: ‘-x c++’ after last input file has no effect
+gcc: fatal error: no input files
+compilation terminated.

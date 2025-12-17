@@ -102,14 +102,14 @@ double compute_probability(double pheromone, double visits) noexcept {
 #if (SHAFFERA) 
 double benchmark_function(double* params) noexcept {
     double sum_sq = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
-    // AVX-оптимизация для случая, когда PARAMETR_SIZE_ONE_X=4
-    if (PARAMETR_SIZE_ONE_X == 4) {
+    // AVX-оптимизация для случая, когда SET_PARAMETR_SIZE_ONE_X=4
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
         __m256d sum_sq_vec = _mm256_setzero_pd();
 
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             __m256d x_vec = _mm256_set1_pd(x);
             sum_sq_vec = _mm256_add_pd(sum_sq_vec, _mm256_mul_pd(x_vec, x_vec));
         }
@@ -121,7 +121,7 @@ double benchmark_function(double* params) noexcept {
     else {
         // Стандартная реализация для других случаев
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             sum_sq += x * x;
         }
     }
@@ -134,17 +134,17 @@ double benchmark_function(double* params) noexcept {
 #if (RASTRIGIN)
 double benchmark_function(double* params) noexcept {
     double sum = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     constexpr double two_pi = 2.0 * M_PI;
 
     // AVX-оптимизация для RASTRIGIN
-    if (PARAMETR_SIZE_ONE_X == 4) {
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
         __m256d sum_vec = _mm256_setzero_pd();
         __m256d ten_vec = _mm256_set1_pd(10.0);
         __m256d two_pi_vec = _mm256_set1_pd(two_pi);
 
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             __m256d x_vec = _mm256_set1_pd(x);
             __m256d x_sq = _mm256_mul_pd(x_vec, x_vec);
 
@@ -172,7 +172,7 @@ double benchmark_function(double* params) noexcept {
     else {
         // Стандартная реализация
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             sum += x * x - 10.0 * std::cos(two_pi * x) + 10.0;
         }
     }
@@ -181,18 +181,18 @@ double benchmark_function(double* params) noexcept {
 #endif
 #if (ACKLEY)
 double benchmark_function(double* params) noexcept {
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     double sum_sq = 0.0;
     double sum_cos = 0.0;
 
     // AVX-оптимизация для ACKLEY
-    if (PARAMETR_SIZE_ONE_X == 4) {
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
         __m256d sum_sq_vec = _mm256_setzero_pd();
         __m256d sum_cos_vec = _mm256_setzero_pd();
         __m256d two_pi_vec = _mm256_set1_pd(2.0 * M_PI);
 
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             __m256d x_vec = _mm256_set1_pd(x);
 
             // Сумма квадратов
@@ -220,7 +220,7 @@ double benchmark_function(double* params) noexcept {
     else {
         // Стандартная реализация
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             sum_sq += x * x;
             sum_cos += std::cos(2.0 * M_PI * x);
         }
@@ -233,14 +233,14 @@ double benchmark_function(double* params) noexcept {
 #if (SPHERE)
 double benchmark_function(double* params) noexcept {
     double sum_sq = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
     // AVX-оптимизация для SPHERE
-    if (PARAMETR_SIZE_ONE_X == 4) {
+    if (SET_PARAMETR_SIZE_ONE_X == 4) {
         __m256d sum_sq_vec = _mm256_setzero_pd();
 
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             __m256d x_vec = _mm256_set1_pd(x);
             sum_sq_vec = _mm256_add_pd(sum_sq_vec, _mm256_mul_pd(x_vec, x_vec));
         }
@@ -252,7 +252,7 @@ double benchmark_function(double* params) noexcept {
     else {
         // Стандартная реализация
         for (int i = 0; i < num_vars; ++i) {
-            double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+            double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
             sum_sq += x * x;
         }
     }
@@ -731,7 +731,7 @@ void log_parameters() {
     outfile << "OpenMP version: " << _OPENMP << "; AVX2 optimization enabled; "
         << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
-        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
         << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
@@ -771,7 +771,7 @@ int main() {
     std::cout << "\n=== OPTIMIZED OPENMP ALGORITHM WITH AVX2 ===" << std::endl;
     std::cout << "Configuration:" << std::endl;
     std::cout << "  PARAMETR_SIZE: " << PARAMETR_SIZE << std::endl;
-    std::cout << "  PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << std::endl;
+    std::cout << "  SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << std::endl;
     std::cout << "  MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << " (AVX2 optimized)" << std::endl;
     std::cout << "  ANT_SIZE: " << ANT_SIZE << std::endl;
     std::cout << "  KOL_ITERATION: " << KOL_ITERATION << std::endl;

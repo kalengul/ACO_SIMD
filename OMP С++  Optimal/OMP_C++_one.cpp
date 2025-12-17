@@ -80,11 +80,11 @@ double compute_probability(double pheromone, double visits) noexcept {
 #if (SHAFFERA) 
 double benchmark_function(double* params) noexcept {
     double sum_sq = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
     // Оптимизированное вычисление с развертыванием цикла
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_sq += x * x;
     }
 
@@ -97,12 +97,12 @@ double benchmark_function(double* params) noexcept {
 #if (RASTRIGIN)
 double benchmark_function(double* params) noexcept {
     double sum = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     constexpr double two_pi = 2.0 * M_PI;
 
 #pragma omp simd reduction(+:sum)
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum += x * x - 10.0 * std::cos(two_pi * x) + 10.0;
     }
     return sum;
@@ -111,13 +111,13 @@ double benchmark_function(double* params) noexcept {
 
 #if (ACKLEY)
 double benchmark_function(double* params) noexcept {
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     double sum_sq = 0.0;
     double sum_cos = 0.0;
 
 #pragma omp simd reduction(+:sum_sq, sum_cos)
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_sq += x * x;
         sum_cos += std::cos(2.0 * M_PI * x);
     }
@@ -130,11 +130,11 @@ double benchmark_function(double* params) noexcept {
 #if (SPHERE)
 double benchmark_function(double* params) noexcept {
     double sum_sq = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
 #pragma omp simd reduction(+:sum_sq)
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_sq += x * x;
     }
     return sum_sq;
@@ -198,7 +198,7 @@ void log_parameters(std::ofstream& logFile) {
     logFile << "PARAMETERS: "
         << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
-        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
         << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
@@ -694,7 +694,7 @@ int run_optimized_algorithm() {
     std::cout << "\n=== OPTIMIZED OPENMP ALGORITHM ===" << std::endl;
     std::cout << "Configuration:" << std::endl;
     std::cout << "  PARAMETR_SIZE: " << PARAMETR_SIZE << std::endl;
-    std::cout << "  PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << std::endl;
+    std::cout << "  SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << std::endl;
     std::cout << "  MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << std::endl;
     std::cout << "  ANT_SIZE: " << ANT_SIZE << std::endl;
     std::cout << "  KOL_ITERATION: " << KOL_ITERATION << std::endl;

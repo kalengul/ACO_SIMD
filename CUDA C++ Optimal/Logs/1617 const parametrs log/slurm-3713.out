@@ -1,0 +1,51 @@
+===================================================
+    CUDA ACO Benchmark Launcher
+===================================================
+Checking CUDA availability...
+Checking GPU information...
+GPU Information:
+name, memory.total [MiB], driver_version
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Cleaning previous builds...
+Setting GPU architecture...
+Using ARCH: sm_70 (V100)
+
+===================================================
+Testing with PARAMETR_SIZE=1638
+===================================================
+Updating parameter file with PARAMETR_SIZE=1638...
+Updating parametrs.h with PARAMETR_SIZE=1638 and NAME_FILE_GRAPH=Parametr_Graph/test1638.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=1638
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=1638
+PARAM_SIZE=1638 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=1638, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling CUDA program with arch=sm_70...
+
+ERROR: Compilation failed!
+Compilation errors saved to: results/compilation_logs/compile_size_1638_block_500_20251215_113627.txt
+Showing last 10 lines of compilation log:
+    80 bytes stack frame, 36 bytes spill stores, 36 bytes spill loads
+ptxas info    : Used 32 registers, 424 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_70'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, 360 bytes cmem[0]
+========== COMPILATION END ==========
+Exit code: 255
+Trying simplified compilation...
+gcc: error: aco_cuda_optimized.cu: No such file or directory
+gcc: warning: ‘-x c++’ after last input file has no effect
+gcc: fatal error: no input files
+compilation terminated.

@@ -11,10 +11,10 @@
 
 // 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128, 1376256
 #define KOL_GPU 4
-#define PARAMETR_SIZE 43008
+#define PARAMETR_SIZE 1344
 #define SET_PARAMETR_SIZE_ONE_X 21    // ���������� ���������� �� ��� x 21 (6)
 #define MAX_VALUE_SIZE 5    // ������������ ���������� �������� � ���������� 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test43008.txt"
+#define NAME_FILE_GRAPH "Parametr_Graph/test1344.txt"
 #define ANT_SIZE 512     // ������������ ���������� ������� 500
 #define KOL_ITERATION 500   // ���������� �������� ��� 500
 #define KOL_STAT_LEVEL 20    // ���������� ������ ����� ���������� 20

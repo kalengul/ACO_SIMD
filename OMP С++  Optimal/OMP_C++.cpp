@@ -86,10 +86,10 @@ double compute_probability(double pheromone, double visits) noexcept {
 #if (SHAFFERA) 
 double benchmark_function(double* params) noexcept {
     double sum_sq = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_sq += x * x;
     }
 
@@ -101,11 +101,11 @@ double benchmark_function(double* params) noexcept {
 #if (RASTRIGIN)
 double benchmark_function(double* params) noexcept {
     double sum = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     constexpr double two_pi = 2.0 * M_PI;
 
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum += x * x - 10.0 * std::cos(two_pi * x) + 10.0;
     }
     return sum;
@@ -113,12 +113,12 @@ double benchmark_function(double* params) noexcept {
 #endif
 #if (ACKLEY)
 double benchmark_function(double* params) noexcept {
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
     double sum_sq = 0.0;
     double sum_cos = 0.0;
 
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_sq += x * x;
         sum_cos += std::cos(2.0 * M_PI * x);
     }
@@ -130,10 +130,10 @@ double benchmark_function(double* params) noexcept {
 #if (SPHERE)
 double benchmark_function(double* params) noexcept {
     double sum_sq = 0.0;
-    const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
 
     for (int i = 0; i < num_vars; ++i) {
-        double x = compute_parameter(params, i * PARAMETR_SIZE_ONE_X, PARAMETR_SIZE_ONE_X);
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
         sum_sq += x * x;
     }
     return sum_sq;
@@ -758,7 +758,7 @@ void log_parameters() {
     outfile << "OpenMP version: " << _OPENMP << "; "
         << "PARAMETR_SIZE: " << PARAMETR_SIZE << "; "
         << "MAX_VALUE_SIZE: " << MAX_VALUE_SIZE << "; "
-        << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+        << "SET_PARAMETR_SIZE_ONE_X: " << SET_PARAMETR_SIZE_ONE_X << "; "
         << "ANT_SIZE: " << ANT_SIZE << "; "
         << "MAX_THREAD_CUDA: " << MAX_THREAD_CUDA << "; "
         << "NAME_FILE_GRAPH: " << NAME_FILE_GRAPH << "; "
