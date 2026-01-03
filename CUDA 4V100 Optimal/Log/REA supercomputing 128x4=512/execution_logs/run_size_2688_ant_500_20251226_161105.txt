@@ -1,0 +1,302 @@
+Start time: Fri Dec 26 16:11:12 MSK 2025
+Launching with 1 MPI processes (one per GPU)...
+Testing different GPU assignment methods...
+Method 1: Using separate CUDA_VISIBLE_DEVICES for each rank
+[node01:09684] MCW rank 0 bound to socket 0[core 0[hwt 0-1]], socket 0[core 1[hwt 0-1]], socket 0[core 2[hwt 0-1]], socket 0[core 3[hwt 0-1]], socket 0[core 4[hwt 0-1]], socket 0[core 5[hwt 0-1]], socket 0[core 6[hwt 0-1]], socket 0[core 7[hwt 0-1]], socket 0[core 8[hwt 0-1]], socket 0[core 9[hwt 0-1]], socket 0[core 10[hwt 0-1]], socket 0[core 11[hwt 0-1]], socket 0[core 12[hwt 0-1]], socket 0[core 13[hwt 0-1]], socket 0[core 14[hwt 0-1]], socket 0[core 15[hwt 0-1]]: [BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB][../../../../../../../../../../../../../../../..]
+--------------------------------------------------------------------------
+WARNING: An invalid value was given for btl_tcp_if_include.  This
+value will be ignored.
+
+  Local host: node01
+  Value:      ib0
+  Message:    Unknown interface name
+--------------------------------------------------------------------------
+Process 0/1 using GPU 0: Tesla V100-SXM2-16GB (Compute 7.0)
+Memory bounds check:
+  PARAMETR_SIZE: 2688
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE per process: 500
+  Total ants across all processes: 500
+  Total matrix elements: 13440
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting MPI ACO and DEPOSIT runs ===
+Run MPI Combined Run0: Time=498.036ms Kernel=57.6076ms Probabilities=57.6076ms Ant=127.819ms Update=0ms Memory=440.429ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=5.43239 MIN=0.5 MAX=0.5 
+Run MPI Combined Run1: Time=1676.34ms Kernel=49.7307ms Probabilities=49.7307ms Ant=126.373ms Update=0ms Memory=1626.61ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=1.61395 MIN=0.5 MAX=0.5 
+Run MPI Combined Run2: Time=287.834ms Kernel=52.1312ms Probabilities=52.1312ms Ant=127.313ms Update=0ms Memory=235.703ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.3996 MIN=0.5 MAX=0.5 
+Run MPI Combined Run3: Time=279.806ms Kernel=49.3293ms Probabilities=49.3293ms Ant=126.224ms Update=0ms Memory=230.477ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.6693 MIN=0.5 MAX=0.5 
+Run MPI Combined Run4: Time=345.661ms Kernel=49.6665ms Probabilities=49.6665ms Ant=126.796ms Update=0ms Memory=295.995ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.82711 MIN=0.5 MAX=0.5 
+Run MPI Combined Run5: Time=281.323ms Kernel=50.0976ms Probabilities=50.0976ms Ant=126.496ms Update=0ms Memory=231.226ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.61715 MIN=0.5 MAX=0.5 
+Run MPI Combined Run6: Time=280.728ms Kernel=49.6512ms Probabilities=49.6512ms Ant=126.762ms Update=0ms Memory=231.077ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.63755 MIN=0.5 MAX=0.5 
+Run MPI Combined Run7: Time=281.021ms Kernel=49.5723ms Probabilities=49.5723ms Ant=126.434ms Update=0ms Memory=231.448ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.62751 MIN=0.5 MAX=0.5 
+Run MPI Combined Run8: Time=281.363ms Kernel=49.7823ms Probabilities=49.7823ms Ant=127.229ms Update=0ms Memory=231.581ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.61578 MIN=0.5 MAX=0.5 
+Run MPI Combined Run9: Time=280.268ms Kernel=49.6535ms Probabilities=49.6535ms Ant=126.374ms Update=0ms Memory=230.614ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.65338 MIN=0.5 MAX=0.5 
+Run MPI Combined Run10: Time=278.568ms Kernel=48.8154ms Probabilities=48.8154ms Ant=126.393ms Update=0ms Memory=229.753ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.71227 MIN=0.5 MAX=0.5 
+Run MPI Combined Run11: Time=278.18ms Kernel=48.8059ms Probabilities=48.8059ms Ant=126.034ms Update=0ms Memory=229.374ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.72583 MIN=0.5 MAX=0.5 
+Run MPI Combined Run12: Time=278.885ms Kernel=48.8699ms Probabilities=48.8699ms Ant=126.576ms Update=0ms Memory=230.015ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70123 MIN=0.5 MAX=0.5 
+Run MPI Combined Run13: Time=279.063ms Kernel=49.0603ms Probabilities=49.0603ms Ant=126.353ms Update=0ms Memory=230.003ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.69504 MIN=0.5 MAX=0.5 
+Run MPI Combined Run14: Time=278.732ms Kernel=48.8354ms Probabilities=48.8354ms Ant=126.553ms Update=0ms Memory=229.897ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70656 MIN=0.5 MAX=0.5 
+Run MPI Combined Run15: Time=278.723ms Kernel=48.7941ms Probabilities=48.7941ms Ant=126.466ms Update=0ms Memory=229.929ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70687 MIN=0.5 MAX=0.5 
+Run MPI Combined Run16: Time=279.8ms Kernel=49.1517ms Probabilities=49.1517ms Ant=126.994ms Update=0ms Memory=230.648ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.66953 MIN=0.5 MAX=0.5 
+Run MPI Combined Run17: Time=278.654ms Kernel=49.0134ms Probabilities=49.0134ms Ant=126.217ms Update=0ms Memory=229.64ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70929 MIN=0.5 MAX=0.5 
+Run MPI Combined Run18: Time=278.846ms Kernel=48.7833ms Probabilities=48.7833ms Ant=126.784ms Update=0ms Memory=230.062ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.7026 MIN=0.5 MAX=0.5 
+Run MPI Combined Run19: Time=278.819ms Kernel=48.956ms Probabilities=48.956ms Ant=126.323ms Update=0ms Memory=229.863ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70355 MIN=0.5 MAX=0.5 
+Run MPI Combined Run20: Time=278.858ms Kernel=48.8466ms Probabilities=48.8466ms Ant=126.649ms Update=0ms Memory=230.012ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70217 MIN=0.5 MAX=0.5 
+Run MPI Combined Run21: Time=280.249ms Kernel=49.3515ms Probabilities=49.3515ms Ant=126.551ms Update=0ms Memory=230.898ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.65401 MIN=0.5 MAX=0.5 
+Run MPI Combined Run22: Time=279.839ms Kernel=49.155ms Probabilities=49.155ms Ant=126.918ms Update=0ms Memory=230.684ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.66816 MIN=0.5 MAX=0.5 
+Run MPI Combined Run23: Time=278.558ms Kernel=48.8361ms Probabilities=48.8361ms Ant=126.206ms Update=0ms Memory=229.722ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.71263 MIN=0.5 MAX=0.5 
+Run MPI Combined Run24: Time=279.271ms Kernel=48.904ms Probabilities=48.904ms Ant=126.85ms Update=0ms Memory=230.367ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.68782 MIN=0.5 MAX=0.5 
+Run MPI Combined Run25: Time=279.237ms Kernel=49.1905ms Probabilities=49.1905ms Ant=126.446ms Update=0ms Memory=230.047ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.689 MIN=0.5 MAX=0.5 
+Run MPI Combined Run26: Time=279.716ms Kernel=49.0245ms Probabilities=49.0245ms Ant=126.944ms Update=0ms Memory=230.692ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.6724 MIN=0.5 MAX=0.5 
+Run MPI Combined Run27: Time=278.662ms Kernel=48.8128ms Probabilities=48.8128ms Ant=126.527ms Update=0ms Memory=229.849ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70901 MIN=0.5 MAX=0.5 
+Run MPI Combined Run28: Time=278.981ms Kernel=48.7283ms Probabilities=48.7283ms Ant=126.861ms Update=0ms Memory=230.253ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.6979 MIN=0.5 MAX=0.5 
+Run MPI Combined Run29: Time=278.97ms Kernel=48.8493ms Probabilities=48.8493ms Ant=126.574ms Update=0ms Memory=230.12ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.6983 MIN=0.5 MAX=0.5 
+Run MPI Combined Run30: Time=278.864ms Kernel=48.8366ms Probabilities=48.8366ms Ant=126.753ms Update=0ms Memory=230.027ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70196 MIN=0.5 MAX=0.5 
+Run MPI Combined Run31: Time=278.752ms Kernel=48.8591ms Probabilities=48.8591ms Ant=126.476ms Update=0ms Memory=229.893ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70586 MIN=0.5 MAX=0.5 
+Run MPI Combined Run32: Time=279.034ms Kernel=48.8882ms Probabilities=48.8882ms Ant=126.861ms Update=0ms Memory=230.145ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.69607 MIN=0.5 MAX=0.5 
+Run MPI Combined Run33: Time=278.675ms Kernel=48.8344ms Probabilities=48.8344ms Ant=126.468ms Update=0ms Memory=229.841ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70854 MIN=0.5 MAX=0.5 
+Run MPI Combined Run34: Time=279.035ms Kernel=48.8217ms Probabilities=48.8217ms Ant=126.811ms Update=0ms Memory=230.213ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.69602 MIN=0.5 MAX=0.5 
+Run MPI Combined Run35: Time=1126.39ms Kernel=49.3624ms Probabilities=49.3624ms Ant=126.619ms Update=0ms Memory=1077.03ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=2.40195 MIN=0.5 MAX=0.5 
+Run MPI Combined Run36: Time=302.275ms Kernel=56.8821ms Probabilities=56.8821ms Ant=128.352ms Update=0ms Memory=245.393ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=8.95054 MIN=0.5 MAX=0.5 
+Run MPI Combined Run37: Time=280.667ms Kernel=49.5518ms Probabilities=49.5518ms Ant=126.865ms Update=0ms Memory=231.115ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.63963 MIN=0.5 MAX=0.5 
+Run MPI Combined Run38: Time=305.671ms Kernel=49.9796ms Probabilities=49.9796ms Ant=127.494ms Update=0ms Memory=255.692ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=8.8511 MIN=0.5 MAX=0.5 
+Run MPI Combined Run39: Time=301.207ms Kernel=56.8217ms Probabilities=56.8217ms Ant=127.793ms Update=0ms Memory=244.385ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=8.9823 MIN=0.5 MAX=0.5 
+Run MPI Combined Run40: Time=283.531ms Kernel=50.0975ms Probabilities=50.0975ms Ant=127.947ms Update=0ms Memory=233.433ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.54228 MIN=0.5 MAX=0.5 
+Run MPI Combined Run41: Time=282.05ms Kernel=49.6524ms Probabilities=49.6524ms Ant=127.288ms Update=0ms Memory=232.397ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.59239 MIN=0.5 MAX=0.5 
+Run MPI Combined Run42: Time=280.657ms Kernel=49.3954ms Probabilities=49.3954ms Ant=126.971ms Update=0ms Memory=231.261ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.63999 MIN=0.5 MAX=0.5 
+Run MPI Combined Run43: Time=278.691ms Kernel=48.7715ms Probabilities=48.7715ms Ant=126.257ms Update=0ms Memory=229.92ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70798 MIN=0.5 MAX=0.5 
+Run MPI Combined Run44: Time=279.462ms Kernel=48.7927ms Probabilities=48.7927ms Ant=126.898ms Update=0ms Memory=230.669ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.68121 MIN=0.5 MAX=0.5 
+Run MPI Combined Run45: Time=279.538ms Kernel=49.1387ms Probabilities=49.1387ms Ant=126.564ms Update=0ms Memory=230.399ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.67858 MIN=0.5 MAX=0.5 
+Run MPI Combined Run46: Time=279.455ms Kernel=49.0872ms Probabilities=49.0872ms Ant=126.781ms Update=0ms Memory=230.367ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.68146 MIN=0.5 MAX=0.5 
+Run MPI Combined Run47: Time=278.894ms Kernel=48.8709ms Probabilities=48.8709ms Ant=126.293ms Update=0ms Memory=230.023ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70091 MIN=0.5 MAX=0.5 
+Run MPI Combined Run48: Time=279.475ms Kernel=48.913ms Probabilities=48.913ms Ant=126.934ms Update=0ms Memory=230.562ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.68075 MIN=0.5 MAX=0.5 
+Run MPI Combined Run49: Time=278.824ms Kernel=48.7265ms Probabilities=48.7265ms Ant=126.403ms Update=0ms Memory=230.097ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=9.70336 MIN=0.5 MAX=0.5 
+MPI ACO total execution time: 18457 ms
+*** Error in `./aco_cuda_mpi': double free or corruption (!prev): 0x0000000001edaf00 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x81329)[0x7fe61986e329]
+./aco_cuda_mpi[0x405c4d]
+./aco_cuda_mpi[0x402fd2]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7fe61980f555]
+./aco_cuda_mpi[0x40383c]
+======= Memory map: ========
+00400000-004b0000 r-xp 00000000 08:02 9961920                            /cephfs/projects/utitov/MPI/aco_cuda_mpi
+006af000-006b0000 r--p 000af000 08:02 9961920                            /cephfs/projects/utitov/MPI/aco_cuda_mpi
+006b0000-006b1000 rw-p 000b0000 08:02 9961920                            /cephfs/projects/utitov/MPI/aco_cuda_mpi
+006b1000-006e8000 rw-p 00000000 00:00 0 
+00e1c000-01fee000 rw-p 00000000 00:00 0                                  [heap]
+200000000-200400000 ---p 00000000 00:00 0 
+200400000-200600000 rw-s 00000000 00:05 23899                            /dev/nvidia0
+200600000-204e00000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+204e00000-205e00000 ---p 00000000 00:00 0 
+205e00000-206000000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+206000000-206200000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+206200000-206400000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+206400000-206600000 rw-s 206400000 00:05 16558                           /dev/nvidia-uvm
+206600000-206800000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+206800000-206a00000 ---p 00000000 00:00 0 
+206a00000-206c00000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+206c00000-206e00000 ---p 00000000 00:00 0 
+206e00000-207000000 rw-s 00000000 00:04 107277410                        /dev/zero (deleted)
+207000000-207200000 ---p 00000000 00:00 0 
+207200000-207400000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+207400000-207600000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+207600000-207800000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+207800000-207a00000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+207a00000-207c00000 rw-s 00000000 00:05 47123                            /dev/nvidiactl
+207c00000-400200000 ---p 00000000 00:00 0 
+402000000-be6000000 ---p 00000000 00:00 0 
+10000000000-10004000000 ---p 00000000 00:00 0 
+7fe5d0000000-7fe5d0021000 rw-p 00000000 00:00 0 
+7fe5d0021000-7fe5d4000000 ---p 00000000 00:00 0 
+7fe5d6000000-7fe5e8000000 ---p 00000000 00:00 0 
+7fe5e8000000-7fe5e8021000 rw-p 00000000 00:00 0 
+7fe5e8021000-7fe5ec000000 ---p 00000000 00:00 0 
+7fe5ec000000-7fe5ec021000 rw-p 00000000 00:00 0 
+7fe5ec021000-7fe5f0000000 ---p 00000000 00:00 0 
+7fe5f0000000-7fe600000000 ---p 00000000 00:00 0 
+7fe602000000-7fe602400000 ---p 00000000 00:00 0 
+7fe602400000-7fe602600000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe602600000-7fe602800000 rw-s 00000000 00:04 107277407                  /dev/zero (deleted)
+7fe602800000-7fe602a00000 rw-s 00000000 00:04 107277408                  /dev/zero (deleted)
+7fe602a00000-7fe603000000 ---p 00000000 00:00 0 
+7fe603000000-7fe603200000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe603200000-7fe603400000 rw-s 00000000 00:04 107277411                  /dev/zero (deleted)
+7fe603400000-7fe603619000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe603619000-7fe604000000 ---p 00000000 00:00 0 
+7fe6051fe000-7fe6057ff000 rw-p 00000000 00:00 0 
+7fe6057ff000-7fe605800000 ---p 00000000 00:00 0 
+7fe605800000-7fe606000000 rw-p 00000000 00:00 0 
+7fe606000000-7fe60c000000 ---p 00000000 00:00 0 
+7fe60c000000-7fe60c021000 rw-p 00000000 00:00 0 
+7fe60c021000-7fe610000000 ---p 00000000 00:00 0 
+7fe6101dc000-7fe6103dc000 rw-s 00000000 00:04 107277409                  /dev/zero (deleted)
+7fe6103dc000-7fe6103dd000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103dd000-7fe6103de000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103de000-7fe6103df000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103df000-7fe6103e0000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e0000-7fe6103e1000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e1000-7fe6103e2000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e2000-7fe6103e3000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e3000-7fe6103e4000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e4000-7fe6103e5000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e5000-7fe6103e6000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e6000-7fe6103e7000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e7000-7fe6103e8000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e8000-7fe6103e9000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103e9000-7fe6103ea000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103ea000-7fe6103eb000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103eb000-7fe6103ec000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103ec000-7fe6103ed000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103ed000-7fe6103ee000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103ee000-7fe6103ef000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103ef000-7fe6103f0000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f0000-7fe6103f1000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f1000-7fe6103f2000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f2000-7fe6103f3000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f3000-7fe6103f4000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f4000-7fe6103f5000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f5000-7fe6103f6000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f6000-7fe6103f7000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f7000-7fe6103f8000 rw-s 00000000 00:05 47123                      /dev/nvidiactl
+7fe6103f8000-7fe61067d000 ---p 00000000 00:00 0 
+7fe61067d000-7fe61067e000 ---p 00000000 00:00 0 
+7fe61067e000-7fe610e7e000 rw-p 00000000 00:00 0 
+7fe610e7e000-7fe6113c0000 ---p 00000000 00:00 0 
+7fe6113c0000-7fe6114a0000 r--p 00000000 08:02 5679874                    /usr/lib64/libcuda.so.535.86.10
+7fe6114a0000-7fe6119a0000 r-xp 000e0000 08:02 5679874                    /usr/lib64/libcuda.so.535.86.10
+7fe6119a0000-7fe612e7a000 r--p 005e0000 08:02 5679874                    /usr/lib64/libcuda.so.535.86.10
+7fe612e7a000-7fe612e7b000 ---p 01aba000 08:02 5679874                    /usr/lib64/libcuda.so.535.86.10
+7fe612e7b000-7fe612e93000 r--p 01aba000 08:02 5679874                    /usr/lib64/libcuda.so.535.86.10
+7fe612e93000-7fe612f99000 rw-p 01ad2000 08:02 5679874                    /usr/lib64/libcuda.so.535.86.10
+7fe612f99000-7fe612fff000 rw-p 00000000 00:00 0 
+7fe612fff000-7fe6133ff000 r--s 00000000 08:02 2097483                    /tmp/ompi.node01.1052/pid.9684/pmix_dstor_ds21_9684/smdataseg-984743937-0
+7fe6133ff000-7fe6137ff000 r--s 00000000 08:02 2097482                    /tmp/ompi.node01.1052/pid.9684/pmix_dstor_ds21_9684/smseg-984743937-0
+7fe6137ff000-7fe613800000 ---p 00000000 00:00 0 
+7fe613800000-7fe614000000 rw-p 00000000 00:00 0 
+7fe614000000-7fe614021000 rw-p 00000000 00:00 0 
+7fe614021000-7fe618000000 ---p 00000000 00:00 0 
+7fe618186000-7fe618187000 ---p 00000000 00:00 0 
+7fe618187000-7fe618987000 rw-p 00000000 00:00 0 
+7fe618987000-7fe61899c000 r-xp 00000000 08:02 5639811                    /usr/lib64/libz.so.1.2.7
+7fe61899c000-7fe618b9b000 ---p 00015000 08:02 5639811                    /usr/lib64/libz.so.1.2.7
+7fe618b9b000-7fe618b9c000 r--p 00014000 08:02 5639811                    /usr/lib64/libz.so.1.2.7
+7fe618b9c000-7fe618b9d000 rw-p 00015000 08:02 5639811                    /usr/lib64/libz.so.1.2.7
+7fe618b9d000-7fe618b9f000 r-xp 00000000 08:02 5662937                    /usr/lib64/libutil-2.17.so
+7fe618b9f000-7fe618d9e000 ---p 00002000 08:02 5662937                    /usr/lib64/libutil-2.17.so
+7fe618d9e000-7fe618d9f000 r--p 00001000 08:02 5662937                    /usr/lib64/libutil-2.17.so
+7fe618d9f000-7fe618da0000 rw-p 00002000 08:02 5662937                    /usr/lib64/libutil-2.17.so
+7fe618da0000-7fe618da9000 r-xp 00000000 08:02 5643291                    /usr/lib64/libpciaccess.so.0.11.1
+7fe618da9000-7fe618fa8000 ---p 00009000 08:02 5643291                    /usr/lib64/libpciaccess.so.0.11.1
+7fe618fa8000-7fe618fa9000 r--p 00008000 08:02 5643291                    /usr/lib64/libpciaccess.so.0.11.1
+7fe618fa9000-7fe618faa000 rw-p 00009000 08:02 5643291                    /usr/lib64/libpciaccess.so.0.11.1
+7fe618faa000-7fe619294000 r-xp 00000000 08:02 5394082                    /opt/openmpi/v4.0.1/lib/libopen-pal.so.40.20.1
+7fe619294000-7fe619494000 ---p 002ea000 08:02 5394082                    /opt/openmpi/v4.0.1/lib/libopen-pal.so.40.20.1
+7fe619494000-7fe619499000 r--p 002ea000 08:02 5394082                    /opt/openmpi/v4.0.1/lib/libopen-pal.so.40.20.1
+7fe619499000-7fe6194ab000 rw-p 002ef000 08:02 5394082                    /opt/openmpi/v4.0.1/lib/libopen-pal.so.40.20.1
+7fe6194ab000-7fe6194b7000 rw-p 00000000 00:00 0 
+7fe6194b7000-7fe6195dd000 r-xp 00000000 08:02 5394123                    /opt/openmpi/v4.0.1/lib/libopen-rte.so.40.20.1
+7fe6195dd000-7fe6197dc000 ---p 00126000 08:02 5394123                    /opt/openmpi/v4.0.1/lib/libopen-rte.so.40.20.1
+7fe6197dc000-7fe6197de000 r--p 00125000 08:02 5394123                    /opt/openmpi/v4.0.1/lib/libopen-rte.so.40.20.1
+7fe6197de000-7fe6197e9000 rw-p 00127000 08:02 5394123                    /opt/openmpi/v4.0.1/lib/libopen-rte.so.40.20.1
+7fe6197e9000-7fe6197ed000 rw-p 00000000 00:00 0 
+7fe6197ed000-7fe6199b1000 r-xp 00000000 08:02 5639763                    /usr/lib64/libc-2.17.so
+7fe6199b1000-7fe619bb0000 ---p 001c4000 08:02 5639763                    /usr/lib64/libc-2.17.so
+7fe619bb0000-7fe619bb4000 r--p 001c3000 08:02 5639763                    /usr/lib64/libc-2.17.so
+7fe619bb4000-7fe619bb6000 rw-p 001c7000 08:02 5639763                    /usr/lib64/libc-2.17.so
+7fe619bb6000-7fe619bbb000 rw-p 00000000 00:00 0 
+7fe619bbb000-7fe619bd1000 r-xp 00000000 08:02 8659104                    /opt/gcc/v9.1/lib64/libgcc_s.so.1
+7fe619bd1000-7fe619dd1000 ---p 00016000 08:02 8659104                    /opt/gcc/v9.1/lib64/libgcc_s.so.1
+7fe619dd1000-7fe619dd2000 r--p 00016000 08:02 8659104                    /opt/gcc/v9.1/lib64/libgcc_s.so.1
+7fe619dd2000-7fe619dd3000 rw-p 00017000 08:02 8659104                    /opt/gcc/v9.1/lib64/libgcc_s.so.1
+7fe619dd3000-7fe619e07000 r-xp 00000000 08:02 8660007                    /opt/gcc/v9.1/lib64/libgomp.so.1.0.0
+7fe619e07000-7fe61a007000 ---p 00034000 08:02 8660007                    /opt/gcc/v9.1/lib64/libgomp.so.1.0.0
+7fe61a007000-7fe61a008000 r--p 00034000 08:02 8660007                    /opt/gcc/v9.1/lib64/libgomp.so.1.0.0
+7fe61a008000-7fe61a009000 rw-p 00035000 08:02 8660007                    /opt/gcc/v9.1/lib64/libgomp.so.1.0.0
+7fe61a009000-7fe61a10a000 r-xp 00000000 08:02 5662915                    /usr/lib64/libm-2.17.so
+7fe61a10a000-7fe61a309000 ---p 00101000 08:02 5662915                    /usr/lib64/libm-2.17.so
+7fe61a309000-7fe61a30a000 r--p 00100000 08:02 5662915                    /usr/lib64/libm-2.17.so
+7fe61a30a000-7fe61a30b000 rw-p 00101000 08:02 5662915                    /usr/lib64/libm-2.17.so
+7fe61a30b000-7fe61a4d4000 r-xp 00000000 08:02 8659939                    /opt/gcc/v9.1/lib64/libstdc++.so.6.0.26
+7fe61a4d4000-7fe61a6d3000 ---p 001c9000 08:02 8659939                    /opt/gcc/v9.1/lib64/libstdc++.so.6.0.26
+7fe61a6d3000-7fe61a6de000 r--p 001c8000 08:02 8659939                    /opt/gcc/v9.1/lib64/libstdc++.so.6.0.26
+7fe61a6de000-7fe61a6e1000 rw-p 001d3000 08:02 8659939                    /opt/gcc/v9.1/lib64/libstdc++.so.6.0.26
+7fe61a6e1000-7fe61a6e4000 rw-p 00000000 00:00 0 
+7fe61a6e4000-7fe61a6e6000 r-xp 00000000 08:02 5662913                    /usr/lib64/libdl-2.17.so
+7fe61a6e6000-7fe61a8e6000 ---p 00002000 08:02 5662913                    /usr/lib64/libdl-2.17.so
+7fe61a8e6000-7fe61a8e7000 r--p 00002000 08:02 5662913                    /usr/lib64/libdl-2.17.so
+7fe61a8e7000-7fe61a8e8000 rw-p 00003000 08:02 5662913                    /usr/lib64/libdl-2.17.so
+7fe61a8e8000-7fe61a8ff000 r-xp 00000000 08:02 5639789                    /usr/lib64/libpthread-2.17.so
+7fe61a8ff000-7fe61aafe000 ---p 00017000 08:02 5639789                    /usr/lib64/libpthread-2.17.so
+7fe61aafe000-7fe61aaff000 r--p 00016000 08:02 5639789                    /usr/lib64/libpthread-2.17.so
+7fe61aaff000-7fe61ab00000 rw-p 00017000 08:02 5639789                    /usr/lib64/libpthread-2.17.so
+7fe61ab00000-7fe61ab04000 rw-p 00000000 00:00 0 
+7fe61ab04000-7fe61ab0b000 r-xp 00000000 08:02 5662933                    /usr/lib64/librt-2.17.so
+7fe61ab0b000-7fe61ad0a000 ---p 00007000 08:02 5662933                    /usr/lib64/librt-2.17.so
+7fe61ad0a000-7fe61ad0b000 r--p 00006000 08:02 5662933                    /usr/lib64/librt-2.17.so
+7fe61ad0b000-7fe61ad0c000 rw-p 00007000 08:02 5662933                    /usr/lib64/librt-2.17.so
+7fe61ad0c000-7fe61af5a000 r-xp 00000000 08:02 5394220                    /opt/openmpi/v4.0.1/lib/libmpi.so.40.20.1
+7fe61af5a000-7fe61b159000 ---p 0024e000 08:02 5394220                    /opt/openmpi/v4.0.1/lib/libmpi.so.40.20.1
+7fe61b159000-7fe61b15c000 r--p 0024d000 08:02 5394220                    /opt/openmpi/v4.0.1/lib/libmpi.so.40.20.1
+7fe61b15c000-7fe61b176000 rw-p 00250000 08:02 5394220                    /opt/openmpi/v4.0.1/lib/libmpi.so.40.20.1
+7fe61b176000-7fe61b18e000 rw-p 00000000 00:00 0 
+7fe61b18e000-7fe61b22e000 r-xp 00000000 08:02 5278039                    /opt/cuda/v12.1/targets/x86_64-linux/lib/libcudart.so.12.1.55
+7fe61b22e000-7fe61b42e000 ---p 000a0000 08:02 5278039                    /opt/cuda/v12.1/targets/x86_64-linux/lib/libcudart.so.12.1.55
+7fe61b42e000-7fe61b433000 r--p 000a0000 08:02 5278039                    /opt/cuda/v12.1/targets/x86_64-linux/lib/libcudart.so.12.1.55
+7fe61b433000-7fe61b434000 rw-p 000a5000 08:02 5278039                    /opt/cuda/v12.1/targets/x86_64-linux/lib/libcudart.so.12.1.55
+7fe61b434000-7fe61b435000 rw-p 00000000 00:00 0 
+7fe61b435000-7fe61b457000 r-xp 00000000 08:02 5662902                    /usr/lib64/ld-2.17.so
+7fe61b4ae000-7fe61b5fb000 rw-p 00000000 00:00 0 
+7fe61b5fb000-7fe61b61b000 ---p 00000000 00:00 0 
+7fe61b61b000-7fe61b62b000 -w-s 00000000 00:05 23901                      /dev/nvidia1
+7fe61b62b000-7fe61b636000 rw-p 00000000 00:00 0 
+7fe61b63a000-7fe61b63c000 rw-p 00000000 00:00 0 
+7fe61b63c000-7fe61b63e000 ---p 00000000 00:00 0 
+7fe61b63e000-7fe61b63f000 r--s 00000000 00:05 23901                      /dev/nvidia1
+7fe61b63f000-7fe61b640000 r--s 00000000 00:05 23899                      /dev/nvidia0
+7fe61b640000-7fe61b650000 -w-s 00000000 00:05 23899                      /dev/nvidia0
+7fe61b650000-7fe61b651000 r--s 00000000 08:02 2097477                    /tmp/ompi.node01.1052/pid.9684/pmix_dstor_ds21_9684/initial-pmix_shared-segment-0
+7fe61b651000-7fe61b652000 rw-s 00000000 08:02 2097479                    /tmp/ompi.node01.1052/pid.9684/pmix_dstor_ds21_9684/smlockseg-984743937
+7fe61b652000-7fe61b653000 r--s 00000000 08:02 2097480                    /tmp/ompi.node01.1052/pid.9684/pmix_dstor_ds12_9684/initial-pmix_shared-segment-0
+7fe61b653000-7fe61b654000 rw-s 00000000 08:02 2097481                    /tmp/ompi.node01.1052/pid.9684/pmix_dstor_ds12_9684/dstore_sm.lock
+7fe61b654000-7fe61b656000 rw-p 00000000 00:00 0 
+7fe61b656000-7fe61b657000 r--p 00021000 08:02 5662902                    /usr/lib64/ld-2.17.so
+7fe61b657000-7fe61b658000 rw-p 00022000 08:02 5662902                    /usr/lib64/ld-2.17.so
+7fe61b658000-7fe61b659000 rw-p 00000000 00:00 0 
+7ffc0e99f000-7ffc0e9c1000 rw-p 00000000 00:00 0                          [stack]
+7ffc0e9df000-7ffc0e9e1000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+[node01:09690] *** Process received signal ***
+[node01:09690] Signal: Aborted (6)
+[node01:09690] Signal code:  (-6)
+[node01:09690] [ 0] /lib64/libpthread.so.0(+0xf630)[0x7fe61a8f7630]
+[node01:09690] [ 1] /lib64/libc.so.6(gsignal+0x37)[0x7fe619823387]
+[node01:09690] [ 2] /lib64/libc.so.6(abort+0x148)[0x7fe619824a78]
+[node01:09690] [ 3] /lib64/libc.so.6(+0x78f67)[0x7fe619865f67]
+[node01:09690] [ 4] /lib64/libc.so.6(+0x81329)[0x7fe61986e329]
+[node01:09690] [ 5] ./aco_cuda_mpi[0x405c4d]
+[node01:09690] [ 6] ./aco_cuda_mpi[0x402fd2]
+[node01:09690] [ 7] /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fe61980f555]
+[node01:09690] [ 8] ./aco_cuda_mpi[0x40383c]
+[node01:09690] *** End of error message ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 0 with PID 9690 on node node01 exited on signal 6 (Aborted).
+--------------------------------------------------------------------------
+End time: Fri Dec 26 16:11:36 MSK 2025
+Execution time: 24.078132444 seconds
+MPI execution completed successfully
+Log file saved to results
+GPU utilization after run:
+index, name, utilization.gpu [%], memory.used [MiB], memory.free [MiB]
+0, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+1, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+2, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+3, Tesla V100-SXM2-16GB, 1 %, 0 MiB, 16151 MiB

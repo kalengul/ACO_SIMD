@@ -1,0 +1,8 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_4.exe aco_cuda_4.cu -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" -lmsmpi -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+c1xx: fatal error C1083: Cannot open source file: 'aco_cuda_4.cu': No such file or directory
+aco_cuda_4.cu
+========== COMPILATION END ========== 
+Exit code: 2 

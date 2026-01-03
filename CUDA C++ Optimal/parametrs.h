@@ -9,13 +9,22 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
+#define GO_CUDA_4_STEP 1
+#define GO_CUDA_3_STEP 1
+#define GO_CUDA_2_STEP 1 
+#define GO_CUDA_2_STEP_AGENT 1
+#define GO_CUDA_4_STEP_CPU 1
+#define GO_CUDA_3_STEP_CPU 1
+#define GO_CUDA_2_STEP_CPU 1 
+#define GO_CUDA_2_STEP_TRANSP 1
+
 // 42, 84, 168, 336, 672, 1344, 2688, 5376, 10752, 21504, 43008, 86016, 172032, 344064, 688128, 1376256
 #define KOL_GPU 4
-#define PARAMETR_SIZE 1344
+#define PARAMETR_SIZE 84
 #define SET_PARAMETR_SIZE_ONE_X 21    // ���������� ���������� �� ��� x 21 (6)
 #define MAX_VALUE_SIZE 5    // ������������ ���������� �������� � ���������� 5 (100)
-#define NAME_FILE_GRAPH "Parametr_Graph/test1344.txt"
-#define ANT_SIZE 512     // ������������ ���������� ������� 500
+#define NAME_FILE_GRAPH "Parametr_Graph/test84.txt"
+#define ANT_SIZE 512     // ������������ ���������� ������� 512
 #define KOL_ITERATION 500   // ���������� �������� ��� 500
 #define KOL_STAT_LEVEL 20    // ���������� ������ ����� ���������� 20
 #define KOL_PROGON_STATISTICS 50 //��� ����� ���������� 50
@@ -25,6 +34,7 @@
 #define PARAMETR_RO 0.999     // �������� ��� ��� ��������� �������� RO
 #define HASH_TABLE_SIZE 1048576  // 2^20
 #define GO_HASH 0
+#define GO_HASH_CPU 0
 //#define HASH_TABLE_SIZE 67108864  // 2^26 (������ ���� �������� ������)
 #define MAX_PROBES 10000 // Maximum number of probes for collision resolution
 #define MAX_THREAD_CUDA 512 //1024
@@ -43,8 +53,9 @@
 #define NON_WHILE_ANT 1
 #define BLOCK_SIZE 256
 #define WARP_SIZE 32
+#define WARP_PER_BLOCK (BLOCK_SIZE + WARP_SIZE - 1) / WARP_SIZE
 #define AGENTS_PER_BLOCK 8
-#define TILE_SIZE 256  
+#define TILE_SIZE 32  
 #define MAX_SHARED_MEMORY_KB 48  // �������������� �������� ��� ����������� GPU
 #define MAX_PARAMETR_SIZE_LIMIT ((MAX_SHARED_MEMORY_KB * 1024) / sizeof(double))
 #define GO_ALG_MINMAX 1

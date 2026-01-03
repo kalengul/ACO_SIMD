@@ -1,0 +1,1784 @@
+===================================================
+    CUDA ACO Benchmark Launcher
+===================================================
+Checking CUDA availability...
+Checking GPU information...
+GPU Information:
+name, memory.total [MiB], driver_version
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Tesla V100-SXM2-16GB, 16384 MiB, 535.86.10
+Cleaning previous builds...
+Setting GPU architecture...
+Using ARCH: sm_70 (V100)
+
+===================================================
+Testing with PARAMETR_SIZE=42
+===================================================
+Updating parameter file with PARAMETR_SIZE=42...
+Updating parametrs.h with PARAMETR_SIZE=42 and NAME_FILE_GRAPH=Parametr_Graph/test42.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=42
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=42
+PARAM_SIZE=42 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=42, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_42_block_4096_20251228_045554.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:56:03 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 2.00643 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1025137 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 336 bytes (0.328125 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 1680 bytes (1.64062 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 42; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test42.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 336 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 42
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 210
+  Total agent nodes: 172032
+Expected matrix memory: 1680 bytes
+Expected agent memory: 688128 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=64.3722ms Kernel=58.1119ms Probabilities=3.75093ms Ant=49.4345ms Update=0ms Memory=6.26031ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.26349 MIN=0.00123005 MAX=0.999802 
+Run Combined Run 2start ant and deposit1: Time=62.5083ms Kernel=56.2063ms Probabilities=3.29627ms Ant=47.9897ms Update=0ms Memory=6.30198ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.42045 MIN=0.00123005 MAX=0.999292 
+Run Combined Run 2start ant and deposit2: Time=62.6224ms Kernel=56.2943ms Probabilities=3.27579ms Ant=47.9661ms Update=0ms Memory=6.32801ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41057 MIN=0.00123005 MAX=0.999318 
+Run Combined Run 2start ant and deposit3: Time=62.5825ms Kernel=56.2288ms Probabilities=3.29525ms Ant=47.9231ms Update=0ms Memory=6.35371ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41401 MIN=0.00123005 MAX=0.999722 
+Run Combined Run 2start ant and deposit4: Time=62.6427ms Kernel=56.2401ms Probabilities=3.27272ms Ant=47.9149ms Update=0ms Memory=6.40262ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40881 MIN=0.00123005 MAX=0.999505 
+Run Combined Run 2start ant and deposit5: Time=62.6587ms Kernel=56.2657ms Probabilities=3.28603ms Ant=47.9047ms Update=0ms Memory=6.39308ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40743 MIN=0.00123005 MAX=0.99982 
+Run Combined Run 2start ant and deposit6: Time=62.6747ms Kernel=56.2831ms Probabilities=3.30139ms Ant=47.8852ms Update=0ms Memory=6.39165ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40605 MIN=0.00123005 MAX=0.999619 
+Run Combined Run 2start ant and deposit7: Time=63.1302ms Kernel=56.5882ms Probabilities=3.35669ms Ant=48.0255ms Update=0ms Memory=6.542ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36704 MIN=0.00123005 MAX=0.999726 
+Run Combined Run 2start ant and deposit8: Time=63.1892ms Kernel=56.6436ms Probabilities=3.37205ms Ant=48.0378ms Update=0ms Memory=6.54564ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36203 MIN=0.00123005 MAX=0.999941 
+Run Combined Run 2start ant and deposit9: Time=63.115ms Kernel=56.5852ms Probabilities=3.35157ms Ant=48.0337ms Update=0ms Memory=6.52987ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36833 MIN=0.00123005 MAX=0.999727 
+Run Combined Run 2start ant and deposit10: Time=63.0962ms Kernel=56.5811ms Probabilities=3.36079ms Ant=48.0132ms Update=0ms Memory=6.51517ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36993 MIN=0.00123005 MAX=0.999597 
+Run Combined Run 2start ant and deposit11: Time=63.178ms Kernel=56.6395ms Probabilities=3.37ms Ant=48.0429ms Update=0ms Memory=6.53857ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36298 MIN=0.00123005 MAX=0.999888 
+Run Combined Run 2start ant and deposit12: Time=62.7164ms Kernel=56.2933ms Probabilities=3.33826ms Ant=47.8903ms Update=0ms Memory=6.42313ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40245 MIN=0.00123005 MAX=0.999741 
+Run Combined Run 2start ant and deposit13: Time=62.7782ms Kernel=56.4049ms Probabilities=3.28603ms Ant=48.0357ms Update=0ms Memory=6.37326ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.39714 MIN=0.00123005 MAX=0.999423 
+Run Combined Run 2start ant and deposit14: Time=62.6963ms Kernel=56.2821ms Probabilities=3.25531ms Ant=47.9641ms Update=0ms Memory=6.41423ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40419 MIN=0.00123005 MAX=0.999225 
+Run Combined Run 2start ant and deposit15: Time=62.6476ms Kernel=56.2011ms Probabilities=3.25224ms Ant=47.8934ms Update=0ms Memory=6.44651ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40839 MIN=0.00123005 MAX=0.999973 
+Run Combined Run 2start ant and deposit16: Time=62.7282ms Kernel=56.3271ms Probabilities=3.31368ms Ant=47.9672ms Update=0ms Memory=6.40113ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40144 MIN=0.00123005 MAX=0.999503 
+Run Combined Run 2start ant and deposit17: Time=62.7512ms Kernel=56.238ms Probabilities=3.30139ms Ant=47.8924ms Update=0ms Memory=6.51318ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.39946 MIN=0.00123005 MAX=0.999947 
+Run Combined Run 2start ant and deposit18: Time=62.585ms Kernel=56.1858ms Probabilities=3.28501ms Ant=47.8279ms Update=0ms Memory=6.39926ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.4138 MIN=0.00123005 MAX=0.99998 
+Run Combined Run 2start ant and deposit19: Time=62.5671ms Kernel=56.237ms Probabilities=3.28091ms Ant=47.9057ms Update=0ms Memory=6.33016ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41535 MIN=0.00123005 MAX=0.99998 
+Run Combined Run 2start ant and deposit20: Time=62.7137ms Kernel=56.3506ms Probabilities=3.29627ms Ant=47.9303ms Update=0ms Memory=6.36303ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40269 MIN=0.00123005 MAX=0.999812 
+Run Combined Run 2start ant and deposit21: Time=62.6242ms Kernel=56.2718ms Probabilities=3.29115ms Ant=47.9477ms Update=0ms Memory=6.35243ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41041 MIN=0.00123005 MAX=0.999986 
+Run Combined Run 2start ant and deposit22: Time=62.5989ms Kernel=56.2104ms Probabilities=3.30549ms Ant=47.8842ms Update=0ms Memory=6.38859ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41259 MIN=0.00123005 MAX=0.999394 
+Run Combined Run 2start ant and deposit23: Time=62.6583ms Kernel=56.321ms Probabilities=3.30344ms Ant=47.9866ms Update=0ms Memory=6.33736ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40746 MIN=0.00123005 MAX=0.999368 
+Run Combined Run 2start ant and deposit24: Time=62.6329ms Kernel=56.2636ms Probabilities=3.26248ms Ant=47.9405ms Update=0ms Memory=6.36926ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40966 MIN=0.00123005 MAX=0.999335 
+Run Combined Run 2start ant and deposit25: Time=62.6548ms Kernel=56.3332ms Probabilities=3.30446ms Ant=48.0009ms Update=0ms Memory=6.32155ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40777 MIN=0.00123005 MAX=0.999972 
+Run Combined Run 2start ant and deposit26: Time=62.7416ms Kernel=56.3588ms Probabilities=3.2891ms Ant=48.0101ms Update=0ms Memory=6.38278ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40029 MIN=0.00123005 MAX=0.999365 
+Run Combined Run 2start ant and deposit27: Time=62.6237ms Kernel=56.2073ms Probabilities=3.27067ms Ant=47.9139ms Update=0ms Memory=6.41643ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41045 MIN=0.00123005 MAX=0.999686 
+Run Combined Run 2start ant and deposit28: Time=62.5689ms Kernel=56.2206ms Probabilities=3.29525ms Ant=47.8996ms Update=0ms Memory=6.3483ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41519 MIN=0.00123005 MAX=0.999741 
+Run Combined Run 2start ant and deposit29: Time=62.7126ms Kernel=56.2964ms Probabilities=3.27579ms Ant=47.9569ms Update=0ms Memory=6.41617ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40279 MIN=0.00123005 MAX=0.999982 
+Run Combined Run 2start ant and deposit30: Time=62.6371ms Kernel=56.3261ms Probabilities=3.26555ms Ant=48.0276ms Update=0ms Memory=6.31103ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40929 MIN=0.00123005 MAX=0.998508 
+Run Combined Run 2start ant and deposit31: Time=62.6309ms Kernel=56.3363ms Probabilities=3.26453ms Ant=48.0634ms Update=0ms Memory=6.29462ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40983 MIN=0.00123005 MAX=0.999315 
+Run Combined Run 2start ant and deposit32: Time=62.7463ms Kernel=56.3425ms Probabilities=3.27784ms Ant=47.96ms Update=0ms Memory=6.40385ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.39988 MIN=0.00123005 MAX=0.999632 
+Run Combined Run 2start ant and deposit33: Time=62.5764ms Kernel=56.238ms Probabilities=3.27374ms Ant=47.8862ms Update=0ms Memory=6.33839ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.41454 MIN=0.00123005 MAX=0.999796 
+Run Combined Run 2start ant and deposit34: Time=62.9039ms Kernel=56.4305ms Probabilities=3.33109ms Ant=47.961ms Update=0ms Memory=6.47343ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.38635 MIN=0.00123005 MAX=0.999748 
+Run Combined Run 2start ant and deposit35: Time=63.1265ms Kernel=56.6005ms Probabilities=3.3485ms Ant=48.0163ms Update=0ms Memory=6.52598ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36736 MIN=0.00123005 MAX=0.999558 
+Run Combined Run 2start ant and deposit36: Time=63.2013ms Kernel=56.6733ms Probabilities=3.33928ms Ant=48.1197ms Update=0ms Memory=6.52806ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36101 MIN=0.00123005 MAX=0.999986 
+Run Combined Run 2start ant and deposit37: Time=63.0792ms Kernel=56.5718ms Probabilities=3.36078ms Ant=47.9887ms Update=0ms Memory=6.50738ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.37138 MIN=0.00123005 MAX=0.99957 
+Run Combined Run 2start ant and deposit38: Time=63.1448ms Kernel=56.6026ms Probabilities=3.34235ms Ant=48.0317ms Update=0ms Memory=6.54219ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.36581 MIN=0.00123005 MAX=0.999752 
+Run Combined Run 2start ant and deposit39: Time=63.602ms Kernel=56.5667ms Probabilities=3.37102ms Ant=48.0245ms Update=0ms Memory=7.03522ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.32724 MIN=0.00123005 MAX=0.999737 
+Run Combined Run 2start ant and deposit40: Time=62.7336ms Kernel=56.2851ms Probabilities=3.31778ms Ant=47.917ms Update=0ms Memory=6.44848ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40098 MIN=0.00123005 MAX=0.999753 
+Run Combined Run 2start ant and deposit41: Time=62.6965ms Kernel=56.3547ms Probabilities=3.27579ms Ant=48.004ms Update=0ms Memory=6.34179ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40417 MIN=0.00123005 MAX=0.998955 
+Run Combined Run 2start ant and deposit42: Time=62.7085ms Kernel=56.2851ms Probabilities=3.27272ms Ant=47.9395ms Update=0ms Memory=6.42337ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40314 MIN=0.00123005 MAX=0.999908 
+Run Combined Run 2start ant and deposit43: Time=62.6774ms Kernel=56.2605ms Probabilities=3.27682ms Ant=47.9395ms Update=0ms Memory=6.41687ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.40582 MIN=0.00123005 MAX=0.999973 
+Run Combined Run 2start ant and deposit44: Time=63.0669ms Kernel=56.7296ms Probabilities=3.28091ms Ant=48.3461ms Update=0ms Memory=6.33735ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.37243 MIN=0.00123005 MAX=0.999677 
+Run Combined Run 2start ant and deposit45: Time=62.8068ms Kernel=56.45ms Probabilities=3.2717ms Ant=48.089ms Update=0ms Memory=6.35678ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.39468 MIN=0.00123005 MAX=0.999423 
+Run Combined Run 2start ant and deposit46: Time=62.8939ms Kernel=56.5678ms Probabilities=3.2635ms Ant=48.2426ms Update=0ms Memory=6.32614ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.38721 MIN=0.00123005 MAX=0.999788 
+Run Combined Run 2start ant and deposit47: Time=62.903ms Kernel=56.5371ms Probabilities=3.26248ms Ant=48.2058ms Update=0ms Memory=6.36591ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.38643 MIN=0.00123005 MAX=0.999928 
+Run Combined Run 2start ant and deposit48: Time=63.0594ms Kernel=56.6876ms Probabilities=3.30242ms Ant=48.3399ms Update=0ms Memory=6.37183ms HitRate=100% Occupancy=100% memory_throughput_gbs=5.37307 MIN=0.00123005 MAX=0.999766 
+Run Combined Run 2start ant and deposit49: Time=2298.32ms Kernel=56.702ms Probabilities=3.31573ms Ant=48.3246ms Update=0ms Memory=2241.62ms HitRate=100% Occupancy=100% memory_throughput_gbs=0.147422 MIN=0.00123005 MAX=0.999853 
+Combined ACO total execution time: 5404 ms
+Program executed successfully
+End time: Sun Dec 28 04:56:12 MSK 2025
+Execution time: 9.031801876 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=42, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 9.031801876 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=84
+===================================================
+Updating parameter file with PARAMETR_SIZE=84...
+Updating parametrs.h with PARAMETR_SIZE=84 and NAME_FILE_GRAPH=Parametr_Graph/test84.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=84
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=84
+PARAM_SIZE=84 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=84, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_84_block_4096_20251228_045613.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:56:22 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 3.98159 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1025137 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 672 bytes (0.65625 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 3360 bytes (3.28125 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 84; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test84.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 672 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 84
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 420
+  Total agent nodes: 344064
+Expected matrix memory: 3360 bytes
+Expected agent memory: 1376256 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=75.5467ms Kernel=69.1067ms Probabilities=3.5748ms Ant=60.629ms Update=0ms Memory=6.44002ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.76791 MIN=0.00123027 MAX=0.995116 
+Run Combined Run 2start ant and deposit1: Time=74.3489ms Kernel=67.5564ms Probabilities=3.40482ms Ant=59.2323ms Update=0ms Memory=6.79258ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.90916 MIN=0.0012325 MAX=0.995116 
+Run Combined Run 2start ant and deposit2: Time=73.736ms Kernel=67.3536ms Probabilities=3.39151ms Ant=58.9548ms Update=0ms Memory=6.38244ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.98321 MIN=0.00123009 MAX=0.995116 
+Run Combined Run 2start ant and deposit3: Time=74.7437ms Kernel=67.7345ms Probabilities=3.47138ms Ant=59.1299ms Update=0ms Memory=7.00918ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.8621 MIN=0.00123006 MAX=0.995116 
+Run Combined Run 2start ant and deposit4: Time=74.417ms Kernel=67.9209ms Probabilities=3.48367ms Ant=59.3152ms Update=0ms Memory=6.4961ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.90101 MIN=0.00123034 MAX=0.995116 
+Run Combined Run 2start ant and deposit5: Time=74.2416ms Kernel=67.6741ms Probabilities=3.45295ms Ant=59.0469ms Update=0ms Memory=6.56755ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.92203 MIN=0.00123018 MAX=0.995116 
+Run Combined Run 2start ant and deposit6: Time=74.4501ms Kernel=67.9219ms Probabilities=3.46626ms Ant=59.306ms Update=0ms Memory=6.52816ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.89706 MIN=0.00123197 MAX=0.995116 
+Run Combined Run 2start ant and deposit7: Time=74.3208ms Kernel=67.8594ms Probabilities=3.4724ms Ant=59.304ms Update=0ms Memory=6.46135ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.91253 MIN=0.0012304 MAX=0.995116 
+Run Combined Run 2start ant and deposit8: Time=586.114ms Kernel=67.6854ms Probabilities=3.46114ms Ant=59.1913ms Update=0ms Memory=518.428ms HitRate=100% Occupancy=100% memory_throughput_gbs=1.13013 MIN=0.00123229 MAX=0.995116 
+Run Combined Run 2start ant and deposit9: Time=75.5697ms Kernel=68.5394ms Probabilities=3.66799ms Ant=59.519ms Update=0ms Memory=7.03032ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.76524 MIN=0.00123286 MAX=0.995116 
+Run Combined Run 2start ant and deposit10: Time=73.9355ms Kernel=67.5082ms Probabilities=3.47342ms Ant=58.9333ms Update=0ms Memory=6.4273ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.95898 MIN=0.00123055 MAX=0.995116 
+Run Combined Run 2start ant and deposit11: Time=73.6267ms Kernel=67.4324ms Probabilities=3.42837ms Ant=59.0295ms Update=0ms Memory=6.19424ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.99655 MIN=0.00123031 MAX=0.995116 
+Run Combined Run 2start ant and deposit12: Time=73.5976ms Kernel=67.4058ms Probabilities=3.38638ms Ant=59.0746ms Update=0ms Memory=6.19181ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00011 MIN=0.00123026 MAX=0.995116 
+Run Combined Run 2start ant and deposit13: Time=73.9ms Kernel=67.7458ms Probabilities=3.39867ms Ant=59.3941ms Update=0ms Memory=6.15422ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.96328 MIN=0.0012334 MAX=0.995116 
+Run Combined Run 2start ant and deposit14: Time=73.7083ms Kernel=67.542ms Probabilities=3.41608ms Ant=59.1494ms Update=0ms Memory=6.1663ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.98659 MIN=0.00123925 MAX=0.995116 
+Run Combined Run 2start ant and deposit15: Time=73.5379ms Kernel=67.3546ms Probabilities=3.42837ms Ant=58.9507ms Update=0ms Memory=6.18322ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00742 MIN=0.00123054 MAX=0.995116 
+Run Combined Run 2start ant and deposit16: Time=74.266ms Kernel=67.882ms Probabilities=3.48879ms Ant=59.2262ms Update=0ms Memory=6.384ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.91911 MIN=0.00123032 MAX=0.995116 
+Run Combined Run 2start ant and deposit17: Time=74.0561ms Kernel=67.6547ms Probabilities=3.47138ms Ant=58.9609ms Update=0ms Memory=6.40142ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.94439 MIN=0.00123732 MAX=0.995116 
+Run Combined Run 2start ant and deposit18: Time=74.2518ms Kernel=67.8584ms Probabilities=3.50107ms Ant=59.1626ms Update=0ms Memory=6.39342ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.92081 MIN=0.00123115 MAX=0.995116 
+Run Combined Run 2start ant and deposit19: Time=74.1627ms Kernel=67.7427ms Probabilities=3.4939ms Ant=59.0429ms Update=0ms Memory=6.41995ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.93154 MIN=0.00123055 MAX=0.995116 
+Run Combined Run 2start ant and deposit20: Time=74.0013ms Kernel=67.7202ms Probabilities=3.42632ms Ant=59.1729ms Update=0ms Memory=6.28116ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.95101 MIN=0.0012314 MAX=0.995116 
+Run Combined Run 2start ant and deposit21: Time=73.592ms Kernel=67.4038ms Probabilities=3.38331ms Ant=59.0009ms Update=0ms Memory=6.18823ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.0008 MIN=0.00123104 MAX=0.995116 
+Run Combined Run 2start ant and deposit22: Time=73.9004ms Kernel=67.3157ms Probabilities=3.36181ms Ant=58.9651ms Update=0ms Memory=6.58469ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.96323 MIN=0.00123424 MAX=0.995116 
+Run Combined Run 2start ant and deposit23: Time=73.4938ms Kernel=67.2942ms Probabilities=3.37717ms Ant=58.9261ms Update=0ms Memory=6.1996ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.01282 MIN=0.00124689 MAX=0.995116 
+Run Combined Run 2start ant and deposit24: Time=73.625ms Kernel=67.4457ms Probabilities=3.37102ms Ant=59.0951ms Update=0ms Memory=6.17928ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.99676 MIN=0.00123103 MAX=0.995116 
+Run Combined Run 2start ant and deposit25: Time=73.8102ms Kernel=67.6096ms Probabilities=3.37614ms Ant=59.2876ms Update=0ms Memory=6.20067ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.97418 MIN=0.00123117 MAX=0.995116 
+Run Combined Run 2start ant and deposit26: Time=73.1947ms Kernel=67.0023ms Probabilities=3.38331ms Ant=58.6363ms Update=0ms Memory=6.19238ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.04965 MIN=0.00123006 MAX=0.995116 
+Run Combined Run 2start ant and deposit27: Time=73.8726ms Kernel=67.6874ms Probabilities=3.39765ms Ant=59.304ms Update=0ms Memory=6.18522ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.9666 MIN=0.00123043 MAX=0.995116 
+Run Combined Run 2start ant and deposit28: Time=73.5303ms Kernel=67.3997ms Probabilities=3.40687ms Ant=59.0418ms Update=0ms Memory=6.13061ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00835 MIN=0.00123013 MAX=0.995116 
+Run Combined Run 2start ant and deposit29: Time=73.3822ms Kernel=67.2133ms Probabilities=3.36693ms Ant=58.8964ms Update=0ms Memory=6.16897ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.02652 MIN=0.00127451 MAX=0.995116 
+Run Combined Run 2start ant and deposit30: Time=73.5585ms Kernel=67.4263ms Probabilities=3.35362ms Ant=59.049ms Update=0ms Memory=6.13226ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00489 MIN=0.00123007 MAX=0.995116 
+Run Combined Run 2start ant and deposit31: Time=73.5199ms Kernel=67.3905ms Probabilities=3.36386ms Ant=59.0715ms Update=0ms Memory=6.12943ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00962 MIN=0.00123007 MAX=0.995116 
+Run Combined Run 2start ant and deposit32: Time=73.3271ms Kernel=67.1478ms Probabilities=3.37103ms Ant=58.8155ms Update=0ms Memory=6.17928ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.03331 MIN=0.00123009 MAX=0.995116 
+Run Combined Run 2start ant and deposit33: Time=73.6201ms Kernel=67.4212ms Probabilities=3.35259ms Ant=59.0592ms Update=0ms Memory=6.19892ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.99736 MIN=0.00124261 MAX=0.995116 
+Run Combined Run 2start ant and deposit34: Time=73.5773ms Kernel=67.4027ms Probabilities=3.33416ms Ant=59.0664ms Update=0ms Memory=6.17455ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00259 MIN=0.00123029 MAX=0.995116 
+Run Combined Run 2start ant and deposit35: Time=73.5278ms Kernel=67.3105ms Probabilities=3.35874ms Ant=58.924ms Update=0ms Memory=6.21728ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.00865 MIN=0.00123105 MAX=0.995116 
+Run Combined Run 2start ant and deposit36: Time=73.6736ms Kernel=67.5349ms Probabilities=3.36386ms Ant=59.1995ms Update=0ms Memory=6.13878ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.99082 MIN=0.0012303 MAX=0.995116 
+Run Combined Run 2start ant and deposit37: Time=73.4247ms Kernel=67.247ms Probabilities=3.34542ms Ant=58.9046ms Update=0ms Memory=6.17766ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.0213 MIN=0.00123162 MAX=0.995116 
+Run Combined Run 2start ant and deposit38: Time=73.4363ms Kernel=67.2952ms Probabilities=3.34235ms Ant=59.006ms Update=0ms Memory=6.14107ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.01988 MIN=0.00123092 MAX=0.995116 
+Run Combined Run 2start ant and deposit39: Time=73.6843ms Kernel=67.4744ms Probabilities=3.37819ms Ant=59.0787ms Update=0ms Memory=6.20988ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.98952 MIN=0.00124413 MAX=0.995116 
+Run Combined Run 2start ant and deposit40: Time=73.9895ms Kernel=67.6198ms Probabilities=3.46114ms Ant=58.9579ms Update=0ms Memory=6.36972ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.95244 MIN=0.00123061 MAX=0.995116 
+Run Combined Run 2start ant and deposit41: Time=74.1601ms Kernel=67.7192ms Probabilities=3.44066ms Ant=59.091ms Update=0ms Memory=6.44098ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.93184 MIN=0.00123324 MAX=0.995116 
+Run Combined Run 2start ant and deposit42: Time=74.1784ms Kernel=67.7601ms Probabilities=3.48469ms Ant=59.0705ms Update=0ms Memory=6.41827ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.92964 MIN=0.00123314 MAX=0.995116 
+Run Combined Run 2start ant and deposit43: Time=74.1109ms Kernel=67.7161ms Probabilities=3.44168ms Ant=59.0756ms Update=0ms Memory=6.39481ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.93777 MIN=0.00123009 MAX=0.995116 
+Run Combined Run 2start ant and deposit44: Time=74.0151ms Kernel=67.7499ms Probabilities=3.43247ms Ant=59.2385ms Update=0ms Memory=6.26524ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.94934 MIN=0.00123028 MAX=0.995116 
+Run Combined Run 2start ant and deposit45: Time=73.4998ms Kernel=67.3198ms Probabilities=3.36181ms Ant=58.9374ms Update=0ms Memory=6.17999ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.01208 MIN=0.00123006 MAX=0.995116 
+Run Combined Run 2start ant and deposit46: Time=73.7302ms Kernel=67.5778ms Probabilities=3.35157ms Ant=59.1985ms Update=0ms Memory=6.15243ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.98392 MIN=0.00123008 MAX=0.995116 
+Run Combined Run 2start ant and deposit47: Time=73.3531ms Kernel=67.1887ms Probabilities=3.3485ms Ant=58.8452ms Update=0ms Memory=6.16444ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.0301 MIN=0.00123185 MAX=0.995116 
+Run Combined Run 2start ant and deposit48: Time=73.3417ms Kernel=67.1928ms Probabilities=3.34645ms Ant=58.8729ms Update=0ms Memory=6.14888ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.03151 MIN=0.00123202 MAX=0.995116 
+Run Combined Run 2start ant and deposit49: Time=73.4412ms Kernel=67.3003ms Probabilities=3.34133ms Ant=58.9855ms Update=0ms Memory=6.14082ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.01928 MIN=0.0012301 MAX=0.995116 
+Combined ACO total execution time: 4500 ms
+Program executed successfully
+End time: Sun Dec 28 04:56:35 MSK 2025
+Execution time: 13.150574503 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=84, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 13.150574503 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=168
+===================================================
+Updating parameter file with PARAMETR_SIZE=168...
+Updating parametrs.h with PARAMETR_SIZE=168 and NAME_FILE_GRAPH=Parametr_Graph/test168.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=168
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=168
+PARAM_SIZE=168 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=168, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_168_block_4096_20251228_045636.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:56:44 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 7.9319 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1025137 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 1344 bytes (1.3125 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 6720 bytes (6.5625 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 168; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test168.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 1344 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 168
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 840
+  Total agent nodes: 688128
+Expected matrix memory: 6720 bytes
+Expected agent memory: 2752512 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=69.803ms Kernel=63.4635ms Probabilities=3.83592ms Ant=54.5464ms Update=0ms Memory=6.33957ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7601 MIN=0.010897 MAX=0.994274 
+Run Combined Run 2start ant and deposit1: Time=69.7883ms Kernel=63.3611ms Probabilities=3.64751ms Ant=54.5884ms Update=0ms Memory=6.42717ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7641 MIN=0.0108629 MAX=0.984087 
+Run Combined Run 2start ant and deposit2: Time=69.8624ms Kernel=63.4266ms Probabilities=3.66082ms Ant=54.5761ms Update=0ms Memory=6.43578ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7442 MIN=0.0110668 MAX=0.991374 
+Run Combined Run 2start ant and deposit3: Time=69.924ms Kernel=63.4798ms Probabilities=3.68642ms Ant=54.6181ms Update=0ms Memory=6.44423ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7277 MIN=0.0108662 MAX=0.981019 
+Run Combined Run 2start ant and deposit4: Time=69.8487ms Kernel=63.4163ms Probabilities=3.68437ms Ant=54.5628ms Update=0ms Memory=6.43234ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7479 MIN=0.010901 MAX=0.981019 
+Run Combined Run 2start ant and deposit5: Time=70.0185ms Kernel=63.5115ms Probabilities=3.68539ms Ant=54.6017ms Update=0ms Memory=6.50692ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7024 MIN=0.0109848 MAX=0.981015 
+Run Combined Run 2start ant and deposit6: Time=70.7506ms Kernel=63.9406ms Probabilities=3.82568ms Ant=54.6335ms Update=0ms Memory=6.80999ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.5089 MIN=0.0108634 MAX=0.995015 
+Run Combined Run 2start ant and deposit7: Time=70.8663ms Kernel=64.0932ms Probabilities=3.86664ms Ant=54.8577ms Update=0ms Memory=6.77318ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4786 MIN=0.010928 MAX=0.981019 
+Run Combined Run 2start ant and deposit8: Time=70.9612ms Kernel=64.1454ms Probabilities=3.90145ms Ant=54.7604ms Update=0ms Memory=6.81579ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4539 MIN=0.0108569 MAX=0.993009 
+Run Combined Run 2start ant and deposit9: Time=70.9546ms Kernel=64.1475ms Probabilities=3.89736ms Ant=54.7379ms Update=0ms Memory=6.80713ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4557 MIN=0.0108571 MAX=0.985803 
+Run Combined Run 2start ant and deposit10: Time=70.9662ms Kernel=64.1433ms Probabilities=3.92091ms Ant=54.6908ms Update=0ms Memory=6.82287ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4526 MIN=0.0108641 MAX=0.984113 
+Run Combined Run 2start ant and deposit11: Time=70.4306ms Kernel=63.8126ms Probabilities=3.78984ms Ant=54.6253ms Update=0ms Memory=6.61803ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.593 MIN=0.0108655 MAX=0.995106 
+Run Combined Run 2start ant and deposit12: Time=69.8604ms Kernel=63.3836ms Probabilities=3.68232ms Ant=54.4973ms Update=0ms Memory=6.47683ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7447 MIN=0.0108619 MAX=0.994519 
+Run Combined Run 2start ant and deposit13: Time=70.0022ms Kernel=63.5669ms Probabilities=3.71816ms Ant=54.6529ms Update=0ms Memory=6.43533ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7068 MIN=0.0109051 MAX=0.989252 
+Run Combined Run 2start ant and deposit14: Time=70.7873ms Kernel=63.5423ms Probabilities=3.70178ms Ant=54.6509ms Update=0ms Memory=7.24499ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4993 MIN=0.0109114 MAX=0.981352 
+Run Combined Run 2start ant and deposit15: Time=69.9076ms Kernel=63.3774ms Probabilities=3.68642ms Ant=54.5423ms Update=0ms Memory=6.53017ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7321 MIN=0.0108651 MAX=0.981019 
+Run Combined Run 2start ant and deposit16: Time=69.8298ms Kernel=63.3621ms Probabilities=3.69359ms Ant=54.5044ms Update=0ms Memory=6.46776ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7529 MIN=0.0108733 MAX=0.995108 
+Run Combined Run 2start ant and deposit17: Time=69.9265ms Kernel=63.4593ms Probabilities=3.70997ms Ant=54.5587ms Update=0ms Memory=6.46716ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.727 MIN=0.0108581 MAX=0.981016 
+Run Combined Run 2start ant and deposit18: Time=69.8974ms Kernel=63.4471ms Probabilities=3.73864ms Ant=54.5075ms Update=0ms Memory=6.45029ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7348 MIN=0.0108619 MAX=0.981016 
+Run Combined Run 2start ant and deposit19: Time=69.8841ms Kernel=63.4583ms Probabilities=3.67515ms Ant=54.573ms Update=0ms Memory=6.42579ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7384 MIN=0.0108599 MAX=0.983537 
+Run Combined Run 2start ant and deposit20: Time=70.0732ms Kernel=63.5781ms Probabilities=3.72943ms Ant=54.6714ms Update=0ms Memory=6.49504ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.6878 MIN=0.0108801 MAX=0.995115 
+Run Combined Run 2start ant and deposit21: Time=69.7947ms Kernel=63.3836ms Probabilities=3.71407ms Ant=54.487ms Update=0ms Memory=6.41113ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7624 MIN=0.0108827 MAX=0.995036 
+Run Combined Run 2start ant and deposit22: Time=69.7179ms Kernel=63.3068ms Probabilities=3.61371ms Ant=54.5229ms Update=0ms Memory=6.41107ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7831 MIN=0.0108585 MAX=0.981019 
+Run Combined Run 2start ant and deposit23: Time=69.8063ms Kernel=63.3661ms Probabilities=3.6475ms Ant=54.5454ms Update=0ms Memory=6.44018ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7592 MIN=0.0108772 MAX=0.987944 
+Run Combined Run 2start ant and deposit24: Time=69.7289ms Kernel=63.2699ms Probabilities=3.65672ms Ant=54.4604ms Update=0ms Memory=6.45895ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7801 MIN=0.0110004 MAX=0.990107 
+Run Combined Run 2start ant and deposit25: Time=69.8677ms Kernel=63.4266ms Probabilities=3.63829ms Ant=54.5833ms Update=0ms Memory=6.44107ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7428 MIN=0.01104 MAX=0.992831 
+Run Combined Run 2start ant and deposit26: Time=69.9381ms Kernel=63.5187ms Probabilities=3.6813ms Ant=54.6181ms Update=0ms Memory=6.41942ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7239 MIN=0.0108824 MAX=0.988223 
+Run Combined Run 2start ant and deposit27: Time=69.8269ms Kernel=63.4061ms Probabilities=3.66287ms Ant=54.571ms Update=0ms Memory=6.42079ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7537 MIN=0.0108635 MAX=0.981019 
+Run Combined Run 2start ant and deposit28: Time=69.8514ms Kernel=63.3693ms Probabilities=3.65979ms Ant=54.5004ms Update=0ms Memory=6.4822ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7471 MIN=0.0108725 MAX=0.981557 
+Run Combined Run 2start ant and deposit29: Time=69.8257ms Kernel=63.359ms Probabilities=3.68027ms Ant=54.5495ms Update=0ms Memory=6.46664ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7541 MIN=0.0108662 MAX=0.981019 
+Run Combined Run 2start ant and deposit30: Time=70.4477ms Kernel=63.743ms Probabilities=3.75502ms Ant=54.6376ms Update=0ms Memory=6.70472ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.5885 MIN=0.0109184 MAX=0.994414 
+Run Combined Run 2start ant and deposit31: Time=70.8019ms Kernel=64.0471ms Probabilities=3.80827ms Ant=54.871ms Update=0ms Memory=6.75481ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4955 MIN=0.0108582 MAX=0.99244 
+Run Combined Run 2start ant and deposit32: Time=70.8384ms Kernel=64.0082ms Probabilities=3.83592ms Ant=54.6918ms Update=0ms Memory=6.83028ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4859 MIN=0.0108585 MAX=0.993489 
+Run Combined Run 2start ant and deposit33: Time=70.8342ms Kernel=64.0103ms Probabilities=3.83899ms Ant=54.6959ms Update=0ms Memory=6.82392ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.487 MIN=0.0109026 MAX=0.994681 
+Run Combined Run 2start ant and deposit34: Time=70.8609ms Kernel=64.0625ms Probabilities=3.83694ms Ant=54.6806ms Update=0ms Memory=6.79843ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.4801 MIN=0.0108592 MAX=0.992958 
+Run Combined Run 2start ant and deposit35: Time=70.6459ms Kernel=63.8976ms Probabilities=3.83592ms Ant=54.5915ms Update=0ms Memory=6.74835ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.5363 MIN=0.01086 MAX=0.981019 
+Run Combined Run 2start ant and deposit36: Time=69.8044ms Kernel=63.3856ms Probabilities=3.66491ms Ant=54.5484ms Update=0ms Memory=6.41875ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7598 MIN=0.0108607 MAX=0.992462 
+Run Combined Run 2start ant and deposit37: Time=69.8214ms Kernel=63.401ms Probabilities=3.63829ms Ant=54.6048ms Update=0ms Memory=6.42044ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7552 MIN=0.0109028 MAX=0.981019 
+Run Combined Run 2start ant and deposit38: Time=69.8013ms Kernel=63.3744ms Probabilities=3.63112ms Ant=54.5403ms Update=0ms Memory=6.42695ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7606 MIN=0.0108779 MAX=0.989845 
+Run Combined Run 2start ant and deposit39: Time=69.752ms Kernel=63.3539ms Probabilities=3.64136ms Ant=54.571ms Update=0ms Memory=6.39808ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7739 MIN=0.0108584 MAX=0.981019 
+Run Combined Run 2start ant and deposit40: Time=69.7295ms Kernel=63.3569ms Probabilities=3.6301ms Ant=54.5813ms Update=0ms Memory=6.3726ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7799 MIN=0.0108569 MAX=0.993598 
+Run Combined Run 2start ant and deposit41: Time=69.8299ms Kernel=63.3753ms Probabilities=3.64546ms Ant=54.5516ms Update=0ms Memory=6.45456ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7529 MIN=0.0108653 MAX=0.981017 
+Run Combined Run 2start ant and deposit42: Time=69.8559ms Kernel=63.3836ms Probabilities=3.63931ms Ant=54.5689ms Update=0ms Memory=6.47226ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7459 MIN=0.0110856 MAX=0.981017 
+Run Combined Run 2start ant and deposit43: Time=69.7849ms Kernel=63.3488ms Probabilities=3.62191ms Ant=54.5249ms Update=0ms Memory=6.43609ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.765 MIN=0.0108583 MAX=0.99061 
+Run Combined Run 2start ant and deposit44: Time=69.8356ms Kernel=63.3764ms Probabilities=3.62191ms Ant=54.527ms Update=0ms Memory=6.45926ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7514 MIN=0.0108627 MAX=0.987991 
+Run Combined Run 2start ant and deposit45: Time=69.7179ms Kernel=63.2934ms Probabilities=3.64546ms Ant=54.4656ms Update=0ms Memory=6.42446ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.783 MIN=0.0108985 MAX=0.994363 
+Run Combined Run 2start ant and deposit46: Time=70.2386ms Kernel=63.3989ms Probabilities=3.67311ms Ant=54.5843ms Update=0ms Memory=6.83961ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.6438 MIN=0.0110624 MAX=0.993708 
+Run Combined Run 2start ant and deposit47: Time=69.8702ms Kernel=63.4287ms Probabilities=3.62805ms Ant=54.6724ms Update=0ms Memory=6.44149ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.7421 MIN=0.0108639 MAX=0.981019 
+Run Combined Run 2start ant and deposit48: Time=69.7736ms Kernel=63.3508ms Probabilities=3.6301ms Ant=54.5587ms Update=0ms Memory=6.42283ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.768 MIN=0.0108573 MAX=0.995055 
+Run Combined Run 2start ant and deposit49: Time=69.759ms Kernel=63.316ms Probabilities=3.61986ms Ant=54.5044ms Update=0ms Memory=6.44305ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.772 MIN=0.0108632 MAX=0.994595 
+Combined ACO total execution time: 3525 ms
+Program executed successfully
+End time: Sun Dec 28 04:56:58 MSK 2025
+Execution time: 14.113956682 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=168, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 14.113956682 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=336
+===================================================
+Updating parameter file with PARAMETR_SIZE=336...
+Updating parametrs.h with PARAMETR_SIZE=336 and NAME_FILE_GRAPH=Parametr_Graph/test336.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=336
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=336
+PARAM_SIZE=336 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=336, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_336_block_4096_20251228_045659.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:57:08 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 15.8325 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1025137 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 2688 bytes (2.625 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 13440 bytes (13.125 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 336; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test336.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 2688 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 336
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 1680
+  Total agent nodes: 1376256
+Expected matrix memory: 13440 bytes
+Expected agent memory: 5505024 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=102.107ms Kernel=95.11ms Probabilities=4.4155ms Ant=85.3063ms Update=0ms Memory=6.99702ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.5004 MIN=0.0539633 MAX=0.954357 
+Run Combined Run 2start ant and deposit1: Time=101.661ms Kernel=94.9513ms Probabilities=4.16564ms Ant=85.4138ms Update=0ms Memory=6.70993ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.6122 MIN=0.0579758 MAX=0.931835 
+Run Combined Run 2start ant and deposit2: Time=101.708ms Kernel=94.9975ms Probabilities=4.16257ms Ant=85.4057ms Update=0ms Memory=6.71068ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.6004 MIN=0.0543168 MAX=0.957744 
+Run Combined Run 2start ant and deposit3: Time=100.629ms Kernel=94.1987ms Probabilities=3.98747ms Ant=85.0657ms Update=0ms Memory=6.4302ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.875 MIN=0.0540111 MAX=0.931818 
+Run Combined Run 2start ant and deposit4: Time=100.597ms Kernel=94.1599ms Probabilities=4.02433ms Ant=85.0074ms Update=0ms Memory=6.43755ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8831 MIN=0.0539108 MAX=0.931836 
+Run Combined Run 2start ant and deposit5: Time=100.779ms Kernel=94.2705ms Probabilities=3.99771ms Ant=85.1364ms Update=0ms Memory=6.50829ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8365 MIN=0.0539224 MAX=0.954416 
+Run Combined Run 2start ant and deposit6: Time=100.493ms Kernel=94.0748ms Probabilities=3.96904ms Ant=85.0186ms Update=0ms Memory=6.41868ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9098 MIN=0.0539393 MAX=0.958495 
+Run Combined Run 2start ant and deposit7: Time=100.678ms Kernel=94.2582ms Probabilities=4.00795ms Ant=85.1947ms Update=0ms Memory=6.4203ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8622 MIN=0.0461656 MAX=0.931836 
+Run Combined Run 2start ant and deposit8: Time=100.581ms Kernel=94.1587ms Probabilities=4.02433ms Ant=84.9909ms Update=0ms Memory=6.42239ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8873 MIN=0.0545106 MAX=0.931831 
+Run Combined Run 2start ant and deposit9: Time=100.664ms Kernel=94.2868ms Probabilities=4.01921ms Ant=85.1281ms Update=0ms Memory=6.37757ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8658 MIN=0.0540922 MAX=0.950838 
+Run Combined Run 2start ant and deposit10: Time=100.601ms Kernel=94.2325ms Probabilities=4.03252ms Ant=85.0698ms Update=0ms Memory=6.36887ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8821 MIN=0.0539095 MAX=0.9592 
+Run Combined Run 2start ant and deposit11: Time=100.819ms Kernel=94.4465ms Probabilities=4.01102ms Ant=85.2807ms Update=0ms Memory=6.37232ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8262 MIN=0.0544447 MAX=0.933281 
+Run Combined Run 2start ant and deposit12: Time=100.625ms Kernel=94.1957ms Probabilities=4.0274ms Ant=85.0442ms Update=0ms Memory=6.42886ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8761 MIN=0.0546115 MAX=0.933126 
+Run Combined Run 2start ant and deposit13: Time=100.644ms Kernel=94.2018ms Probabilities=4.03047ms Ant=85.0575ms Update=0ms Memory=6.44206ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8711 MIN=0.0539422 MAX=0.945894 
+Run Combined Run 2start ant and deposit14: Time=100.604ms Kernel=94.166ms Probabilities=3.98849ms Ant=85.1282ms Update=0ms Memory=6.43813ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8813 MIN=0.053916 MAX=0.937315 
+Run Combined Run 2start ant and deposit15: Time=100.738ms Kernel=94.2765ms Probabilities=4.00385ms Ant=85.2387ms Update=0ms Memory=6.46131ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.847 MIN=0.0539125 MAX=0.95875 
+Run Combined Run 2start ant and deposit16: Time=101.577ms Kernel=94.85ms Probabilities=4.20353ms Ant=85.1804ms Update=0ms Memory=6.72753ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.6333 MIN=0.0540595 MAX=0.931836 
+Run Combined Run 2start ant and deposit17: Time=101.814ms Kernel=95.0414ms Probabilities=4.20455ms Ant=85.3401ms Update=0ms Memory=6.77221ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.5739 MIN=0.0539685 MAX=0.958694 
+Run Combined Run 2start ant and deposit18: Time=101.453ms Kernel=94.7394ms Probabilities=4.20148ms Ant=85.0913ms Update=0ms Memory=6.71397ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.6647 MIN=0.0539121 MAX=0.957084 
+Run Combined Run 2start ant and deposit19: Time=101.56ms Kernel=94.8613ms Probabilities=4.18407ms Ant=85.2182ms Update=0ms Memory=6.69894ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.6377 MIN=0.0539245 MAX=0.931831 
+Run Combined Run 2start ant and deposit20: Time=100.521ms Kernel=94.1168ms Probabilities=3.97211ms Ant=85.0186ms Update=0ms Memory=6.40415ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9027 MIN=0.0539149 MAX=0.959019 
+Run Combined Run 2start ant and deposit21: Time=100.497ms Kernel=94.1169ms Probabilities=3.99873ms Ant=84.9726ms Update=0ms Memory=6.37971ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.909 MIN=0.0542258 MAX=0.954145 
+Run Combined Run 2start ant and deposit22: Time=100.313ms Kernel=93.9233ms Probabilities=3.94651ms Ant=84.8127ms Update=0ms Memory=6.39005ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9564 MIN=0.0553478 MAX=0.931836 
+Run Combined Run 2start ant and deposit23: Time=100.654ms Kernel=94.2223ms Probabilities=4.01614ms Ant=85.1445ms Update=0ms Memory=6.4312ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8686 MIN=0.0539449 MAX=0.956655 
+Run Combined Run 2start ant and deposit24: Time=100.453ms Kernel=94.0308ms Probabilities=4.0018ms Ant=84.9643ms Update=0ms Memory=6.42177ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9204 MIN=0.0544377 MAX=0.931836 
+Run Combined Run 2start ant and deposit25: Time=100.724ms Kernel=94.3154ms Probabilities=4.00692ms Ant=85.2449ms Update=0ms Memory=6.40877ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8505 MIN=0.0544918 MAX=0.958898 
+Run Combined Run 2start ant and deposit26: Time=100.978ms Kernel=94.1741ms Probabilities=4.03457ms Ant=85.039ms Update=0ms Memory=6.8043ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.7854 MIN=0.0539287 MAX=0.933135 
+Run Combined Run 2start ant and deposit27: Time=100.611ms Kernel=94.2151ms Probabilities=4.0274ms Ant=85.078ms Update=0ms Memory=6.39538ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8797 MIN=0.0539323 MAX=0.958817 
+Run Combined Run 2start ant and deposit28: Time=100.581ms Kernel=94.2018ms Probabilities=4.03457ms Ant=85.0688ms Update=0ms Memory=6.37943ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8872 MIN=0.0548709 MAX=0.959026 
+Run Combined Run 2start ant and deposit29: Time=100.856ms Kernel=94.4312ms Probabilities=4.01102ms Ant=85.2725ms Update=0ms Memory=6.42451ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8168 MIN=0.0541016 MAX=0.95858 
+Run Combined Run 2start ant and deposit30: Time=100.453ms Kernel=93.9939ms Probabilities=3.97211ms Ant=84.8363ms Update=0ms Memory=6.4593ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9202 MIN=0.0539823 MAX=0.931835 
+Run Combined Run 2start ant and deposit31: Time=100.537ms Kernel=94.1537ms Probabilities=3.95163ms Ant=85.1231ms Update=0ms Memory=6.38294ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8987 MIN=0.0540313 MAX=0.931836 
+Run Combined Run 2start ant and deposit32: Time=100.628ms Kernel=94.1486ms Probabilities=3.99771ms Ant=84.9612ms Update=0ms Memory=6.47945ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8752 MIN=0.0541458 MAX=0.952696 
+Run Combined Run 2start ant and deposit33: Time=2257.33ms Kernel=95.1439ms Probabilities=4.29057ms Ant=85.2982ms Update=0ms Memory=2162.19ms HitRate=100% Occupancy=100% memory_throughput_gbs=1.15347 MIN=0.0544093 MAX=0.953024 
+Run Combined Run 2start ant and deposit34: Time=103.126ms Kernel=95.447ms Probabilities=4.27726ms Ant=85.5173ms Update=0ms Memory=7.67909ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2484 MIN=0.053912 MAX=0.958348 
+Run Combined Run 2start ant and deposit35: Time=101.618ms Kernel=94.3964ms Probabilities=3.99668ms Ant=85.205ms Update=0ms Memory=7.22194ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.623 MIN=0.0540208 MAX=0.947593 
+Run Combined Run 2start ant and deposit36: Time=100.755ms Kernel=94.1465ms Probabilities=3.96187ms Ant=85.0585ms Update=0ms Memory=6.60808ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8427 MIN=0.0540064 MAX=0.955785 
+Run Combined Run 2start ant and deposit37: Time=100.725ms Kernel=94.1772ms Probabilities=3.95982ms Ant=85.0841ms Update=0ms Memory=6.54749ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8504 MIN=0.055523 MAX=0.955009 
+Run Combined Run 2start ant and deposit38: Time=100.927ms Kernel=94.0062ms Probabilities=3.95163ms Ant=84.9049ms Update=0ms Memory=6.92058ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.7986 MIN=0.0539188 MAX=0.958974 
+Run Combined Run 2start ant and deposit39: Time=277.217ms Kernel=94.1476ms Probabilities=3.95777ms Ant=85.0564ms Update=0ms Memory=183.07ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.39253 MIN=0.0539842 MAX=0.940846 
+Run Combined Run 2start ant and deposit40: Time=222.815ms Kernel=94.1649ms Probabilities=3.95777ms Ant=85.0483ms Update=0ms Memory=128.651ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.6858 MIN=0.0539161 MAX=0.957401 
+Run Combined Run 2start ant and deposit41: Time=102.252ms Kernel=94.9934ms Probabilities=4.15028ms Ant=85.3565ms Update=0ms Memory=7.25846ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.4643 MIN=0.0486629 MAX=0.959107 
+Run Combined Run 2start ant and deposit42: Time=101.421ms Kernel=94.6933ms Probabilities=4.12161ms Ant=85.1251ms Update=0ms Memory=6.72796ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.6728 MIN=0.0540974 MAX=0.957327 
+Run Combined Run 2start ant and deposit43: Time=101.181ms Kernel=94.638ms Probabilities=4.07143ms Ant=85.2316ms Update=0ms Memory=6.5434ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.7337 MIN=0.0539556 MAX=0.958107 
+Run Combined Run 2start ant and deposit44: Time=100.436ms Kernel=94.0277ms Probabilities=3.92808ms Ant=84.9674ms Update=0ms Memory=6.40777ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9248 MIN=0.0313207 MAX=0.935058 
+Run Combined Run 2start ant and deposit45: Time=100.629ms Kernel=94.211ms Probabilities=3.93115ms Ant=85.1445ms Update=0ms Memory=6.41782ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.875 MIN=0.0541513 MAX=0.942819 
+Run Combined Run 2start ant and deposit46: Time=100.596ms Kernel=94.1742ms Probabilities=3.9803ms Ant=85.162ms Update=0ms Memory=6.42207ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8834 MIN=0.0539097 MAX=0.935066 
+Run Combined Run 2start ant and deposit47: Time=100.437ms Kernel=94.0339ms Probabilities=3.92808ms Ant=85.1108ms Update=0ms Memory=6.40304ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.9244 MIN=0.0539291 MAX=0.95856 
+Run Combined Run 2start ant and deposit48: Time=100.715ms Kernel=94.2786ms Probabilities=3.96699ms Ant=85.2203ms Update=0ms Memory=6.43668ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8528 MIN=0.0294387 MAX=0.956357 
+Run Combined Run 2start ant and deposit49: Time=100.753ms Kernel=94.3247ms Probabilities=3.98542ms Ant=85.2572ms Update=0ms Memory=6.42796ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.8432 MIN=0.053989 MAX=0.959208 
+Combined ACO total execution time: 7802 ms
+Program executed successfully
+End time: Sun Dec 28 04:57:24 MSK 2025
+Execution time: 16.632138852 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=336, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 16.632138852 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=672
+===================================================
+Updating parameter file with PARAMETR_SIZE=672...
+Updating parametrs.h with PARAMETR_SIZE=672 and NAME_FILE_GRAPH=Parametr_Graph/test672.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=672
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=672
+PARAM_SIZE=672 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=672, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_672_block_4096_20251228_045725.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:57:34 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 31.6338 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1025137 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 5376 bytes (5.25 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 26880 bytes (26.25 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 672; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test672.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 5376 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 672
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 3360
+  Total agent nodes: 2752512
+Expected matrix memory: 26880 bytes
+Expected agent memory: 11010048 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=167.982ms Kernel=161.891ms Probabilities=4.24756ms Ant=152.808ms Update=0ms Memory=6.09039ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9098 MIN=0.147275 MAX=0.836973 
+Run Combined Run 2start ant and deposit1: Time=168.405ms Kernel=161.865ms Probabilities=4.10522ms Ant=152.91ms Update=0ms Memory=6.5406ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.8321 MIN=0.147127 MAX=0.856136 
+Run Combined Run 2start ant and deposit2: Time=167.385ms Kernel=161.415ms Probabilities=3.98952ms Ant=152.717ms Update=0ms Memory=5.96989ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.02 MIN=0.147142 MAX=0.866493 
+Run Combined Run 2start ant and deposit3: Time=167.39ms Kernel=161.403ms Probabilities=3.96289ms Ant=152.693ms Update=0ms Memory=5.98755ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.019 MIN=0.150923 MAX=0.837046 
+Run Combined Run 2start ant and deposit4: Time=167.294ms Kernel=161.315ms Probabilities=3.98542ms Ant=152.608ms Update=0ms Memory=5.97957ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0368 MIN=0.148494 MAX=0.866079 
+Run Combined Run 2start ant and deposit5: Time=167.357ms Kernel=161.373ms Probabilities=4.00078ms Ant=152.638ms Update=0ms Memory=5.98354ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0252 MIN=0.116317 MAX=0.83694 
+Run Combined Run 2start ant and deposit6: Time=167.276ms Kernel=161.254ms Probabilities=3.99156ms Ant=152.47ms Update=0ms Memory=6.02155ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0402 MIN=0.149729 MAX=0.837001 
+Run Combined Run 2start ant and deposit7: Time=167.321ms Kernel=161.343ms Probabilities=3.96187ms Ant=152.682ms Update=0ms Memory=5.97801ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0319 MIN=0.148636 MAX=0.837048 
+Run Combined Run 2start ant and deposit8: Time=167.294ms Kernel=161.318ms Probabilities=3.99259ms Ant=152.577ms Update=0ms Memory=5.9765ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0368 MIN=0.147145 MAX=0.837049 
+Run Combined Run 2start ant and deposit9: Time=167.338ms Kernel=161.392ms Probabilities=3.94344ms Ant=152.713ms Update=0ms Memory=5.9469ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0286 MIN=0.147104 MAX=0.868736 
+Run Combined Run 2start ant and deposit10: Time=167.701ms Kernel=161.561ms Probabilities=4.06836ms Ant=152.616ms Update=0ms Memory=6.14003ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9614 MIN=0.14783 MAX=0.837053 
+Run Combined Run 2start ant and deposit11: Time=168.205ms Kernel=162.002ms Probabilities=4.05608ms Ant=152.998ms Update=0ms Memory=6.20345ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.8687 MIN=0.147208 MAX=0.837052 
+Run Combined Run 2start ant and deposit12: Time=167.77ms Kernel=161.684ms Probabilities=4.05607ms Ant=152.756ms Update=0ms Memory=6.08551ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9488 MIN=0.147155 MAX=0.856144 
+Run Combined Run 2start ant and deposit13: Time=167.484ms Kernel=161.505ms Probabilities=3.97313ms Ant=152.8ms Update=0ms Memory=5.97881ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0016 MIN=0.147215 MAX=0.837004 
+Run Combined Run 2start ant and deposit14: Time=167.137ms Kernel=161.149ms Probabilities=3.94958ms Ant=152.425ms Update=0ms Memory=5.98813ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.066 MIN=0.147435 MAX=0.837053 
+Run Combined Run 2start ant and deposit15: Time=167.36ms Kernel=161.357ms Probabilities=3.96187ms Ant=152.693ms Update=0ms Memory=6.0029ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0247 MIN=0.144225 MAX=0.8615 
+Run Combined Run 2start ant and deposit16: Time=167.204ms Kernel=161.222ms Probabilities=3.95572ms Ant=152.537ms Update=0ms Memory=5.98193ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0536 MIN=0.147164 MAX=0.868838 
+Run Combined Run 2start ant and deposit17: Time=167.495ms Kernel=161.48ms Probabilities=3.95163ms Ant=152.74ms Update=0ms Memory=6.015ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9997 MIN=0.147833 MAX=0.86865 
+Run Combined Run 2start ant and deposit18: Time=167.136ms Kernel=161.165ms Probabilities=3.9803ms Ant=152.457ms Update=0ms Memory=5.97089ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0662 MIN=0.150817 MAX=0.867711 
+Run Combined Run 2start ant and deposit19: Time=167.37ms Kernel=161.432ms Probabilities=3.96494ms Ant=152.75ms Update=0ms Memory=5.93724ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0228 MIN=0.147149 MAX=0.837052 
+Run Combined Run 2start ant and deposit20: Time=167.311ms Kernel=161.206ms Probabilities=4.0274ms Ant=152.369ms Update=0ms Memory=6.10497ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0337 MIN=0.147163 MAX=0.868776 
+Run Combined Run 2start ant and deposit21: Time=168.307ms Kernel=162.103ms Probabilities=4.05198ms Ant=153.125ms Update=0ms Memory=6.20372ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.8501 MIN=0.147178 MAX=0.83699 
+Run Combined Run 2start ant and deposit22: Time=167.756ms Kernel=161.6ms Probabilities=4.05095ms Ant=152.63ms Update=0ms Memory=6.15607ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9515 MIN=0.147668 MAX=0.856775 
+Run Combined Run 2start ant and deposit23: Time=167.518ms Kernel=161.498ms Probabilities=3.94651ms Ant=152.837ms Update=0ms Memory=6.02005ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9953 MIN=0.143991 MAX=0.837043 
+Run Combined Run 2start ant and deposit24: Time=167.223ms Kernel=161.244ms Probabilities=3.95265ms Ant=152.551ms Update=0ms Memory=5.97914ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.05 MIN=0.117318 MAX=0.83704 
+Run Combined Run 2start ant and deposit25: Time=167.941ms Kernel=161.499ms Probabilities=3.95265ms Ant=152.798ms Update=0ms Memory=6.44154ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9173 MIN=0.147128 MAX=0.837039 
+Run Combined Run 2start ant and deposit26: Time=167.275ms Kernel=161.247ms Probabilities=3.9803ms Ant=152.49ms Update=0ms Memory=6.02806ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0403 MIN=0.147198 MAX=0.86759 
+Run Combined Run 2start ant and deposit27: Time=167.433ms Kernel=161.443ms Probabilities=3.97723ms Ant=152.72ms Update=0ms Memory=5.98975ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0112 MIN=0.148364 MAX=0.854922 
+Run Combined Run 2start ant and deposit28: Time=167.366ms Kernel=161.395ms Probabilities=3.95163ms Ant=152.682ms Update=0ms Memory=5.97101ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0236 MIN=0.151801 MAX=0.837053 
+Run Combined Run 2start ant and deposit29: Time=167.51ms Kernel=161.498ms Probabilities=3.95982ms Ant=152.809ms Update=0ms Memory=6.01169ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9969 MIN=0.140534 MAX=0.867434 
+Run Combined Run 2start ant and deposit30: Time=1727.49ms Kernel=161.233ms Probabilities=3.9844ms Ant=152.519ms Update=0ms Memory=1566.26ms HitRate=100% Occupancy=100% memory_throughput_gbs=3.00567 MIN=0.147853 MAX=0.837045 
+Run Combined Run 2start ant and deposit31: Time=170.732ms Kernel=163.22ms Probabilities=4.32334ms Ant=153.212ms Update=0ms Memory=7.51167ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.4119 MIN=0.147106 MAX=0.840596 
+Run Combined Run 2start ant and deposit32: Time=167.889ms Kernel=161.634ms Probabilities=4.00385ms Ant=152.793ms Update=0ms Memory=6.25452ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9269 MIN=0.147106 MAX=0.837016 
+Run Combined Run 2start ant and deposit33: Time=167.563ms Kernel=161.442ms Probabilities=3.97108ms Ant=152.709ms Update=0ms Memory=6.12131ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.987 MIN=0.147121 MAX=0.837051 
+Run Combined Run 2start ant and deposit34: Time=167.379ms Kernel=161.302ms Probabilities=3.96494ms Ant=152.596ms Update=0ms Memory=6.0779ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.021 MIN=0.151358 MAX=0.837051 
+Run Combined Run 2start ant and deposit35: Time=309.605ms Kernel=161.503ms Probabilities=3.96596ms Ant=152.75ms Update=0ms Memory=148.101ms HitRate=100% Occupancy=100% memory_throughput_gbs=16.7707 MIN=0.147168 MAX=0.867805 
+Run Combined Run 2start ant and deposit36: Time=247.778ms Kernel=161.689ms Probabilities=4.04481ms Ant=152.68ms Update=0ms Memory=86.0896ms HitRate=100% Occupancy=100% memory_throughput_gbs=20.9554 MIN=0.148111 MAX=0.864506 
+Run Combined Run 2start ant and deposit37: Time=168.087ms Kernel=161.876ms Probabilities=4.02536ms Ant=152.912ms Update=0ms Memory=6.2112ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.8904 MIN=0.147481 MAX=0.837053 
+Run Combined Run 2start ant and deposit38: Time=167.31ms Kernel=161.327ms Probabilities=3.95368ms Ant=152.604ms Update=0ms Memory=5.98289ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0339 MIN=0.148087 MAX=0.837053 
+Run Combined Run 2start ant and deposit39: Time=167.453ms Kernel=161.485ms Probabilities=3.95163ms Ant=152.8ms Update=0ms Memory=5.96791ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0074 MIN=0.148083 MAX=0.83705 
+Run Combined Run 2start ant and deposit40: Time=167.31ms Kernel=161.371ms Probabilities=3.97825ms Ant=152.639ms Update=0ms Memory=5.93867ms HitRate=100% Occupancy=100% memory_throughput_gbs=31.0339 MIN=0.115081 MAX=0.867673 
+Run Combined Run 2start ant and deposit41: Time=167.592ms Kernel=161.621ms Probabilities=3.97928ms Ant=152.882ms Update=0ms Memory=5.97139ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.9816 MIN=0.147107 MAX=0.86789 
+Run Combined Run 2start ant and deposit42: Time=172.925ms Kernel=164.628ms Probabilities=5.35758ms Ant=153.428ms Update=0ms Memory=8.29695ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.0261 MIN=0.147581 MAX=0.864388 
+Run Combined Run 2start ant and deposit43: Time=171.517ms Kernel=163.834ms Probabilities=4.4452ms Ant=153.411ms Update=0ms Memory=7.683ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2727 MIN=0.147109 MAX=0.842147 
+Run Combined Run 2start ant and deposit44: Time=168.679ms Kernel=162.095ms Probabilities=4.01819ms Ant=152.812ms Update=0ms Memory=6.5843ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.7819 MIN=0.147115 MAX=0.837052 
+Run Combined Run 2start ant and deposit45: Time=169.099ms Kernel=162.492ms Probabilities=4.04891ms Ant=153.138ms Update=0ms Memory=6.60611ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.7056 MIN=0.147103 MAX=0.85348 
+Run Combined Run 2start ant and deposit46: Time=169.595ms Kernel=162.769ms Probabilities=4.21377ms Ant=153.12ms Update=0ms Memory=6.82565ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.6158 MIN=0.147121 MAX=0.837053 
+Run Combined Run 2start ant and deposit47: Time=169.767ms Kernel=162.982ms Probabilities=4.19022ms Ant=153.309ms Update=0ms Memory=6.78471ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.5848 MIN=0.130937 MAX=0.868614 
+Run Combined Run 2start ant and deposit48: Time=168.764ms Kernel=162.254ms Probabilities=4.0274ms Ant=152.99ms Update=0ms Memory=6.51007ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.7665 MIN=0.147133 MAX=0.837051 
+Run Combined Run 2start ant and deposit49: Time=168.75ms Kernel=162.292ms Probabilities=3.97928ms Ant=153.166ms Update=0ms Memory=6.45857ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.769 MIN=0.147108 MAX=0.864402 
+Combined ACO total execution time: 11163 ms
+Program executed successfully
+End time: Sun Dec 28 04:57:56 MSK 2025
+Execution time: 21.944478278 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=672, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 21.944478278 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=1344
+===================================================
+Updating parameter file with PARAMETR_SIZE=1344...
+Updating parametrs.h with PARAMETR_SIZE=1344 and NAME_FILE_GRAPH=Parametr_Graph/test1344.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=1344
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=1344
+PARAM_SIZE=1344 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=1344, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_1344_block_4096_20251228_045757.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:58:05 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 63.2363 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1025137 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 10752 bytes (10.5 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 53760 bytes (52.5 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 1344; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test1344.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 10752 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 1344
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 6720
+  Total agent nodes: 5505024
+Expected matrix memory: 53760 bytes
+Expected agent memory: 22020096 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=342.737ms Kernel=336.315ms Probabilities=4.46056ms Ant=326.776ms Update=0ms Memory=6.42105ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2544 MIN=0.261637 MAX=0.7276 
+Run Combined Run 2start ant and deposit1: Time=342.703ms Kernel=336.377ms Probabilities=3.99771ms Ant=327.273ms Update=0ms Memory=6.32611ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2574 MIN=0.262701 MAX=0.727792 
+Run Combined Run 2start ant and deposit2: Time=343.386ms Kernel=336.588ms Probabilities=4.17179ms Ant=326.978ms Update=0ms Memory=6.79828ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1972 MIN=0.283078 MAX=0.727637 
+Run Combined Run 2start ant and deposit3: Time=343.882ms Kernel=337.228ms Probabilities=4.1339ms Ant=327.846ms Update=0ms Memory=6.65472ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1536 MIN=0.260694 MAX=0.727882 
+Run Combined Run 2start ant and deposit4: Time=342.303ms Kernel=335.777ms Probabilities=3.97108ms Ant=326.693ms Update=0ms Memory=6.52603ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2927 MIN=0.278299 MAX=0.727882 
+Run Combined Run 2start ant and deposit5: Time=343.422ms Kernel=337.002ms Probabilities=4.08065ms Ant=327.792ms Update=0ms Memory=6.41995ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1941 MIN=0.283089 MAX=0.727743 
+Run Combined Run 2start ant and deposit6: Time=342.235ms Kernel=335.807ms Probabilities=3.99771ms Ant=326.699ms Update=0ms Memory=6.42773ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2988 MIN=0.281737 MAX=0.727853 
+Run Combined Run 2start ant and deposit7: Time=344.171ms Kernel=337.49ms Probabilities=4.23527ms Ant=327.934ms Update=0ms Memory=6.68091ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1284 MIN=0.260885 MAX=0.727807 
+Run Combined Run 2start ant and deposit8: Time=2354.41ms Kernel=336.502ms Probabilities=4.20763ms Ant=327.009ms Update=0ms Memory=2017.91ms HitRate=100% Occupancy=100% memory_throughput_gbs=4.40421 MIN=0.274482 MAX=0.727886 
+Run Combined Run 2start ant and deposit9: Time=344.412ms Kernel=337.587ms Probabilities=4.22299ms Ant=328.034ms Update=0ms Memory=6.82477ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1073 MIN=0.262974 MAX=0.7278 
+Run Combined Run 2start ant and deposit10: Time=342.514ms Kernel=335.952ms Probabilities=4.03355ms Ant=326.768ms Update=0ms Memory=6.56226ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2741 MIN=0.263399 MAX=0.727778 
+Run Combined Run 2start ant and deposit11: Time=841.457ms Kernel=337.541ms Probabilities=4.20251ms Ant=327.989ms Update=0ms Memory=503.916ms HitRate=100% Occupancy=100% memory_throughput_gbs=12.323 MIN=0.264952 MAX=0.727875 
+Run Combined Run 2start ant and deposit12: Time=342.518ms Kernel=335.883ms Probabilities=4.02843ms Ant=326.968ms Update=0ms Memory=6.63516ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2737 MIN=0.262601 MAX=0.727655 
+Run Combined Run 2start ant and deposit13: Time=348.302ms Kernel=340.121ms Probabilities=5.3371ms Ant=328.724ms Update=0ms Memory=8.18079ms HitRate=100% Occupancy=100% memory_throughput_gbs=29.771 MIN=0.263829 MAX=0.727782 
+Run Combined Run 2start ant and deposit14: Time=342.817ms Kernel=336.143ms Probabilities=4.12673ms Ant=326.762ms Update=0ms Memory=6.67447ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2473 MIN=0.283078 MAX=0.727859 
+Run Combined Run 2start ant and deposit15: Time=344.717ms Kernel=337.992ms Probabilities=4.35815ms Ant=328.266ms Update=0ms Memory=6.72488ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.0806 MIN=0.263903 MAX=0.727883 
+Run Combined Run 2start ant and deposit16: Time=342.63ms Kernel=336.055ms Probabilities=4.05403ms Ant=326.852ms Update=0ms Memory=6.57504ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2638 MIN=0.267573 MAX=0.727839 
+Run Combined Run 2start ant and deposit17: Time=343.33ms Kernel=336.879ms Probabilities=4.07655ms Ant=327.659ms Update=0ms Memory=6.45145ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2021 MIN=0.283079 MAX=0.727645 
+Run Combined Run 2start ant and deposit18: Time=342.442ms Kernel=335.963ms Probabilities=4.03969ms Ant=326.797ms Update=0ms Memory=6.47842ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2805 MIN=0.283078 MAX=0.727051 
+Run Combined Run 2start ant and deposit19: Time=343.741ms Kernel=337.205ms Probabilities=4.09601ms Ant=327.88ms Update=0ms Memory=6.53622ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.166 MIN=0.283078 MAX=0.727354 
+Run Combined Run 2start ant and deposit20: Time=343.637ms Kernel=336.804ms Probabilities=4.18203ms Ant=327.154ms Update=0ms Memory=6.83301ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1752 MIN=0.283078 MAX=0.727829 
+Run Combined Run 2start ant and deposit21: Time=343.295ms Kernel=336.895ms Probabilities=4.04788ms Ant=327.731ms Update=0ms Memory=6.39966ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2053 MIN=0.270123 MAX=0.727838 
+Run Combined Run 2start ant and deposit22: Time=342.328ms Kernel=335.87ms Probabilities=3.97518ms Ant=326.804ms Update=0ms Memory=6.45813ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2905 MIN=0.260898 MAX=0.727887 
+Run Combined Run 2start ant and deposit23: Time=343.352ms Kernel=336.949ms Probabilities=4.05403ms Ant=327.777ms Update=0ms Memory=6.40292ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2002 MIN=0.270712 MAX=0.723515 
+Run Combined Run 2start ant and deposit24: Time=342.691ms Kernel=336.11ms Probabilities=4.01819ms Ant=326.884ms Update=0ms Memory=6.58054ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2585 MIN=0.283078 MAX=0.727682 
+Run Combined Run 2start ant and deposit25: Time=345.225ms Kernel=337.98ms Probabilities=4.27419ms Ant=328.182ms Update=0ms Memory=7.24503ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.0363 MIN=0.262598 MAX=0.727758 
+Run Combined Run 2start ant and deposit26: Time=342.544ms Kernel=336.074ms Probabilities=4.05403ms Ant=326.829ms Update=0ms Memory=6.47034ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2714 MIN=0.283078 MAX=0.727888 
+Run Combined Run 2start ant and deposit27: Time=343.358ms Kernel=336.924ms Probabilities=4.04481ms Ant=327.733ms Update=0ms Memory=6.43393ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1997 MIN=0.273203 MAX=0.727874 
+Run Combined Run 2start ant and deposit28: Time=342.469ms Kernel=335.968ms Probabilities=4.0059ms Ant=326.867ms Update=0ms Memory=6.50107ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2781 MIN=0.283084 MAX=0.727897 
+Run Combined Run 2start ant and deposit29: Time=1723.02ms Kernel=337.064ms Probabilities=4.07451ms Ant=327.826ms Update=0ms Memory=1385.95ms HitRate=100% Occupancy=100% memory_throughput_gbs=6.01811 MIN=0.268825 MAX=0.727853 
+Run Combined Run 2start ant and deposit30: Time=344.621ms Kernel=337.281ms Probabilities=4.43188ms Ant=327.118ms Update=0ms Memory=7.33981ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.089 MIN=0.269891 MAX=0.727866 
+Run Combined Run 2start ant and deposit31: Time=343.359ms Kernel=336.567ms Probabilities=3.99054ms Ant=327.51ms Update=0ms Memory=6.79169ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1996 MIN=0.261153 MAX=0.727897 
+Run Combined Run 2start ant and deposit32: Time=568.184ms Kernel=335.887ms Probabilities=3.99771ms Ant=326.696ms Update=0ms Memory=232.297ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.2499 MIN=0.267488 MAX=0.727804 
+Run Combined Run 2start ant and deposit33: Time=674.777ms Kernel=338.14ms Probabilities=4.5609ms Ant=327.748ms Update=0ms Memory=336.637ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.367 MIN=0.265904 MAX=0.72763 
+Run Combined Run 2start ant and deposit34: Time=533.203ms Kernel=337.711ms Probabilities=4.17486ms Ant=328.181ms Update=0ms Memory=195.491ms HitRate=100% Occupancy=100% memory_throughput_gbs=19.4472 MIN=0.260553 MAX=0.727859 
+Run Combined Run 2start ant and deposit35: Time=771.16ms Kernel=381.108ms Probabilities=4.7811ms Ant=370.512ms Update=0ms Memory=390.052ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.4464 MIN=0.260529 MAX=0.727354 
+Run Combined Run 2start ant and deposit36: Time=605.53ms Kernel=338.781ms Probabilities=4.99713ms Ant=327.992ms Update=0ms Memory=266.749ms HitRate=100% Occupancy=100% memory_throughput_gbs=17.1243 MIN=0.278973 MAX=0.727883 
+Run Combined Run 2start ant and deposit37: Time=346.363ms Kernel=338.59ms Probabilities=4.48308ms Ant=328.351ms Update=0ms Memory=7.77341ms HitRate=100% Occupancy=100% memory_throughput_gbs=29.9377 MIN=0.260904 MAX=0.72788 
+Run Combined Run 2start ant and deposit38: Time=477.819ms Kernel=336.784ms Probabilities=4.181ms Ant=327.264ms Update=0ms Memory=141.035ms HitRate=100% Occupancy=100% memory_throughput_gbs=21.7013 MIN=0.283078 MAX=0.727899 
+Run Combined Run 2start ant and deposit39: Time=348.636ms Kernel=340.019ms Probabilities=5.45997ms Ant=328.223ms Update=0ms Memory=8.61667ms HitRate=100% Occupancy=100% memory_throughput_gbs=29.7425 MIN=0.264067 MAX=0.727875 
+Run Combined Run 2start ant and deposit40: Time=344.048ms Kernel=337.327ms Probabilities=4.10932ms Ant=327.822ms Update=0ms Memory=6.72092ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1391 MIN=0.283078 MAX=0.72772 
+Run Combined Run 2start ant and deposit41: Time=344.445ms Kernel=337.267ms Probabilities=4.37658ms Ant=327.331ms Update=0ms Memory=7.17871ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1043 MIN=0.273096 MAX=0.727897 
+Run Combined Run 2start ant and deposit42: Time=344.557ms Kernel=337.755ms Probabilities=4.21991ms Ant=328.033ms Update=0ms Memory=6.80228ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.0946 MIN=0.260615 MAX=0.727214 
+Run Combined Run 2start ant and deposit43: Time=343.073ms Kernel=336.417ms Probabilities=4.12775ms Ant=326.886ms Update=0ms Memory=6.65662ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2247 MIN=0.263471 MAX=0.727892 
+Run Combined Run 2start ant and deposit44: Time=344.135ms Kernel=337.384ms Probabilities=4.08782ms Ant=327.997ms Update=0ms Memory=6.75021ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1315 MIN=0.283079 MAX=0.727284 
+Run Combined Run 2start ant and deposit45: Time=342.881ms Kernel=336.204ms Probabilities=4.13492ms Ant=326.678ms Update=0ms Memory=6.67731ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.2417 MIN=0.260926 MAX=0.727899 
+Run Combined Run 2start ant and deposit46: Time=343.902ms Kernel=337.248ms Probabilities=4.14209ms Ant=327.854ms Update=0ms Memory=6.65396ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1519 MIN=0.262125 MAX=0.727858 
+Run Combined Run 2start ant and deposit47: Time=344.47ms Kernel=337.502ms Probabilities=4.3602ms Ant=327.578ms Update=0ms Memory=6.96741ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1022 MIN=0.260537 MAX=0.727884 
+Run Combined Run 2start ant and deposit48: Time=344.385ms Kernel=337.623ms Probabilities=4.1298ms Ant=328.095ms Update=0ms Memory=6.76141ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.1097 MIN=0.260541 MAX=0.744365 
+Run Combined Run 2start ant and deposit49: Time=343.07ms Kernel=336.369ms Probabilities=4.10625ms Ant=326.935ms Update=0ms Memory=6.70163ms HitRate=100% Occupancy=100% memory_throughput_gbs=30.225 MIN=0.262153 MAX=0.727854 
+Combined ACO total execution time: 30549 ms
+Program executed successfully
+End time: Sun Dec 28 04:58:48 MSK 2025
+Execution time: 42.468228633 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=1344, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 42.468228633 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=2688
+===================================================
+Updating parameter file with PARAMETR_SIZE=2688...
+Updating parametrs.h with PARAMETR_SIZE=2688 and NAME_FILE_GRAPH=Parametr_Graph/test2688.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=2688
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=2688
+PARAM_SIZE=2688 <= 2688, setting BLOCK_SIZE=64
+Successfully updated parametrs.h with BLOCK_SIZE=64
+===================================================
+Testing with PARAMETR_SIZE=2688, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_2688_block_4096_20251228_045849.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 04:58:57 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 126.441 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1022659 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 21504 bytes (21 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 107520 bytes (105 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 2688; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test2688.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 21504 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 2688
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 13440
+  Total agent nodes: 11010048
+Expected matrix memory: 107520 bytes
+Expected agent memory: 44040192 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=821.267ms Kernel=815.002ms Probabilities=4.5732ms Ant=805.338ms Update=0ms Memory=6.26538ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2334 MIN=0.37569 MAX=0.627172 
+Run Combined Run 2start ant and deposit1: Time=821.143ms Kernel=814.757ms Probabilities=4.14926ms Ant=805.644ms Update=0ms Memory=6.38611ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2372 MIN=0.37569 MAX=0.629796 
+Run Combined Run 2start ant and deposit2: Time=820.641ms Kernel=814.201ms Probabilities=4.13799ms Ant=805.001ms Update=0ms Memory=6.4397ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2526 MIN=0.375692 MAX=0.629803 
+Run Combined Run 2start ant and deposit3: Time=2407.35ms Kernel=814.584ms Probabilities=4.12775ms Ant=805.433ms Update=0ms Memory=1592.77ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.60836 MIN=0.365161 MAX=0.629663 
+Run Combined Run 2start ant and deposit4: Time=922.873ms Kernel=814.625ms Probabilities=4.25473ms Ant=805.067ms Update=0ms Memory=108.248ms HitRate=100% Occupancy=100% memory_throughput_gbs=22.4552 MIN=0.375691 MAX=0.629687 
+Run Combined Run 2start ant and deposit5: Time=821.144ms Kernel=814.731ms Probabilities=4.10523ms Ant=805.611ms Update=0ms Memory=6.41315ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2372 MIN=0.36442 MAX=0.629297 
+Run Combined Run 2start ant and deposit6: Time=820.96ms Kernel=814.531ms Probabilities=4.08884ms Ant=805.332ms Update=0ms Memory=6.42938ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2428 MIN=0.37569 MAX=0.629749 
+Run Combined Run 2start ant and deposit7: Time=821.146ms Kernel=814.675ms Probabilities=4.13799ms Ant=805.567ms Update=0ms Memory=6.47131ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2371 MIN=0.365854 MAX=0.629719 
+Run Combined Run 2start ant and deposit8: Time=821.361ms Kernel=814.907ms Probabilities=4.13799ms Ant=805.633ms Update=0ms Memory=6.45392ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2305 MIN=0.37569 MAX=0.629787 
+Run Combined Run 2start ant and deposit9: Time=821.035ms Kernel=814.717ms Probabilities=4.13799ms Ant=805.555ms Update=0ms Memory=6.31818ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2405 MIN=0.364408 MAX=0.628463 
+Run Combined Run 2start ant and deposit10: Time=821.379ms Kernel=814.966ms Probabilities=4.14619ms Ant=805.703ms Update=0ms Memory=6.41284ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.23 MIN=0.364392 MAX=0.629606 
+Run Combined Run 2start ant and deposit11: Time=820.801ms Kernel=814.414ms Probabilities=4.11444ms Ant=805.287ms Update=0ms Memory=6.38739ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2477 MIN=0.366609 MAX=0.629719 
+Run Combined Run 2start ant and deposit12: Time=2761.45ms Kernel=814.73ms Probabilities=4.11649ms Ant=805.559ms Update=0ms Memory=1946.72ms HitRate=100% Occupancy=100% memory_throughput_gbs=7.5045 MIN=0.364377 MAX=0.629804 
+Run Combined Run 2start ant and deposit13: Time=943.38ms Kernel=814.574ms Probabilities=4.20251ms Ant=805.289ms Update=0ms Memory=128.805ms HitRate=100% Occupancy=100% memory_throughput_gbs=21.9671 MIN=0.37569 MAX=0.629776 
+Run Combined Run 2start ant and deposit14: Time=821.57ms Kernel=815.128ms Probabilities=4.09191ms Ant=805.995ms Update=0ms Memory=6.44171ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2241 MIN=0.368904 MAX=0.629457 
+Run Combined Run 2start ant and deposit15: Time=821.208ms Kernel=814.775ms Probabilities=4.10215ms Ant=805.608ms Update=0ms Memory=6.43329ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2352 MIN=0.367434 MAX=0.627115 
+Run Combined Run 2start ant and deposit16: Time=821.991ms Kernel=815.593ms Probabilities=4.12878ms Ant=806.421ms Update=0ms Memory=6.39795ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2112 MIN=0.364411 MAX=0.629775 
+Run Combined Run 2start ant and deposit17: Time=820.955ms Kernel=814.589ms Probabilities=4.11547ms Ant=805.462ms Update=0ms Memory=6.36621ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.243 MIN=0.367088 MAX=0.629652 
+Run Combined Run 2start ant and deposit18: Time=822.05ms Kernel=815.668ms Probabilities=4.13902ms Ant=806.496ms Update=0ms Memory=6.3819ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2093 MIN=0.37569 MAX=0.629787 
+Run Combined Run 2start ant and deposit19: Time=821.238ms Kernel=814.879ms Probabilities=4.0827ms Ant=805.822ms Update=0ms Memory=6.3584ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2343 MIN=0.364457 MAX=0.629623 
+Run Combined Run 2start ant and deposit20: Time=822.056ms Kernel=815.636ms Probabilities=4.12161ms Ant=806.45ms Update=0ms Memory=6.42029ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2091 MIN=0.36586 MAX=0.629804 
+Run Combined Run 2start ant and deposit21: Time=1529.21ms Kernel=814.835ms Probabilities=4.10215ms Ant=805.746ms Update=0ms Memory=714.372ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.5517 MIN=0.366617 MAX=0.629798 
+Run Combined Run 2start ant and deposit22: Time=1023.69ms Kernel=815.222ms Probabilities=4.14107ms Ant=805.985ms Update=0ms Memory=208.467ms HitRate=100% Occupancy=100% memory_throughput_gbs=20.2438 MIN=0.37569 MAX=0.629769 
+Run Combined Run 2start ant and deposit23: Time=820.754ms Kernel=814.259ms Probabilities=4.21172ms Ant=805.013ms Update=0ms Memory=6.49451ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2492 MIN=0.375694 MAX=0.629777 
+Run Combined Run 2start ant and deposit24: Time=821.214ms Kernel=814.872ms Probabilities=4.11239ms Ant=805.769ms Update=0ms Memory=6.34131ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.235 MIN=0.37569 MAX=0.629724 
+Run Combined Run 2start ant and deposit25: Time=821.048ms Kernel=814.618ms Probabilities=4.21172ms Ant=805.358ms Update=0ms Memory=6.43005ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2401 MIN=0.37569 MAX=0.629725 
+Run Combined Run 2start ant and deposit26: Time=821.175ms Kernel=814.858ms Probabilities=4.07246ms Ant=805.826ms Update=0ms Memory=6.31696ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2362 MIN=0.36566 MAX=0.629521 
+Run Combined Run 2start ant and deposit27: Time=820.953ms Kernel=814.543ms Probabilities=4.19329ms Ant=805.281ms Update=0ms Memory=6.41003ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.243 MIN=0.375691 MAX=0.629577 
+Run Combined Run 2start ant and deposit28: Time=820.934ms Kernel=814.585ms Probabilities=4.07963ms Ant=805.446ms Update=0ms Memory=6.34949ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2436 MIN=0.375694 MAX=0.629779 
+Run Combined Run 2start ant and deposit29: Time=821.144ms Kernel=814.715ms Probabilities=4.17281ms Ant=805.423ms Update=0ms Memory=6.42938ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2371 MIN=0.37569 MAX=0.629599 
+Run Combined Run 2start ant and deposit30: Time=2021.11ms Kernel=814.584ms Probabilities=4.06734ms Ant=805.533ms Update=0ms Memory=1206.52ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.2535 MIN=0.357699 MAX=0.629789 
+Run Combined Run 2start ant and deposit31: Time=1114.35ms Kernel=815.229ms Probabilities=4.31822ms Ant=805.575ms Update=0ms Memory=299.122ms HitRate=100% Occupancy=100% memory_throughput_gbs=18.5968 MIN=0.364382 MAX=0.629699 
+Run Combined Run 2start ant and deposit32: Time=874.435ms Kernel=867.799ms Probabilities=4.35508ms Ant=858.152ms Update=0ms Memory=6.63593ms HitRate=100% Occupancy=100% memory_throughput_gbs=23.6991 MIN=0.375691 MAX=0.629747 
+Run Combined Run 2start ant and deposit33: Time=1745.59ms Kernel=815.078ms Probabilities=4.17281ms Ant=805.801ms Update=0ms Memory=930.509ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8718 MIN=0.367183 MAX=0.627986 
+Run Combined Run 2start ant and deposit34: Time=3082.02ms Kernel=814.335ms Probabilities=4.15643ms Ant=805.042ms Update=0ms Memory=2267.68ms HitRate=100% Occupancy=100% memory_throughput_gbs=6.72396 MIN=0.37569 MAX=0.629794 
+Run Combined Run 2start ant and deposit35: Time=1155.06ms Kernel=815.155ms Probabilities=4.21377ms Ant=805.697ms Update=0ms Memory=339.902ms HitRate=100% Occupancy=100% memory_throughput_gbs=17.9414 MIN=0.370441 MAX=0.629596 
+Run Combined Run 2start ant and deposit36: Time=822.34ms Kernel=815.261ms Probabilities=4.58036ms Ant=805.365ms Update=0ms Memory=7.07861ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2005 MIN=0.375691 MAX=0.629699 
+Run Combined Run 2start ant and deposit37: Time=820.991ms Kernel=814.428ms Probabilities=4.13083ms Ant=805.178ms Update=0ms Memory=6.56299ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2419 MIN=0.37569 MAX=0.629797 
+Run Combined Run 2start ant and deposit38: Time=821.1ms Kernel=814.71ms Probabilities=4.08679ms Ant=805.582ms Update=0ms Memory=6.39038ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2385 MIN=0.375691 MAX=0.629221 
+Run Combined Run 2start ant and deposit39: Time=820.865ms Kernel=814.418ms Probabilities=4.09294ms Ant=805.35ms Update=0ms Memory=6.44745ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2457 MIN=0.37569 MAX=0.629762 
+Run Combined Run 2start ant and deposit40: Time=820.964ms Kernel=814.533ms Probabilities=4.12263ms Ant=805.376ms Update=0ms Memory=6.43115ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2427 MIN=0.371291 MAX=0.629785 
+Run Combined Run 2start ant and deposit41: Time=820.972ms Kernel=814.584ms Probabilities=4.08065ms Ant=805.494ms Update=0ms Memory=6.38806ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2425 MIN=0.37569 MAX=0.629798 
+Run Combined Run 2start ant and deposit42: Time=821.32ms Kernel=814.907ms Probabilities=4.11649ms Ant=805.702ms Update=0ms Memory=6.41211ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2318 MIN=0.366974 MAX=0.629629 
+Run Combined Run 2start ant and deposit43: Time=2786.38ms Kernel=814.695ms Probabilities=4.10215ms Ant=805.579ms Update=0ms Memory=1971.68ms HitRate=100% Occupancy=100% memory_throughput_gbs=7.43738 MIN=0.369044 MAX=0.629779 
+Run Combined Run 2start ant and deposit44: Time=821.609ms Kernel=814.736ms Probabilities=4.22299ms Ant=805.225ms Update=0ms Memory=6.8725ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2229 MIN=0.365024 MAX=0.629795 
+Run Combined Run 2start ant and deposit45: Time=937.021ms Kernel=814.642ms Probabilities=4.07041ms Ant=805.559ms Update=0ms Memory=122.379ms HitRate=100% Occupancy=100% memory_throughput_gbs=22.1162 MIN=0.37569 MAX=0.628698 
+Run Combined Run 2start ant and deposit46: Time=821.699ms Kernel=814.876ms Probabilities=4.25064ms Ant=805.354ms Update=0ms Memory=6.82379ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2201 MIN=0.364875 MAX=0.629653 
+Run Combined Run 2start ant and deposit47: Time=821.192ms Kernel=814.711ms Probabilities=4.10113ms Ant=805.562ms Update=0ms Memory=6.48102ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2357 MIN=0.364736 MAX=0.637165 
+Run Combined Run 2start ant and deposit48: Time=820.901ms Kernel=814.558ms Probabilities=4.10113ms Ant=805.49ms Update=0ms Memory=6.3429ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2446 MIN=0.369015 MAX=0.629415 
+Run Combined Run 2start ant and deposit49: Time=821.138ms Kernel=814.718ms Probabilities=4.12161ms Ant=805.523ms Update=0ms Memory=6.42084ms HitRate=100% Occupancy=100% memory_throughput_gbs=25.2373 MIN=0.375693 MAX=0.629507 
+Combined ACO total execution time: 60155 ms
+Program executed successfully
+End time: Sun Dec 28 05:00:07 MSK 2025
+Execution time: 70.236966133 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=2688, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 70.236966133 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=5376
+===================================================
+Updating parameter file with PARAMETR_SIZE=5376...
+Updating parametrs.h with PARAMETR_SIZE=5376 and NAME_FILE_GRAPH=Parametr_Graph/test5376.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=5376
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=5376
+PARAM_SIZE=5376 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=5376, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_5376_block_4096_20251228_050008.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 05:00:17 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 252.852 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1022659 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 43008 bytes (42 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 215040 bytes (210 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 5376; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test5376.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 43008 bytes
+Current PARAMETR_SIZE fits in shared memory
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 5376
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 26880
+  Total agent nodes: 22020096
+Expected matrix memory: 215040 bytes
+Expected agent memory: 88080384 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=2669.14ms Kernel=2662.35ms Probabilities=9.74235ms Ant=2647.31ms Update=0ms Memory=6.78857ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5224 MIN=0.434759 MAX=0.565177 
+Run Combined Run 2start ant and deposit1: Time=2672.03ms Kernel=2665.2ms Probabilities=8.53607ms Ant=2651.4ms Update=0ms Memory=6.82544ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5056 MIN=0.435733 MAX=0.568425 
+Run Combined Run 2start ant and deposit2: Time=4610.24ms Kernel=2661.3ms Probabilities=8.45005ms Ant=2647.57ms Update=0ms Memory=1948.94ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.98683 MIN=0.428607 MAX=0.565146 
+Run Combined Run 2start ant and deposit3: Time=2688.95ms Kernel=2682.01ms Probabilities=8.55142ms Ant=2668.11ms Update=0ms Memory=6.93774ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.408 MIN=0.433305 MAX=0.565177 
+Run Combined Run 2start ant and deposit4: Time=2668.68ms Kernel=2661.84ms Probabilities=8.48588ms Ant=2648.05ms Update=0ms Memory=6.83667ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5251 MIN=0.433016 MAX=0.565177 
+Run Combined Run 2start ant and deposit5: Time=4014.17ms Kernel=2681.25ms Probabilities=8.52378ms Ant=2667.38ms Update=0ms Memory=1332.92ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3213 MIN=0.433182 MAX=0.569621 
+Run Combined Run 2start ant and deposit6: Time=2671.98ms Kernel=2665.14ms Probabilities=8.50534ms Ant=2651.32ms Update=0ms Memory=6.84473ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5059 MIN=0.43356 MAX=0.565174 
+Run Combined Run 2start ant and deposit7: Time=2692.02ms Kernel=2685.15ms Probabilities=8.54016ms Ant=2671.32ms Update=0ms Memory=6.87354ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.3905 MIN=0.432592 MAX=0.565159 
+Run Combined Run 2start ant and deposit8: Time=4543.39ms Kernel=2661.57ms Probabilities=8.51558ms Ant=2647.8ms Update=0ms Memory=1881.82ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.11906 MIN=0.435292 MAX=0.565164 
+Run Combined Run 2start ant and deposit9: Time=2688.34ms Kernel=2681.39ms Probabilities=8.55654ms Ant=2667.5ms Update=0ms Memory=6.948ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4115 MIN=0.432654 MAX=0.565177 
+Run Combined Run 2start ant and deposit10: Time=2670.01ms Kernel=2663.24ms Probabilities=8.4992ms Ant=2649.47ms Update=0ms Memory=6.77075ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5173 MIN=0.432692 MAX=0.565176 
+Run Combined Run 2start ant and deposit11: Time=4690.53ms Kernel=2682.26ms Probabilities=8.5248ms Ant=2668.43ms Update=0ms Memory=2008.27ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.833 MIN=0.434636 MAX=0.565176 
+Run Combined Run 2start ant and deposit12: Time=2671.72ms Kernel=2664.78ms Probabilities=8.55961ms Ant=2650.76ms Update=0ms Memory=6.94312ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5074 MIN=0.432619 MAX=0.565175 
+Run Combined Run 2start ant and deposit13: Time=2690.41ms Kernel=2683.65ms Probabilities=8.50534ms Ant=2669.85ms Update=0ms Memory=6.76025ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.3997 MIN=0.433798 MAX=0.565177 
+Run Combined Run 2start ant and deposit14: Time=4645.63ms Kernel=2664.39ms Probabilities=8.46438ms Ant=2650.58ms Update=0ms Memory=1981.25ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.91836 MIN=0.432604 MAX=0.566311 
+Run Combined Run 2start ant and deposit15: Time=2689.74ms Kernel=2682.83ms Probabilities=8.55347ms Ant=2669.01ms Update=0ms Memory=6.90942ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4035 MIN=0.436952 MAX=0.56514 
+Run Combined Run 2start ant and deposit16: Time=2680.49ms Kernel=2673.74ms Probabilities=8.46745ms Ant=2660ms Update=0ms Memory=6.7561ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4566 MIN=0.432593 MAX=0.565164 
+Run Combined Run 2start ant and deposit17: Time=3906.45ms Kernel=2678.26ms Probabilities=8.51661ms Ant=2664.44ms Update=0ms Memory=1228.19ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.6059 MIN=0.433255 MAX=0.565177 
+Run Combined Run 2start ant and deposit18: Time=2689.69ms Kernel=2682.81ms Probabilities=8.4992ms Ant=2668.99ms Update=0ms Memory=6.88818ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4038 MIN=0.43337 MAX=0.565173 
+Run Combined Run 2start ant and deposit19: Time=2670.13ms Kernel=2663.35ms Probabilities=8.62105ms Ant=2649.43ms Update=0ms Memory=6.78125ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5166 MIN=0.436085 MAX=0.565158 
+Run Combined Run 2start ant and deposit20: Time=4021.77ms Kernel=2663.75ms Probabilities=8.44288ms Ant=2650.05ms Update=0ms Memory=1358.02ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3018 MIN=0.434841 MAX=0.565046 
+Run Combined Run 2start ant and deposit21: Time=2688.43ms Kernel=2681.53ms Probabilities=8.51865ms Ant=2667.69ms Update=0ms Memory=6.89526ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.411 MIN=0.432591 MAX=0.565145 
+Run Combined Run 2start ant and deposit22: Time=2670.78ms Kernel=2664ms Probabilities=8.55654ms Ant=2650.21ms Update=0ms Memory=6.77734ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5129 MIN=0.4326 MAX=0.569044 
+Run Combined Run 2start ant and deposit23: Time=4671.94ms Kernel=2679.75ms Probabilities=8.53094ms Ant=2665.97ms Update=0ms Memory=1992.19ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.86815 MIN=0.432806 MAX=0.565172 
+Run Combined Run 2start ant and deposit24: Time=3716.92ms Kernel=2682.6ms Probabilities=8.56576ms Ant=2668.66ms Update=0ms Memory=1034.32ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.1467 MIN=0.432627 MAX=0.565974 
+Run Combined Run 2start ant and deposit25: Time=3535.53ms Kernel=2679.76ms Probabilities=8.59238ms Ant=2665.83ms Update=0ms Memory=855.774ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.7186 MIN=0.434567 MAX=0.569565 
+Run Combined Run 2start ant and deposit26: Time=3114.8ms Kernel=2682.94ms Probabilities=8.60569ms Ant=2668.88ms Update=0ms Memory=431.859ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.3015 MIN=0.432695 MAX=0.565177 
+Run Combined Run 2start ant and deposit27: Time=2691.32ms Kernel=2683.83ms Probabilities=9.00506ms Ant=2669.42ms Update=0ms Memory=7.48218ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.3945 MIN=0.432791 MAX=0.565174 
+Run Combined Run 2start ant and deposit28: Time=2690.1ms Kernel=2683.37ms Probabilities=8.49715ms Ant=2669.63ms Update=0ms Memory=6.73633ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4014 MIN=0.436953 MAX=0.565175 
+Run Combined Run 2start ant and deposit29: Time=4132.28ms Kernel=2679.86ms Probabilities=8.48691ms Ant=2666.14ms Update=0ms Memory=1452.42ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.0263 MIN=0.436953 MAX=0.565167 
+Run Combined Run 2start ant and deposit30: Time=2687.89ms Kernel=2681.01ms Probabilities=8.4777ms Ant=2667.3ms Update=0ms Memory=6.87549ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4141 MIN=0.43274 MAX=0.569698 
+Run Combined Run 2start ant and deposit31: Time=2687.34ms Kernel=2680.56ms Probabilities=8.42342ms Ant=2666.96ms Update=0ms Memory=6.7793ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4173 MIN=0.433501 MAX=0.565177 
+Run Combined Run 2start ant and deposit32: Time=4614.29ms Kernel=2683.54ms Probabilities=8.45312ms Ant=2669.87ms Update=0ms Memory=1930.75ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.97895 MIN=0.432836 MAX=0.567659 
+Run Combined Run 2start ant and deposit33: Time=2687.98ms Kernel=2681.02ms Probabilities=8.50842ms Ant=2667.17ms Update=0ms Memory=6.95703ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4136 MIN=0.433921 MAX=0.568267 
+Run Combined Run 2start ant and deposit34: Time=2692.17ms Kernel=2685.26ms Probabilities=8.43469ms Ant=2671.45ms Update=0ms Memory=6.91772ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.3896 MIN=0.434089 MAX=0.565175 
+Run Combined Run 2start ant and deposit35: Time=4008.8ms Kernel=2681.41ms Probabilities=8.46746ms Ant=2667.53ms Update=0ms Memory=1327.38ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3351 MIN=0.43282 MAX=0.565172 
+Run Combined Run 2start ant and deposit36: Time=2689.6ms Kernel=2682.71ms Probabilities=8.51046ms Ant=2668.94ms Update=0ms Memory=6.88501ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4043 MIN=0.434219 MAX=0.565176 
+Run Combined Run 2start ant and deposit37: Time=2671.29ms Kernel=2664.45ms Probabilities=8.55859ms Ant=2650.62ms Update=0ms Memory=6.8396ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5099 MIN=0.432814 MAX=0.565165 
+Run Combined Run 2start ant and deposit38: Time=4556.96ms Kernel=2681.86ms Probabilities=8.42957ms Ant=2668.25ms Update=0ms Memory=1875.1ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.09189 MIN=0.433935 MAX=0.565177 
+Run Combined Run 2start ant and deposit39: Time=2688.85ms Kernel=2681.95ms Probabilities=8.51149ms Ant=2668.17ms Update=0ms Memory=6.89893ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4086 MIN=0.432662 MAX=0.565177 
+Run Combined Run 2start ant and deposit40: Time=2685.47ms Kernel=2678.69ms Probabilities=8.45108ms Ant=2665.02ms Update=0ms Memory=6.77661ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.428 MIN=0.432949 MAX=0.565177 
+Run Combined Run 2start ant and deposit41: Time=4654.6ms Kernel=2680.34ms Probabilities=8.47974ms Ant=2666.56ms Update=0ms Memory=1974.26ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.90118 MIN=0.433851 MAX=0.565172 
+Run Combined Run 2start ant and deposit42: Time=2689.81ms Kernel=2682.42ms Probabilities=8.84429ms Ant=2668.09ms Update=0ms Memory=7.38354ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.4031 MIN=0.434887 MAX=0.565174 
+Run Combined Run 2start ant and deposit43: Time=2691.11ms Kernel=2684.19ms Probabilities=8.49715ms Ant=2670.35ms Update=0ms Memory=6.92139ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.3957 MIN=0.433445 MAX=0.565173 
+Run Combined Run 2start ant and deposit44: Time=4565.42ms Kernel=2681.54ms Probabilities=8.45824ms Ant=2667.73ms Update=0ms Memory=1883.89ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.07505 MIN=0.433102 MAX=0.565152 
+Run Combined Run 2start ant and deposit45: Time=3613.7ms Kernel=2683.57ms Probabilities=8.52275ms Ant=2669.68ms Update=0ms Memory=930.135ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.4651 MIN=0.433249 MAX=0.565176 
+Run Combined Run 2start ant and deposit46: Time=3089.95ms Kernel=2686.9ms Probabilities=8.47258ms Ant=2673.17ms Update=0ms Memory=403.049ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.4085 MIN=0.432666 MAX=0.565168 
+Run Combined Run 2start ant and deposit47: Time=3034.53ms Kernel=2685.8ms Probabilities=8.7808ms Ant=2671.81ms Update=0ms Memory=348.734ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.6533 MIN=0.432812 MAX=0.565156 
+Run Combined Run 2start ant and deposit48: Time=2669.86ms Kernel=2663.01ms Probabilities=8.47462ms Ant=2649.26ms Update=0ms Memory=6.85376ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.5182 MIN=0.436952 MAX=0.565177 
+Run Combined Run 2start ant and deposit49: Time=2691.85ms Kernel=2685.09ms Probabilities=8.41524ms Ant=2671.49ms Update=0ms Memory=6.76514ms HitRate=100% Occupancy=100% memory_throughput_gbs=15.3914 MIN=0.432787 MAX=0.566093 
+Combined ACO total execution time: 165733 ms
+Program executed successfully
+End time: Sun Dec 28 05:03:18 MSK 2025
+Execution time: 180.798052404 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=5376, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 180.798052404 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=10752
+===================================================
+Updating parameter file with PARAMETR_SIZE=10752...
+Updating parametrs.h with PARAMETR_SIZE=10752 and NAME_FILE_GRAPH=Parametr_Graph/test10752.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=10752
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=10752
+PARAM_SIZE=10752 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=10752, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_10752_block_4096_20251228_050319.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 05:03:28 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 505.672 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1022659 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 86016 bytes (84 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 430080 bytes (420 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 10752; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test10752.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 86016 bytes
+WARNING: PARAMETR_SIZE too large for shared memory!
+Consider reducing PARAMETR_SIZE or using global memory implementation
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 10752
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 53760
+  Total agent nodes: 44040192
+Expected matrix memory: 430080 bytes
+Expected agent memory: 176160768 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=5858.25ms Kernel=5851.54ms Probabilities=9.58156ms Ant=5836.7ms Update=0ms Memory=6.70801ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.142 MIN=0.467781 MAX=0.532754 
+Run Combined Run 2start ant and deposit1: Time=7955.42ms Kernel=5855.29ms Probabilities=9.14124ms Ant=5840.86ms Update=0ms Memory=2100.14ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.414 MIN=0.466739 MAX=0.532778 
+Run Combined Run 2start ant and deposit2: Time=5860.59ms Kernel=5853.19ms Probabilities=9.11155ms Ant=5838.73ms Update=0ms Memory=7.40186ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1364 MIN=0.468008 MAX=0.533389 
+Run Combined Run 2start ant and deposit3: Time=8284.81ms Kernel=5838.3ms Probabilities=9.09926ms Ant=5823.86ms Update=0ms Memory=2446.51ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.99994 MIN=0.467224 MAX=0.532768 
+Run Combined Run 2start ant and deposit4: Time=6724.62ms Kernel=5855.85ms Probabilities=9.13305ms Ant=5841.35ms Update=0ms Memory=868.771ms HitRate=100% Occupancy=100% memory_throughput_gbs=12.32 MIN=0.466482 MAX=0.532764 
+Run Combined Run 2start ant and deposit5: Time=5854.16ms Kernel=5847.19ms Probabilities=9.13305ms Ant=5832.66ms Update=0ms Memory=6.96875ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1519 MIN=0.467563 MAX=0.532732 
+Run Combined Run 2start ant and deposit6: Time=5869.85ms Kernel=5862.86ms Probabilities=9.11155ms Ant=5848.42ms Update=0ms Memory=6.98535ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1141 MIN=0.466828 MAX=0.532741 
+Run Combined Run 2start ant and deposit7: Time=7313.2ms Kernel=5861.44ms Probabilities=9.12793ms Ant=5847ms Update=0ms Memory=1451.76ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.3285 MIN=0.468008 MAX=0.53267 
+Run Combined Run 2start ant and deposit8: Time=5848.89ms Kernel=5842.07ms Probabilities=9.15865ms Ant=5827.65ms Update=0ms Memory=6.81836ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1647 MIN=0.466395 MAX=0.53278 
+Run Combined Run 2start ant and deposit9: Time=5855.86ms Kernel=5848.99ms Probabilities=9.12793ms Ant=5834.57ms Update=0ms Memory=6.86914ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1478 MIN=0.468008 MAX=0.532779 
+Run Combined Run 2start ant and deposit10: Time=5867.24ms Kernel=5851.21ms Probabilities=15.274ms Ant=5829.59ms Update=0ms Memory=16.0278ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1204 MIN=0.468008 MAX=0.532784 
+Run Combined Run 2start ant and deposit11: Time=5871.92ms Kernel=5864.96ms Probabilities=9.15558ms Ant=5850.44ms Update=0ms Memory=6.95947ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1091 MIN=0.468008 MAX=0.532784 
+Run Combined Run 2start ant and deposit12: Time=5907.36ms Kernel=5843.09ms Probabilities=9.13817ms Ant=5828.57ms Update=0ms Memory=64.2783ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.0245 MIN=0.468008 MAX=0.532755 
+Run Combined Run 2start ant and deposit13: Time=5870.31ms Kernel=5863.39ms Probabilities=9.18629ms Ant=5848.79ms Update=0ms Memory=6.9165ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.113 MIN=0.466395 MAX=0.532784 
+Run Combined Run 2start ant and deposit14: Time=8097.96ms Kernel=5860.67ms Probabilities=9.06854ms Ant=5846.26ms Update=0ms Memory=2237.3ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.2307 MIN=0.468008 MAX=0.532781 
+Run Combined Run 2start ant and deposit15: Time=6450.18ms Kernel=5867.53ms Probabilities=9.1607ms Ant=5853.09ms Update=0ms Memory=582.648ms HitRate=100% Occupancy=100% memory_throughput_gbs=12.8442 MIN=0.468008 MAX=0.532784 
+Run Combined Run 2start ant and deposit16: Time=5861.47ms Kernel=5854.68ms Probabilities=9.08492ms Ant=5840.35ms Update=0ms Memory=6.78516ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1343 MIN=0.466508 MAX=0.532784 
+Run Combined Run 2start ant and deposit17: Time=5870.76ms Kernel=5863.74ms Probabilities=9.14123ms Ant=5849.26ms Update=0ms Memory=7.02197ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1119 MIN=0.466671 MAX=0.532784 
+Run Combined Run 2start ant and deposit18: Time=7286.36ms Kernel=5842.22ms Probabilities=9.08288ms Ant=5827.84ms Update=0ms Memory=1444.14ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.3702 MIN=0.467734 MAX=0.532774 
+Run Combined Run 2start ant and deposit19: Time=5865.75ms Kernel=5858.87ms Probabilities=9.11462ms Ant=5844.42ms Update=0ms Memory=6.88428ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.124 MIN=0.468008 MAX=0.532677 
+Run Combined Run 2start ant and deposit20: Time=5959.99ms Kernel=5850.6ms Probabilities=9.10746ms Ant=5836.23ms Update=0ms Memory=109.388ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.9006 MIN=0.468008 MAX=0.532679 
+Run Combined Run 2start ant and deposit21: Time=8113.72ms Kernel=5863.07ms Probabilities=9.06752ms Ant=5848.73ms Update=0ms Memory=2250.64ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.2108 MIN=0.46669 MAX=0.532784 
+Run Combined Run 2start ant and deposit22: Time=5858.19ms Kernel=5851.02ms Probabilities=9.28256ms Ant=5836.39ms Update=0ms Memory=7.1665ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1422 MIN=0.468008 MAX=0.532774 
+Run Combined Run 2start ant and deposit23: Time=5869.51ms Kernel=5862.57ms Probabilities=9.16787ms Ant=5848.08ms Update=0ms Memory=6.93848ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1149 MIN=0.466478 MAX=0.532784 
+Run Combined Run 2start ant and deposit24: Time=5864.38ms Kernel=5857.61ms Probabilities=9.13919ms Ant=5843.14ms Update=0ms Memory=6.76514ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1273 MIN=0.468008 MAX=0.532731 
+Run Combined Run 2start ant and deposit25: Time=6190.57ms Kernel=5848.01ms Probabilities=9.13919ms Ant=5833.55ms Update=0ms Memory=342.554ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.3829 MIN=0.468008 MAX=0.53278 
+Run Combined Run 2start ant and deposit26: Time=6400.71ms Kernel=5863.77ms Probabilities=9.21702ms Ant=5849.18ms Update=0ms Memory=536.943ms HitRate=100% Occupancy=100% memory_throughput_gbs=12.9435 MIN=0.467046 MAX=0.532783 
+Run Combined Run 2start ant and deposit27: Time=5850.83ms Kernel=5843.88ms Probabilities=9.18015ms Ant=5829.36ms Update=0ms Memory=6.95215ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.16 MIN=0.467093 MAX=0.53277 
+Run Combined Run 2start ant and deposit28: Time=5850.88ms Kernel=5843.97ms Probabilities=9.14739ms Ant=5829.51ms Update=0ms Memory=6.9043ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1599 MIN=0.468008 MAX=0.53278 
+Run Combined Run 2start ant and deposit29: Time=6135.21ms Kernel=5851.88ms Probabilities=9.1054ms Ant=5837.48ms Update=0ms Memory=283.33ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.5036 MIN=0.468008 MAX=0.532772 
+Run Combined Run 2start ant and deposit30: Time=5861.29ms Kernel=5854.39ms Probabilities=9.09926ms Ant=5839.93ms Update=0ms Memory=6.8999ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1347 MIN=0.466561 MAX=0.532782 
+Run Combined Run 2start ant and deposit31: Time=5860.98ms Kernel=5854.06ms Probabilities=9.11257ms Ant=5839.61ms Update=0ms Memory=6.92529ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1354 MIN=0.468008 MAX=0.532784 
+Run Combined Run 2start ant and deposit32: Time=5843.88ms Kernel=5836.81ms Probabilities=9.12998ms Ant=5822.32ms Update=0ms Memory=7.07568ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1768 MIN=0.466661 MAX=0.53275 
+Run Combined Run 2start ant and deposit33: Time=5857.7ms Kernel=5850.81ms Probabilities=9.14432ms Ant=5836.3ms Update=0ms Memory=6.88867ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1434 MIN=0.466547 MAX=0.532762 
+Run Combined Run 2start ant and deposit34: Time=5992.19ms Kernel=5834.63ms Probabilities=9.09721ms Ant=5820.2ms Update=0ms Memory=157.559ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.8259 MIN=0.466483 MAX=0.53275 
+Run Combined Run 2start ant and deposit35: Time=5857.04ms Kernel=5850ms Probabilities=9.17402ms Ant=5835.39ms Update=0ms Memory=7.04199ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1449 MIN=0.468008 MAX=0.532775 
+Run Combined Run 2start ant and deposit36: Time=8130.63ms Kernel=5848.53ms Probabilities=9.11461ms Ant=5834.09ms Update=0ms Memory=2282.1ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.1896 MIN=0.466636 MAX=0.532755 
+Run Combined Run 2start ant and deposit37: Time=6985.89ms Kernel=5860.16ms Probabilities=9.14124ms Ant=5845.67ms Update=0ms Memory=1125.72ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8593 MIN=0.467122 MAX=0.532701 
+Run Combined Run 2start ant and deposit38: Time=5868.23ms Kernel=5861.24ms Probabilities=9.11257ms Ant=5846.72ms Update=0ms Memory=6.99219ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.118 MIN=0.466401 MAX=0.532777 
+Run Combined Run 2start ant and deposit39: Time=5854.82ms Kernel=5847.91ms Probabilities=9.08902ms Ant=5833.47ms Update=0ms Memory=6.90674ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1503 MIN=0.466638 MAX=0.532603 
+Run Combined Run 2start ant and deposit40: Time=5961.13ms Kernel=5854.02ms Probabilities=9.06444ms Ant=5839.58ms Update=0ms Memory=107.11ms HitRate=100% Occupancy=100% memory_throughput_gbs=13.898 MIN=0.466685 MAX=0.532784 
+Run Combined Run 2start ant and deposit41: Time=5856.48ms Kernel=5849.58ms Probabilities=9.09517ms Ant=5835.12ms Update=0ms Memory=6.89551ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1463 MIN=0.468009 MAX=0.532784 
+Run Combined Run 2start ant and deposit42: Time=5865.05ms Kernel=5858.18ms Probabilities=9.12282ms Ant=5843.73ms Update=0ms Memory=6.87061ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1256 MIN=0.46788 MAX=0.532779 
+Run Combined Run 2start ant and deposit43: Time=5842.54ms Kernel=5835.64ms Probabilities=9.10745ms Ant=5821.17ms Update=0ms Memory=6.89746ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1801 MIN=0.466395 MAX=0.532784 
+Run Combined Run 2start ant and deposit44: Time=5845.45ms Kernel=5838.57ms Probabilities=9.08902ms Ant=5824.11ms Update=0ms Memory=6.88672ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.173 MIN=0.467241 MAX=0.53276 
+Run Combined Run 2start ant and deposit45: Time=5899.77ms Kernel=5833.1ms Probabilities=9.088ms Ant=5818.69ms Update=0ms Memory=66.6733ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.0425 MIN=0.46643 MAX=0.53277 
+Run Combined Run 2start ant and deposit46: Time=5861ms Kernel=5853.94ms Probabilities=9.15148ms Ant=5839.47ms Update=0ms Memory=7.06738ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1354 MIN=0.46694 MAX=0.532771 
+Run Combined Run 2start ant and deposit47: Time=7364.51ms Kernel=5842.47ms Probabilities=9.05523ms Ant=5828.09ms Update=0ms Memory=1522.04ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.2496 MIN=0.466638 MAX=0.532775 
+Run Combined Run 2start ant and deposit48: Time=6513.72ms Kernel=5869.77ms Probabilities=9.1351ms Ant=5855.28ms Update=0ms Memory=643.954ms HitRate=100% Occupancy=100% memory_throughput_gbs=12.7189 MIN=0.468008 MAX=0.532683 
+Run Combined Run 2start ant and deposit49: Time=5859.35ms Kernel=5852.5ms Probabilities=9.03783ms Ant=5838.16ms Update=0ms Memory=6.8501ms HitRate=100% Occupancy=100% memory_throughput_gbs=14.1394 MIN=0.468008 MAX=0.532783 
+Combined ACO total execution time: 320067 ms
+Program executed successfully
+End time: Sun Dec 28 05:09:08 MSK 2025
+Execution time: 340.818484808 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=10752, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 340.818484808 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=21504
+===================================================
+Updating parameter file with PARAMETR_SIZE=21504...
+Updating parametrs.h with PARAMETR_SIZE=21504 and NAME_FILE_GRAPH=Parametr_Graph/test21504.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=21504
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=21504
+PARAM_SIZE=21504 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=21504, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_21504_block_4096_20251228_050909.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 05:09:18 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 1011.31 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1022659 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 172032 bytes (168 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 860160 bytes (840 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 21504; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test21504.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 172032 bytes
+WARNING: PARAMETR_SIZE too large for shared memory!
+Consider reducing PARAMETR_SIZE or using global memory implementation
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 21504
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 107520
+  Total agent nodes: 88080384
+Expected matrix memory: 860160 bytes
+Expected agent memory: 352321536 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=14118.3ms Kernel=13923.6ms Probabilities=10.8063ms Ant=13907.5ms Update=0ms Memory=194.733ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.7351 MIN=0.484077 MAX=0.516189 
+Run Combined Run 2start ant and deposit1: Time=15083.5ms Kernel=13919.9ms Probabilities=10.0762ms Ant=13904.6ms Update=0ms Memory=1163.63ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.9842 MIN=0.484078 MAX=0.516178 
+Run Combined Run 2start ant and deposit2: Time=13933ms Kernel=13925.8ms Probabilities=10.1263ms Ant=13910.3ms Update=0ms Memory=7.18262ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8912 MIN=0.484078 MAX=0.516147 
+Run Combined Run 2start ant and deposit3: Time=16053.4ms Kernel=13872.4ms Probabilities=10.0946ms Ant=13857ms Update=0ms Memory=2180.95ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3206 MIN=0.484082 MAX=0.515863 
+Run Combined Run 2start ant and deposit4: Time=13924.3ms Kernel=13917.3ms Probabilities=10.0823ms Ant=13901.8ms Update=0ms Memory=7.0625ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8986 MIN=0.484077 MAX=0.516023 
+Run Combined Run 2start ant and deposit5: Time=14758.8ms Kernel=13919.1ms Probabilities=10.11ms Ant=13903.5ms Update=0ms Memory=839.756ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.2258 MIN=0.484077 MAX=0.516116 
+Run Combined Run 2start ant and deposit6: Time=13931.5ms Kernel=13924.5ms Probabilities=10.0342ms Ant=13909.2ms Update=0ms Memory=7.01562ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8924 MIN=0.48408 MAX=0.516204 
+Run Combined Run 2start ant and deposit7: Time=15448.9ms Kernel=13873.1ms Probabilities=12.2501ms Ant=13855.3ms Update=0ms Memory=1575.8ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.7244 MIN=0.484077 MAX=0.516045 
+Run Combined Run 2start ant and deposit8: Time=13928.1ms Kernel=13921ms Probabilities=10.1007ms Ant=13905.5ms Update=0ms Memory=7.12695ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8953 MIN=0.484077 MAX=0.516198 
+Run Combined Run 2start ant and deposit9: Time=15983ms Kernel=13904.2ms Probabilities=10.1724ms Ant=13888.6ms Update=0ms Memory=2078.82ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.366 MIN=0.484077 MAX=0.515794 
+Run Combined Run 2start ant and deposit10: Time=13927.4ms Kernel=13920.2ms Probabilities=10.1325ms Ant=13904.7ms Update=0ms Memory=7.11133ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.896 MIN=0.484078 MAX=0.515902 
+Run Combined Run 2start ant and deposit11: Time=16092ms Kernel=13869.3ms Probabilities=10.1192ms Ant=13853.8ms Update=0ms Memory=2222.64ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.2958 MIN=0.484078 MAX=0.516205 
+Run Combined Run 2start ant and deposit12: Time=13924.3ms Kernel=13917.2ms Probabilities=10.1499ms Ant=13901.6ms Update=0ms Memory=7.09375ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8986 MIN=0.484077 MAX=0.516079 
+Run Combined Run 2start ant and deposit13: Time=16040.1ms Kernel=13874.9ms Probabilities=10.111ms Ant=13859.5ms Update=0ms Memory=2165.14ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3291 MIN=0.484081 MAX=0.51604 
+Run Combined Run 2start ant and deposit14: Time=13928.8ms Kernel=13921.6ms Probabilities=10.0946ms Ant=13906.1ms Update=0ms Memory=7.22754ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8948 MIN=0.483792 MAX=0.516159 
+Run Combined Run 2start ant and deposit15: Time=15369.3ms Kernel=13902.2ms Probabilities=10.0516ms Ant=13886.8ms Update=0ms Memory=1467.1ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.7799 MIN=0.484077 MAX=0.516203 
+Run Combined Run 2start ant and deposit16: Time=13924.5ms Kernel=13917.4ms Probabilities=10.0997ms Ant=13902ms Update=0ms Memory=7.14453ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8984 MIN=0.484084 MAX=0.516205 
+Run Combined Run 2start ant and deposit17: Time=14822.9ms Kernel=13914.9ms Probabilities=10.0915ms Ant=13899.4ms Update=0ms Memory=907.973ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.1773 MIN=0.484077 MAX=0.516205 
+Run Combined Run 2start ant and deposit18: Time=14300.5ms Kernel=13928.1ms Probabilities=10.1089ms Ant=13912.6ms Update=0ms Memory=372.445ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.5856 MIN=0.483756 MAX=0.516128 
+Run Combined Run 2start ant and deposit19: Time=14884.5ms Kernel=13914.7ms Probabilities=10.1468ms Ant=13899.1ms Update=0ms Memory=969.868ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.131 MIN=0.484078 MAX=0.516205 
+Run Combined Run 2start ant and deposit20: Time=13922.8ms Kernel=13915.5ms Probabilities=10.1479ms Ant=13900ms Update=0ms Memory=7.24512ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8999 MIN=0.484077 MAX=0.515649 
+Run Combined Run 2start ant and deposit21: Time=14824.7ms Kernel=13875.1ms Probabilities=10.1007ms Ant=13859.8ms Update=0ms Memory=949.601ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.1759 MIN=0.484077 MAX=0.515649 
+Run Combined Run 2start ant and deposit22: Time=13936.4ms Kernel=13929.3ms Probabilities=10.0444ms Ant=13913.9ms Update=0ms Memory=7.04492ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8883 MIN=0.484072 MAX=0.51616 
+Run Combined Run 2start ant and deposit23: Time=15576.6ms Kernel=13924.2ms Probabilities=10.1294ms Ant=13908.7ms Update=0ms Memory=1652.43ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.6365 MIN=0.484077 MAX=0.515912 
+Run Combined Run 2start ant and deposit24: Time=13933.1ms Kernel=13925.9ms Probabilities=10.1458ms Ant=13910.3ms Update=0ms Memory=7.23633ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8911 MIN=0.484077 MAX=0.516194 
+Run Combined Run 2start ant and deposit25: Time=15222.7ms Kernel=13880.5ms Probabilities=10.1407ms Ant=13864.9ms Update=0ms Memory=1342.26ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.8837 MIN=0.484084 MAX=0.516202 
+Run Combined Run 2start ant and deposit26: Time=13929.8ms Kernel=13922.7ms Probabilities=10.1304ms Ant=13907.2ms Update=0ms Memory=7.09473ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8939 MIN=0.484077 MAX=0.516163 
+Run Combined Run 2start ant and deposit27: Time=15411.4ms Kernel=13878.8ms Probabilities=10.0936ms Ant=13863.3ms Update=0ms Memory=1532.57ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.7505 MIN=0.484077 MAX=0.516174 
+Run Combined Run 2start ant and deposit28: Time=13930.4ms Kernel=13922.9ms Probabilities=10.41ms Ant=13907ms Update=0ms Memory=7.54785ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8934 MIN=0.484077 MAX=0.516199 
+Run Combined Run 2start ant and deposit29: Time=15421.6ms Kernel=13915.7ms Probabilities=10.1397ms Ant=13900.2ms Update=0ms Memory=1505.91ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.7434 MIN=0.484077 MAX=0.516203 
+Run Combined Run 2start ant and deposit30: Time=13924.6ms Kernel=13917.5ms Probabilities=10.0864ms Ant=13902.1ms Update=0ms Memory=7.03418ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8984 MIN=0.484077 MAX=0.515649 
+Run Combined Run 2start ant and deposit31: Time=16074.6ms Kernel=13857.4ms Probabilities=10.0874ms Ant=13842ms Update=0ms Memory=2217.17ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3069 MIN=0.484077 MAX=0.516183 
+Run Combined Run 2start ant and deposit32: Time=13930.8ms Kernel=13923.5ms Probabilities=10.0946ms Ant=13908ms Update=0ms Memory=7.28125ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8931 MIN=0.484077 MAX=0.516175 
+Run Combined Run 2start ant and deposit33: Time=16010.2ms Kernel=13917.4ms Probabilities=10.0751ms Ant=13901.9ms Update=0ms Memory=2092.8ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3484 MIN=0.484078 MAX=0.516008 
+Run Combined Run 2start ant and deposit34: Time=13933.4ms Kernel=13926.3ms Probabilities=10.0598ms Ant=13910.9ms Update=0ms Memory=7.06348ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8908 MIN=0.483927 MAX=0.5162 
+Run Combined Run 2start ant and deposit35: Time=15987.1ms Kernel=13860.5ms Probabilities=10.0362ms Ant=13845ms Update=0ms Memory=2126.63ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3634 MIN=0.483508 MAX=0.516195 
+Run Combined Run 2start ant and deposit36: Time=14261.8ms Kernel=13921.5ms Probabilities=10.068ms Ant=13906.1ms Update=0ms Memory=340.305ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.617 MIN=0.483518 MAX=0.516694 
+Run Combined Run 2start ant and deposit37: Time=14159.2ms Kernel=13886.8ms Probabilities=10.1437ms Ant=13871.2ms Update=0ms Memory=272.378ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.7013 MIN=0.484077 MAX=0.516205 
+Run Combined Run 2start ant and deposit38: Time=13855.2ms Kernel=13848.2ms Probabilities=10.0127ms Ant=13832.7ms Update=0ms Memory=7.05762ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.9579 MIN=0.484078 MAX=0.516194 
+Run Combined Run 2start ant and deposit39: Time=14487.9ms Kernel=13872.6ms Probabilities=10.0813ms Ant=13857.1ms Update=0ms Memory=615.328ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.4357 MIN=0.484077 MAX=0.516205 
+Run Combined Run 2start ant and deposit40: Time=13866.5ms Kernel=13859.5ms Probabilities=10.0413ms Ant=13844.1ms Update=0ms Memory=7.00977ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.9482 MIN=0.484077 MAX=0.516127 
+Run Combined Run 2start ant and deposit41: Time=15438.3ms Kernel=13871.9ms Probabilities=10.111ms Ant=13856.5ms Update=0ms Memory=1566.39ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.7317 MIN=0.484077 MAX=0.516162 
+Run Combined Run 2start ant and deposit42: Time=13878.5ms Kernel=13871.4ms Probabilities=10.0567ms Ant=13855.9ms Update=0ms Memory=7.0957ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.9379 MIN=0.484077 MAX=0.516012 
+Run Combined Run 2start ant and deposit43: Time=16071.7ms Kernel=13908.9ms Probabilities=10.0649ms Ant=13893.5ms Update=0ms Memory=2162.75ms HitRate=100% Occupancy=100% memory_throughput_gbs=10.3088 MIN=0.484078 MAX=0.516199 
+Run Combined Run 2start ant and deposit44: Time=13927ms Kernel=13920ms Probabilities=10.069ms Ant=13904.6ms Update=0ms Memory=7.06055ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.8963 MIN=0.484087 MAX=0.516145 
+Run Combined Run 2start ant and deposit45: Time=14573.3ms Kernel=13923.5ms Probabilities=10.1233ms Ant=13908ms Update=0ms Memory=649.815ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.3687 MIN=0.484077 MAX=0.516194 
+Run Combined Run 2start ant and deposit46: Time=13899ms Kernel=13891.8ms Probabilities=10.027ms Ant=13876.4ms Update=0ms Memory=7.17383ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.9203 MIN=0.484077 MAX=0.516102 
+Run Combined Run 2start ant and deposit47: Time=13887.9ms Kernel=13880.6ms Probabilities=10.0086ms Ant=13865.1ms Update=0ms Memory=7.2373ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.9298 MIN=0.484077 MAX=0.516145 
+Run Combined Run 2start ant and deposit48: Time=14028.7ms Kernel=13941.6ms Probabilities=10.0373ms Ant=13926.3ms Update=0ms Memory=87.125ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.81 MIN=0.484077 MAX=0.516168 
+Run Combined Run 2start ant and deposit49: Time=13919.8ms Kernel=13912.6ms Probabilities=10.111ms Ant=13897ms Update=0ms Memory=7.2334ms HitRate=100% Occupancy=100% memory_throughput_gbs=11.9025 MIN=0.484077 MAX=0.516141 
+Combined ACO total execution time: 745581 ms
+Program executed successfully
+End time: Sun Dec 28 05:22:18 MSK 2025
+Execution time: 780.063131365 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=21504, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 780.063131365 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=43008
+===================================================
+Updating parameter file with PARAMETR_SIZE=43008...
+Updating parametrs.h with PARAMETR_SIZE=43008 and NAME_FILE_GRAPH=Parametr_Graph/test43008.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=43008
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=43008
+PARAM_SIZE=43008 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=43008, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_43008_block_4096_20251228_052219.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 05:22:28 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 2022.59 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 1022659 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 344064 bytes (336 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 1720320 bytes (1680 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 43008; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test43008.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE SHARED MEMORY
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 344064 bytes
+WARNING: PARAMETR_SIZE too large for shared memory!
+Consider reducing PARAMETR_SIZE or using global memory implementation
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 43008
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 215040
+  Total agent nodes: 176160768
+Expected matrix memory: 1720320 bytes
+Expected agent memory: 704643072 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=34016.6ms Kernel=34009.5ms Probabilities=15.9489ms Ant=33988.1ms Update=0ms Memory=7.16797ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74067 MIN=0.49212 MAX=0.507792 
+Run Combined Run 2start ant and deposit1: Time=34513.7ms Kernel=33973.4ms Probabilities=15.0785ms Ant=33953ms Update=0ms Memory=540.266ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.60039 MIN=0.492138 MAX=0.507792 
+Run Combined Run 2start ant and deposit2: Time=34003.3ms Kernel=33995.6ms Probabilities=15.2638ms Ant=33974.9ms Update=0ms Memory=7.6875ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74448 MIN=0.492113 MAX=0.507952 
+Run Combined Run 2start ant and deposit3: Time=35949.7ms Kernel=33946.6ms Probabilities=15.0672ms Ant=33926.1ms Update=0ms Memory=2003.15ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.21688 MIN=0.492112 MAX=0.507792 
+Run Combined Run 2start ant and deposit4: Time=33998ms Kernel=33990.5ms Probabilities=15.1481ms Ant=33969.9ms Update=0ms Memory=7.54688ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.746 MIN=0.492112 MAX=0.507981 
+Run Combined Run 2start ant and deposit5: Time=35987.8ms Kernel=34080.1ms Probabilities=15.1297ms Ant=34059.6ms Update=0ms Memory=1907.64ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.20714 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit6: Time=34040ms Kernel=34032.6ms Probabilities=14.9935ms Ant=34012.3ms Update=0ms Memory=7.41406ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73397 MIN=0.49212 MAX=0.507792 
+Run Combined Run 2start ant and deposit7: Time=34535.4ms Kernel=34053.2ms Probabilities=15.5126ms Ant=34032.4ms Update=0ms Memory=482.16ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.59435 MIN=0.492111 MAX=0.507927 
+Run Combined Run 2start ant and deposit8: Time=34018.5ms Kernel=34011.1ms Probabilities=15.1092ms Ant=33990.6ms Update=0ms Memory=7.35938ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74014 MIN=0.492112 MAX=0.507873 
+Run Combined Run 2start ant and deposit9: Time=35892.8ms Kernel=34049.1ms Probabilities=15.1317ms Ant=34028.5ms Update=0ms Memory=1843.68ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.23152 MIN=0.492113 MAX=0.507818 
+Run Combined Run 2start ant and deposit10: Time=34004.3ms Kernel=33997.1ms Probabilities=15.0846ms Ant=33976.7ms Update=0ms Memory=7.25ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74418 MIN=0.492113 MAX=0.507971 
+Run Combined Run 2start ant and deposit11: Time=34724.8ms Kernel=34070.5ms Probabilities=15.143ms Ant=34050ms Update=0ms Memory=654.242ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.54202 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit12: Time=34006.4ms Kernel=33999.1ms Probabilities=15.1133ms Ant=33978.5ms Update=0ms Memory=7.35156ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74359 MIN=0.492114 MAX=0.507792 
+Run Combined Run 2start ant and deposit13: Time=35948.1ms Kernel=34007.9ms Probabilities=15.058ms Ant=33987.5ms Update=0ms Memory=1940.18ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.2173 MIN=0.492111 MAX=0.507924 
+Run Combined Run 2start ant and deposit14: Time=34008.9ms Kernel=34001.4ms Probabilities=15.0744ms Ant=33980.9ms Update=0ms Memory=7.46875ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74288 MIN=0.49215 MAX=0.507792 
+Run Combined Run 2start ant and deposit15: Time=35345.9ms Kernel=33998.4ms Probabilities=15.3345ms Ant=33977.7ms Update=0ms Memory=1347.46ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.37435 MIN=0.492116 MAX=0.507792 
+Run Combined Run 2start ant and deposit16: Time=34041.7ms Kernel=34031.8ms Probabilities=16.3339ms Ant=34010ms Update=0ms Memory=9.89844ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73348 MIN=0.492127 MAX=0.507792 
+Run Combined Run 2start ant and deposit17: Time=35254.3ms Kernel=34019.4ms Probabilities=15.06ms Ant=33998.9ms Update=0ms Memory=1234.95ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.39869 MIN=0.492183 MAX=0.507792 
+Run Combined Run 2start ant and deposit18: Time=34417ms Kernel=34004ms Probabilities=15.0293ms Ant=33983.6ms Update=0ms Memory=413.055ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.62735 MIN=0.492112 MAX=0.507791 
+Run Combined Run 2start ant and deposit19: Time=33968.8ms Kernel=33961.3ms Probabilities=15.1ms Ant=33940.9ms Update=0ms Memory=7.50391ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.75438 MIN=0.492116 MAX=0.507792 
+Run Combined Run 2start ant and deposit20: Time=34616.5ms Kernel=34004.3ms Probabilities=15.0682ms Ant=33983.8ms Update=0ms Memory=612.188ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.57188 MIN=0.492121 MAX=0.507792 
+Run Combined Run 2start ant and deposit21: Time=34031.6ms Kernel=34024ms Probabilities=15.0836ms Ant=34003.6ms Update=0ms Memory=7.57031ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73638 MIN=0.492303 MAX=0.507792 
+Run Combined Run 2start ant and deposit22: Time=35849.3ms Kernel=33947.8ms Probabilities=14.9382ms Ant=33927.6ms Update=0ms Memory=1901.43ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.24272 MIN=0.492118 MAX=0.507792 
+Run Combined Run 2start ant and deposit23: Time=34032.6ms Kernel=34025.1ms Probabilities=15.1399ms Ant=34004.5ms Update=0ms Memory=7.48828ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.7361 MIN=0.492116 MAX=0.50783 
+Run Combined Run 2start ant and deposit24: Time=35294.4ms Kernel=34069.3ms Probabilities=15.0395ms Ant=34048.9ms Update=0ms Memory=1225.18ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.38801 MIN=0.492164 MAX=0.507792 
+Run Combined Run 2start ant and deposit25: Time=34036ms Kernel=34028.6ms Probabilities=15.4532ms Ant=34007.8ms Update=0ms Memory=7.37891ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73512 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit26: Time=35918.2ms Kernel=34070.7ms Probabilities=15.1174ms Ant=34050.1ms Update=0ms Memory=1847.57ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.22497 MIN=0.492157 MAX=0.507917 
+Run Combined Run 2start ant and deposit27: Time=34010.2ms Kernel=34002.8ms Probabilities=15.1123ms Ant=33982.3ms Update=0ms Memory=7.41406ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74251 MIN=0.492126 MAX=0.507792 
+Run Combined Run 2start ant and deposit28: Time=35410.5ms Kernel=33979.4ms Probabilities=15.1235ms Ant=33958.9ms Update=0ms Memory=1431.06ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.35725 MIN=0.492111 MAX=0.507956 
+Run Combined Run 2start ant and deposit29: Time=34031.7ms Kernel=34024.2ms Probabilities=15.1798ms Ant=34003.6ms Update=0ms Memory=7.53125ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73634 MIN=0.492119 MAX=0.507898 
+Run Combined Run 2start ant and deposit30: Time=35251.1ms Kernel=34099.6ms Probabilities=14.9914ms Ant=34079.2ms Update=0ms Memory=1151.45ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.39956 MIN=0.492174 MAX=0.507792 
+Run Combined Run 2start ant and deposit31: Time=34012.1ms Kernel=34004.9ms Probabilities=15.0037ms Ant=33984.5ms Update=0ms Memory=7.28125ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74195 MIN=0.492111 MAX=0.507925 
+Run Combined Run 2start ant and deposit32: Time=35932.4ms Kernel=34026.3ms Probabilities=14.9341ms Ant=34006ms Update=0ms Memory=1906.02ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.22134 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit33: Time=33996.9ms Kernel=33989.5ms Probabilities=14.9976ms Ant=33969.1ms Update=0ms Memory=7.41016ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74631 MIN=0.492163 MAX=0.507792 
+Run Combined Run 2start ant and deposit34: Time=35290.3ms Kernel=34046.6ms Probabilities=14.9986ms Ant=34026.2ms Update=0ms Memory=1243.64ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.38912 MIN=0.492112 MAX=0.507899 
+Run Combined Run 2start ant and deposit35: Time=34022ms Kernel=34014.6ms Probabilities=15.0211ms Ant=33994.1ms Update=0ms Memory=7.42969ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73913 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit36: Time=35232.5ms Kernel=34027.7ms Probabilities=14.9966ms Ant=34007.3ms Update=0ms Memory=1204.73ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.40453 MIN=0.492127 MAX=0.507792 
+Run Combined Run 2start ant and deposit37: Time=34034.6ms Kernel=34027.4ms Probabilities=14.9751ms Ant=34007ms Update=0ms Memory=7.27734ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73551 MIN=0.492112 MAX=0.507792 
+Run Combined Run 2start ant and deposit38: Time=35305.3ms Kernel=34008.6ms Probabilities=14.9689ms Ant=33988.2ms Update=0ms Memory=1296.76ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.38512 MIN=0.492219 MAX=0.507883 
+Run Combined Run 2start ant and deposit39: Time=34204ms Kernel=33966.1ms Probabilities=15.1501ms Ant=33945.5ms Update=0ms Memory=237.969ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.6873 MIN=0.492132 MAX=0.507792 
+Run Combined Run 2start ant and deposit40: Time=35034.3ms Kernel=33923.7ms Probabilities=15.0631ms Ant=33903.3ms Update=0ms Memory=1110.59ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.45771 MIN=0.492123 MAX=0.507983 
+Run Combined Run 2start ant and deposit41: Time=34006.3ms Kernel=33998.8ms Probabilities=15.1594ms Ant=33978.2ms Update=0ms Memory=7.59375ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74361 MIN=0.492113 MAX=0.507792 
+Run Combined Run 2start ant and deposit42: Time=34688.9ms Kernel=33978.5ms Probabilities=15.0426ms Ant=33958.1ms Update=0ms Memory=710.426ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.55189 MIN=0.492116 MAX=0.507792 
+Run Combined Run 2start ant and deposit43: Time=33982.9ms Kernel=33975.6ms Probabilities=15.0273ms Ant=33955.2ms Update=0ms Memory=7.35156ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.75032 MIN=0.492112 MAX=0.507792 
+Run Combined Run 2start ant and deposit44: Time=35986.3ms Kernel=33986.9ms Probabilities=15.0559ms Ant=33966.4ms Update=0ms Memory=1999.46ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.20752 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit45: Time=34005.9ms Kernel=33998.4ms Probabilities=15.0611ms Ant=33977.9ms Update=0ms Memory=7.50391ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74374 MIN=0.492178 MAX=0.507792 
+Run Combined Run 2start ant and deposit46: Time=35957.1ms Kernel=33937.9ms Probabilities=15.0877ms Ant=33917.5ms Update=0ms Memory=2019.2ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.21499 MIN=0.492112 MAX=0.507792 
+Run Combined Run 2start ant and deposit47: Time=34018.8ms Kernel=34011.4ms Probabilities=15.101ms Ant=33990.9ms Update=0ms Memory=7.45312ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.74003 MIN=0.492182 MAX=0.507792 
+Run Combined Run 2start ant and deposit48: Time=35941.6ms Kernel=34060ms Probabilities=15.017ms Ant=34039.6ms Update=0ms Memory=1881.64ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.21896 MIN=0.492111 MAX=0.507792 
+Run Combined Run 2start ant and deposit49: Time=34052.8ms Kernel=34045.5ms Probabilities=15.0396ms Ant=34025ms Update=0ms Memory=7.34766ms HitRate=100% Occupancy=100% memory_throughput_gbs=9.73031 MIN=0.492115 MAX=0.507792 
+Combined ACO total execution time: 1753947 ms
+Program executed successfully
+End time: Sun Dec 28 05:52:46 MSK 2025
+Execution time: 1818.237938419 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=43008, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 1818.237938419 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=86016
+===================================================
+Updating parameter file with PARAMETR_SIZE=86016...
+Updating parametrs.h with PARAMETR_SIZE=86016 and NAME_FILE_GRAPH=Parametr_Graph/test86016.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=86016
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=86016
+PARAM_SIZE=86016 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=86016, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_86016_block_4096_20251228_055247.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 05:52:56 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 4045.16 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 343098 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 688128 bytes (672 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 3440640 bytes (3360 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 86016; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test86016.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 688128 bytes
+WARNING: PARAMETR_SIZE too large for shared memory!
+Consider reducing PARAMETR_SIZE or using global memory implementation
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 86016
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 430080
+  Total agent nodes: 352321536
+Expected matrix memory: 3440640 bytes
+Expected agent memory: 1409286144 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+Run Combined Run 2start ant and deposit0: Time=81227.6ms Kernel=80799.3ms Probabilities=25.0849ms Ant=80769ms Update=0ms Memory=428.344ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.15824 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit1: Time=80632.1ms Kernel=80623.3ms Probabilities=24.5698ms Ant=80593.5ms Update=0ms Memory=8.76562ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21849 MIN=0.496123 MAX=0.503868 
+Run Combined Run 2start ant and deposit2: Time=80833.8ms Kernel=80824.2ms Probabilities=25.1935ms Ant=80793.7ms Update=0ms Memory=9.54688ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19798 MIN=0.496165 MAX=0.503863 
+Run Combined Run 2start ant and deposit3: Time=80687.5ms Kernel=80678.5ms Probabilities=24.8412ms Ant=80648.3ms Update=0ms Memory=8.99219ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21285 MIN=0.49615 MAX=0.503868 
+Run Combined Run 2start ant and deposit4: Time=81021.3ms Kernel=80878.3ms Probabilities=25.0174ms Ant=80718.7ms Update=0ms Memory=143ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.17901 MIN=0.496166 MAX=0.503826 
+Run Combined Run 2start ant and deposit5: Time=80761.3ms Kernel=80751.6ms Probabilities=25.1474ms Ant=80721ms Update=0ms Memory=9.71875ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20534 MIN=0.496165 MAX=0.503866 
+Run Combined Run 2start ant and deposit6: Time=80745.2ms Kernel=80735ms Probabilities=23.7424ms Ant=80706ms Update=0ms Memory=10.1875ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20698 MIN=0.496165 MAX=0.503866 
+Run Combined Run 2start ant and deposit7: Time=80475.8ms Kernel=80467.8ms Probabilities=23.8827ms Ant=80438.8ms Update=0ms Memory=8.02344ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.23445 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit8: Time=80759.2ms Kernel=80594.3ms Probabilities=23.7424ms Ant=80565.3ms Update=0ms Memory=164.883ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20555 MIN=0.496165 MAX=0.503864 
+Run Combined Run 2start ant and deposit9: Time=80815.3ms Kernel=80807.6ms Probabilities=23.7885ms Ant=80778.6ms Update=0ms Memory=7.6875ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19986 MIN=0.496119 MAX=0.503868 
+Run Combined Run 2start ant and deposit10: Time=81750.9ms Kernel=80602.5ms Probabilities=24.1694ms Ant=80573ms Update=0ms Memory=1148.36ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.10601 MIN=0.496165 MAX=0.503862 
+Run Combined Run 2start ant and deposit11: Time=80877.6ms Kernel=80869.6ms Probabilities=23.8837ms Ant=80840.5ms Update=0ms Memory=7.92969ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19355 MIN=0.496166 MAX=0.503866 
+Run Combined Run 2start ant and deposit12: Time=80828.3ms Kernel=80820.7ms Probabilities=23.7322ms Ant=80791.8ms Update=0ms Memory=7.625ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19854 MIN=0.496132 MAX=0.503868 
+Run Combined Run 2start ant and deposit13: Time=83082.1ms Kernel=80830.6ms Probabilities=23.7517ms Ant=80801.6ms Update=0ms Memory=2251.45ms HitRate=100% Occupancy=100% memory_throughput_gbs=7.97614 MIN=0.496165 MAX=0.503863 
+Run Combined Run 2start ant and deposit14: Time=80785.5ms Kernel=80777.5ms Probabilities=23.811ms Ant=80748.4ms Update=0ms Memory=8.00781ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20288 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit15: Time=80623.1ms Kernel=80615.5ms Probabilities=23.6759ms Ant=80586.6ms Update=0ms Memory=7.57031ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21941 MIN=0.496152 MAX=0.503868 
+Run Combined Run 2start ant and deposit16: Time=80719.6ms Kernel=80712.2ms Probabilities=23.6359ms Ant=80683.3ms Update=0ms Memory=7.48438ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20957 MIN=0.496102 MAX=0.503857 
+Run Combined Run 2start ant and deposit17: Time=80654.4ms Kernel=80646.5ms Probabilities=23.9698ms Ant=80617.2ms Update=0ms Memory=7.92969ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21621 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit18: Time=80817.1ms Kernel=80809.6ms Probabilities=23.6953ms Ant=80780.7ms Update=0ms Memory=7.55469ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19967 MIN=0.496165 MAX=0.503868 
+Run Combined Run 2start ant and deposit19: Time=80734.2ms Kernel=80726.8ms Probabilities=23.6032ms Ant=80697.9ms Update=0ms Memory=7.46875ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20809 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit20: Time=81944.6ms Kernel=80845.8ms Probabilities=23.6687ms Ant=80816.9ms Update=0ms Memory=1098.83ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.08685 MIN=0.496165 MAX=0.503817 
+Run Combined Run 2start ant and deposit21: Time=80892.4ms Kernel=80683.2ms Probabilities=23.8223ms Ant=80654.1ms Update=0ms Memory=209.203ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19204 MIN=0.496131 MAX=0.503863 
+Run Combined Run 2start ant and deposit22: Time=80764.2ms Kernel=80756.5ms Probabilities=23.6902ms Ant=80727.7ms Update=0ms Memory=7.67188ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20504 MIN=0.496165 MAX=0.503868 
+Run Combined Run 2start ant and deposit23: Time=80753.3ms Kernel=80745.2ms Probabilities=24.0415ms Ant=80716ms Update=0ms Memory=8.0625ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20615 MIN=0.496166 MAX=0.503865 
+Run Combined Run 2start ant and deposit24: Time=80846.3ms Kernel=80838.2ms Probabilities=23.8325ms Ant=80809.1ms Update=0ms Memory=8.03906ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19672 MIN=0.496165 MAX=0.503862 
+Run Combined Run 2start ant and deposit25: Time=80587.8ms Kernel=80580.2ms Probabilities=23.6544ms Ant=80551.4ms Update=0ms Memory=7.55469ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22301 MIN=0.496166 MAX=0.503854 
+Run Combined Run 2start ant and deposit26: Time=80807.2ms Kernel=80799.7ms Probabilities=23.6626ms Ant=80770.9ms Update=0ms Memory=7.5ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20068 MIN=0.496166 MAX=0.503867 
+Run Combined Run 2start ant and deposit27: Time=80528.5ms Kernel=80520.8ms Probabilities=23.937ms Ant=80491.7ms Update=0ms Memory=7.71094ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22906 MIN=0.496165 MAX=0.503868 
+Run Combined Run 2start ant and deposit28: Time=80825.3ms Kernel=80817.8ms Probabilities=23.6329ms Ant=80789ms Update=0ms Memory=7.54688ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19884 MIN=0.496101 MAX=0.503867 
+Run Combined Run 2start ant and deposit29: Time=82189.6ms Kernel=80537.8ms Probabilities=23.6974ms Ant=80508.7ms Update=0ms Memory=1651.84ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.06275 MIN=0.496166 MAX=0.503858 
+Run Combined Run 2start ant and deposit30: Time=81070.1ms Kernel=80952.9ms Probabilities=23.6595ms Ant=80924ms Update=0ms Memory=117.211ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.17408 MIN=0.496166 MAX=0.503866 
+Run Combined Run 2start ant and deposit31: Time=80641.5ms Kernel=80634ms Probabilities=23.6636ms Ant=80605.1ms Update=0ms Memory=7.51562ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21753 MIN=0.496165 MAX=0.503866 
+Run Combined Run 2start ant and deposit32: Time=80845.9ms Kernel=80838.2ms Probabilities=23.6277ms Ant=80809.4ms Update=0ms Memory=7.67969ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19676 MIN=0.496134 MAX=0.503868 
+Run Combined Run 2start ant and deposit33: Time=80572.6ms Kernel=80565.1ms Probabilities=23.5683ms Ant=80536.4ms Update=0ms Memory=7.51562ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22455 MIN=0.496103 MAX=0.503851 
+Run Combined Run 2start ant and deposit34: Time=80751.9ms Kernel=80744.4ms Probabilities=23.5591ms Ant=80715.7ms Update=0ms Memory=7.52344ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20629 MIN=0.496115 MAX=0.503868 
+Run Combined Run 2start ant and deposit35: Time=80628.5ms Kernel=80620.9ms Probabilities=23.6134ms Ant=80592.1ms Update=0ms Memory=7.5625ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21886 MIN=0.496119 MAX=0.503861 
+Run Combined Run 2start ant and deposit36: Time=80546ms Kernel=80538.5ms Probabilities=23.6277ms Ant=80509.6ms Update=0ms Memory=7.58594ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22727 MIN=0.496165 MAX=0.503868 
+Run Combined Run 2start ant and deposit37: Time=80702.6ms Kernel=80695.1ms Probabilities=23.639ms Ant=80666.2ms Update=0ms Memory=7.49219ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21131 MIN=0.496165 MAX=0.503865 
+Run Combined Run 2start ant and deposit38: Time=80916.7ms Kernel=80437.9ms Probabilities=23.6165ms Ant=80409ms Update=0ms Memory=478.789ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.18958 MIN=0.496118 MAX=0.503868 
+Run Combined Run 2start ant and deposit39: Time=80674.8ms Kernel=80608.6ms Probabilities=23.6452ms Ant=80579.8ms Update=0ms Memory=66.1484ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21414 MIN=0.496165 MAX=0.503868 
+Run Combined Run 2start ant and deposit40: Time=80908.6ms Kernel=80901.1ms Probabilities=23.639ms Ant=80872.2ms Update=0ms Memory=7.46094ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.1904 MIN=0.496163 MAX=0.503867 
+Run Combined Run 2start ant and deposit41: Time=80543.9ms Kernel=80536.2ms Probabilities=23.7424ms Ant=80507.2ms Update=0ms Memory=7.67969ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22749 MIN=0.496165 MAX=0.503868 
+Run Combined Run 2start ant and deposit42: Time=80913.6ms Kernel=80906ms Probabilities=23.7168ms Ant=80877ms Update=0ms Memory=7.64844ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.18989 MIN=0.496101 MAX=0.503864 
+Run Combined Run 2start ant and deposit43: Time=80583ms Kernel=80497.2ms Probabilities=23.6513ms Ant=80468.3ms Update=0ms Memory=85.7891ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22349 MIN=0.496106 MAX=0.503866 
+Run Combined Run 2start ant and deposit44: Time=80774.8ms Kernel=80766.8ms Probabilities=23.8397ms Ant=80737.8ms Update=0ms Memory=7.91406ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20397 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit45: Time=80586.7ms Kernel=80579.1ms Probabilities=23.6195ms Ant=80550ms Update=0ms Memory=7.57812ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.22312 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit46: Time=80770.2ms Kernel=80762.5ms Probabilities=23.6923ms Ant=80733.6ms Update=0ms Memory=7.65625ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.20444 MIN=0.496165 MAX=0.503866 
+Run Combined Run 2start ant and deposit47: Time=81273.3ms Kernel=80671ms Probabilities=23.6861ms Ant=80642ms Update=0ms Memory=602.266ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.15365 MIN=0.496165 MAX=0.503866 
+Run Combined Run 2start ant and deposit48: Time=80906.8ms Kernel=80761.8ms Probabilities=23.6667ms Ant=80732.9ms Update=0ms Memory=145.062ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.19058 MIN=0.496165 MAX=0.503867 
+Run Combined Run 2start ant and deposit49: Time=80664.8ms Kernel=80657ms Probabilities=23.7772ms Ant=80628ms Update=0ms Memory=7.80469ms HitRate=100% Occupancy=100% memory_throughput_gbs=8.21516 MIN=0.496165 MAX=0.503864 
+Combined ACO total execution time: 4062863 ms
+Program executed successfully
+End time: Sun Dec 28 07:04:15 MSK 2025
+Execution time: 4278.540689584 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=86016, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 4278.540689584 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=172032
+===================================================
+Updating parameter file with PARAMETR_SIZE=172032...
+Updating parametrs.h with PARAMETR_SIZE=172032 and NAME_FILE_GRAPH=Parametr_Graph/test172032.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=172032
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=172032
+PARAM_SIZE=172032 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=172032, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_172032_block_4096_20251228_070416.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 07:04:24 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 8090.28 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 343098 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 1376256 bytes (1344 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 6881280 bytes (6720 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 172032; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test172032.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 1376256 bytes
+WARNING: PARAMETR_SIZE too large for shared memory!
+Consider reducing PARAMETR_SIZE or using global memory implementation
+=========================
+Memory bounds check:
+  PARAMETR_SIZE: 172032
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE: 4096
+  Total matrix elements: 860160
+  Total agent nodes: 704643072
+Expected matrix memory: 6881280 bytes
+Expected agent memory: 2818572288 bytes
+Performing warmup runs...
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+
+=== Starting ACO and DEPOSIT runs ===
+WARNING: Program execution failed with exit code 1
+End time: Sun Dec 28 07:13:49 MSK 2025
+Execution time: 565.441077817 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=172032, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 565.441077817 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=344064
+===================================================
+Updating parameter file with PARAMETR_SIZE=344064...
+Updating parametrs.h with PARAMETR_SIZE=344064 and NAME_FILE_GRAPH=Parametr_Graph/test344064.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=344064
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=344064
+PARAM_SIZE=344064 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=344064, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_344064_block_4096_20251228_071350.txt
+
+===================================================
+Running ACO optimization...
+===================================================
+
+Start time: Sun Dec 28 07:13:59 MSK 2025
+Initializing CUDA ACO Optimizer...
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 16180.5 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 343098 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 2752512 bytes (2688 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 13762560 bytes (13440 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 344064; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 4096; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test344064.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+=== GPU Memory Limits ===
+Using global memory for parameters (exceeds constant memory limit)
+Max PARAMETR_SIZE for shared memory: 1228 (with 49152 bytes)
+Conservative PARAMETR_SIZE limit: 4915
+Required shared memory for current PARAMETR_SIZE: 2752512 bytes
+WARNING: PARAMETR_SIZE too large for shared memory!
+Consider reducing PARAMETR_SIZE or using global memory implementation
+=========================
+WARNING: Program execution failed with exit code 1
+End time: Sun Dec 28 07:14:03 MSK 2025
+Execution time: 3.783372575 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=344064, ANT_SIZE=4096!
+Results saved in: results/
+Execution time: 3.783372575 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=688128
+===================================================
+Updating parameter file with PARAMETR_SIZE=688128...
+Updating parametrs.h with PARAMETR_SIZE=688128 and NAME_FILE_GRAPH=Parametr_Graph/test688128.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=688128
+Updating BLOCK_SIZE based on PARAM_SIZE...
+Updating BLOCK_SIZE based on PARAM_SIZE=688128
+PARAM_SIZE=688128 > 2688, setting BLOCK_SIZE=256
+Successfully updated parametrs.h with BLOCK_SIZE=256
+===================================================
+Testing with PARAMETR_SIZE=688128, ANT_SIZE=4096
+===================================================
+Updating parameter file with ANT_SIZE=4096...
+Updating parametrs.h with ANT_SIZE=4096
+Successfully updated parametrs.h with ANT_SIZE=4096
+Compiling CUDA program with arch=sm_70...
+
+ERROR: Compilation failed!
+Compilation errors saved to: results/compilation_logs/compile_size_688128_block_4096_20251228_071404.txt
+Showing last 10 lines of compilation log:
+      size_t expected_agent_size = 4096 * 688128 * sizeof(int);
+                                        ^
+
+aco_cuda_global_while.cu(2356): warning #68-D: integer conversion resulted in a change of sign
+      size_t expected_agent_size = 4096 * 688128 * sizeof(int);
+                                   ^
+
+2 errors detected in the compilation of "aco_cuda_global_while.cu".
+========== COMPILATION END ==========
+Exit code: 2
+Trying simplified compilation...
+gcc: error: aco_cuda_optimized.cu: No such file or directory
+gcc: warning: ‘-x c++’ after last input file has no effect
+gcc: fatal error: no input files
+compilation terminated.

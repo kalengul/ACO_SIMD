@@ -1,0 +1,9 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(1016): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+aco_cuda_global_while.cu(2322): fatal error C1004: unexpected end-of-file found
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

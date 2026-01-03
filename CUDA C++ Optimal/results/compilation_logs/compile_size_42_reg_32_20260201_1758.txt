@@ -1,0 +1,43 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(466): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(1938): error: identifier "num_threads" is undefined
+      init_hash_table(hash_table, 1048576, std::min(num_threads, 8));
+                                                    ^
+
+aco_cuda_global_while.cu(1938): error: no instance of overloaded function "std::min" matches the argument list
+            argument types are: (<error-type>, int)
+      init_hash_table(hash_table, 1048576, std::min(num_threads, 8));
+                                           ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\xutility(6649): note #3322-D: number of parameters of function template "std::min(std::initializer_list<_Ty>)" does not match the call
+  [[nodiscard]] constexpr _Ty(min)(initializer_list<_Ty> _Ilist) {
+                              ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\xutility(6642): note #3327-D: candidate function template "std::min(std::initializer_list<_Ty>, _Pr)" failed deduction
+  [[nodiscard]] constexpr _Ty(min)(initializer_list<_Ty> _Ilist, _Pr _Pred) {
+                              ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\utility(64): note #3327-D: candidate function template "std::min(const _Ty &, const _Ty &)" failed deduction
+      (min) (const _Ty& _Left, const _Ty& _Right) noexcept(noexcept(_Right < _Left))  {
+       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include\utility(54): note #3322-D: number of parameters of function template "std::min(const _Ty &, const _Ty &, _Pr)" does not match the call
+  [[nodiscard]] constexpr const _Ty&(min) (const _Ty& _Left, const _Ty& _Right, _Pr _Pred) noexcept(
+                                     ^
+
+aco_cuda_global_while.cu(1968): error: expected an expression
+          do { cudaError_t err = cudaMemcpyAsync(, dev_agent_node, 42 * 10 * sizeof(int), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1968 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                 ^
+
+aco_cuda_global_while.cu(1969): error: expected an expression
+          do { cudaError_t err = cudaMemcpyAsync(, dev_agent_params, 42 * 10 * sizeof(double), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1969 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                 ^
+
+4 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

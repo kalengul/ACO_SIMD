@@ -6,7 +6,7 @@ echo ===================================================
 echo    CUDA ACO Benchmark Launcher
 echo ===================================================
 
-set EXE_NAME=aco_cuda_const_while.exe
+set EXE_NAME=aco_cuda_4.exe
 set OUTPUT_DIR=results
 set CONFIG_FILE=parametrs.h
 
@@ -27,7 +27,15 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-
+:: Проверка наличия MPI
+echo Checking MPI availability...
+where mpiexec >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ERROR: mpiexec not found in PATH!
+    echo Please install Microsoft MPI or add to PATH
+    pause
+    exit /b 1
+)
 :: Получение информации о GPU
 echo Checking GPU information...
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv >nul 2>&1
@@ -86,10 +94,13 @@ for %%S in (%PARAM_SIZES%) do (
         :: Расширенная компиляция с сохранением вывода в файл
         echo ========== COMPILATION START ========== > "!COMPILE_LOG!"
         echo Parameters: PARAMETR_SIZE=%%S, MAXREGCOUNT=%%R >> "!COMPILE_LOG!"
-        echo Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o %EXE_NAME% aco_cuda_const_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=%%R -Xptxas "-O3,-v" --resource-usage >> "!COMPILE_LOG!"
+        echo Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o %EXE_NAME% aco_cuda_4.cu -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" -lmsmpi -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=%%R -Xptxas "-O3,-v" --resource-usage >> "!COMPILE_LOG!"
         echo. >> "!COMPILE_LOG!"
-        
-        nvcc -O3 -arch=!ARCH! -std=c++17 -o %EXE_NAME% aco_cuda_const_while.cu ^
+
+        nvcc -O3 -arch=!ARCH! -std=c++17 -o %EXE_NAME% aco_cuda_4.cu ^
+             -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" ^
+             -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" ^
+             -lmsmpi ^
              -Xcompiler "/O2 /fp:fast /openmp /MT" ^
              -use_fast_math ^
              -lcudart ^
@@ -117,15 +128,17 @@ for %%S in (%PARAM_SIZES%) do (
 
         echo.
         echo ===================================================
-        echo Running ACO optimization...
+        echo Running MPI ACO optimization...
         echo ===================================================
         echo.
 
         :: Запуск программы с измерением времени
         set START_TIME=!time!
         echo Start time: !START_TIME!
+           
+        mpiexec -n 1 %EXE_NAME%
 
-        %EXE_NAME%
+        
 
         set END_TIME=!time!
         echo End time: !END_TIME!

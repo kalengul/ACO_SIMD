@@ -1,0 +1,296 @@
+===================================================
+    OMP ACO Benchmark Launcher
+===================================================
+Checking GCC compiler...
+/opt/gcc/v9.1/bin/g++
+g++ (GCC) 9.1.0
+Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+OpenMP environment:
+OMP_NUM_THREADS=32
+OMP_PLACES=cores
+OMP_PROC_BIND=close
+
+Cleaning previous builds...
+
+===================================================
+Testing with PARAMETR_SIZE=688128
+===================================================
+Updating parameter file with PARAMETR_SIZE=688128...
+Updating parametrs.h with PARAMETR_SIZE=688128 and NAME_FILE_GRAPH=Parametr_Graph/test688128.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=688128
+Updating BLOCK_SIZE based on PARAM_SIZE...
+===================================================
+Testing with PARAMETR_SIZE=688128, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling OpenMP program with GCC...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_688128_ants_500_20251226_163141.txt
+
+===================================================
+Running OpenMP ACO optimization...
+===================================================
+Start time: Fri Dec 26 16:31:44 MSK 2025
+OpenMP threads: 32
+
+=== OPENMP PERFORMANCE OPTIMIZATION WITH THREAD SCALING ===
+OpenMP version: 201511
+Start time: Fri Dec 26 16:31:44 2025
+
+============================================================
+THREAD SCALING EXPERIMENT
+Hardware threads: 64
+Max OpenMP threads: 32
+Runs per configuration: 10
+============================================================
+Testing thread counts: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+Testing 1 threads...
+  Run 1/10... OK (5.06802e+06 ms) min=0.499534
+  Run 2/10... OK (5.07676e+06 ms) min=0.499534
+  Run 3/10... OK (5.04405e+06 ms) min=0.499537
+  Run 4/10... OK (5.02047e+06 ms) min=0.499535
+  Run 5/10... OK (5.01013e+06 ms) min=0.499534
+  Run 6/10... OK (5.12276e+06 ms) min=0.499534
+  Run 7/10... OK (5.138e+06 ms) min=0.499534
+  Run 8/10... OK (5.1539e+06 ms) min=0.499535
+  Run 9/10... OK (5.16218e+06 ms) min=0.499534
+  Run 10/10... OK (5.15408e+06 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 5.09504e+06 ms)
+Testing 2 threads...
+  Run 1/10... OK (2.60359e+06 ms) min=0.499534
+  Run 2/10... OK (2.60794e+06 ms) min=0.499534
+  Run 3/10... OK (2.62402e+06 ms) min=0.499537
+  Run 4/10... OK (2.63079e+06 ms) min=0.499534
+  Run 5/10... OK (2.61006e+06 ms) min=0.499536
+  Run 6/10... OK (2.60911e+06 ms) min=0.499534
+  Run 7/10... OK (2.62066e+06 ms) min=0.499534
+  Run 8/10... OK (2.60903e+06 ms) min=0.499534
+  Run 9/10... OK (2.6118e+06 ms) min=0.499534
+  Run 10/10... OK (2.61443e+06 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 2.61414e+06 ms)
+Testing 3 threads...
+  Run 1/10... OK (1.80938e+06 ms) min=0.499534
+  Run 2/10... OK (1.79303e+06 ms) min=0.499534
+  Run 3/10... OK (1.79353e+06 ms) min=0.499534
+  Run 4/10... OK (1.78664e+06 ms) min=0.499534
+  Run 5/10... OK (1.78674e+06 ms) min=0.499534
+  Run 6/10... OK (1.7828e+06 ms) min=0.499534
+  Run 7/10... OK (1.7734e+06 ms) min=0.499534
+  Run 8/10... OK (1.78138e+06 ms) min=0.499534
+  Run 9/10... OK (1.77641e+06 ms) min=0.499535
+  Run 10/10... OK (1.78466e+06 ms) min=0.499535
+  ✓ Completed 10/10 runs, avg: 1.7868e+06 ms)
+Testing 4 threads...
+  Run 1/10... OK (1.34535e+06 ms) min=0.499531
+  Run 2/10... OK (1.34468e+06 ms) min=0.499534
+  Run 3/10... OK (1.3403e+06 ms) min=0.499534
+  Run 4/10... OK (1.33877e+06 ms) min=0.499534
+  Run 5/10... OK (1.33975e+06 ms) min=0.499534
+  Run 6/10... OK (1.34365e+06 ms) min=0.499534
+  Run 7/10... OK (1.34856e+06 ms) min=0.499534
+  Run 8/10... OK (1.34099e+06 ms) min=0.499535
+  Run 9/10... OK (1.34134e+06 ms) min=0.499534
+  Run 10/10... OK (1.33894e+06 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 1.34223e+06 ms)
+Testing 5 threads...
+  Run 1/10... OK (1.14559e+06 ms) min=0.499534
+  Run 2/10... OK (1.14941e+06 ms) min=0.499535
+  Run 3/10... OK (1.13999e+06 ms) min=0.499534
+  Run 4/10... OK (1.14332e+06 ms) min=0.499534
+  Run 5/10... OK (1.15654e+06 ms) min=0.499535
+  Run 6/10... OK (1.15135e+06 ms) min=0.499534
+  Run 7/10... OK (1.16135e+06 ms) min=0.499534
+  Run 8/10... OK (1.16376e+06 ms) min=0.499534
+  Run 9/10... OK (1.16003e+06 ms) min=0.499534
+  Run 10/10... OK (1.15703e+06 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 1.15284e+06 ms)
+Testing 6 threads...
+  Run 1/10... OK (971099 ms) min=0.499534
+  Run 2/10... OK (980922 ms) min=0.499534
+  Run 3/10... OK (981748 ms) min=0.499534
+  Run 4/10... OK (976787 ms) min=0.499536
+  Run 5/10... OK (972955 ms) min=0.499534
+  Run 6/10... OK (975328 ms) min=0.499534
+  Run 7/10... OK (980894 ms) min=0.499534
+  Run 8/10... OK (974980 ms) min=0.499534
+  Run 9/10... OK (974677 ms) min=0.499534
+  Run 10/10... OK (973531 ms) min=0.499535
+  ✓ Completed 10/10 runs, avg: 976292 ms)
+Testing 7 threads...
+  Run 1/10... OK (882475 ms) min=0.499534
+  Run 2/10... OK (888925 ms) min=0.499534
+  Run 3/10... OK (886614 ms) min=0.499537
+  Run 4/10... OK (883643 ms) min=0.499535
+  Run 5/10... OK (885108 ms) min=0.499535
+  Run 6/10... OK (887307 ms) min=0.499535
+  Run 7/10... OK (889810 ms) min=0.499534
+  Run 8/10... OK (885918 ms) min=0.499534
+  Run 9/10... OK (883807 ms) min=0.499534
+  Run 10/10... OK (886182 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 885979 ms)
+Testing 8 threads...
+  Run 1/10... OK (796357 ms) min=0.499534
+  Run 2/10... OK (796967 ms) min=0.499537
+  Run 3/10... OK (796076 ms) min=0.499537
+  Run 4/10... OK (795120 ms) min=0.499535
+  Run 5/10... OK (796262 ms) min=0.499537
+  Run 6/10... OK (793811 ms) min=0.499534
+  Run 7/10... OK (796457 ms) min=0.499535
+  Run 8/10... OK (796611 ms) min=0.499534
+  Run 9/10... OK (795593 ms) min=0.499534
+  Run 10/10... OK (795950 ms) min=0.499535
+  ✓ Completed 10/10 runs, avg: 795920 ms)
+Testing 9 threads...
+  Run 1/10... OK (730950 ms) min=0.499534
+  Run 2/10... OK (731165 ms) min=0.499537
+  Run 3/10... OK (734350 ms) min=0.499534
+  Run 4/10... OK (738092 ms) min=0.499534
+  Run 5/10... OK (751077 ms) min=0.499535
+  Run 6/10... OK (752878 ms) min=0.499534
+  Run 7/10... OK (753749 ms) min=0.499535
+  Run 8/10... OK (755515 ms) min=0.499534
+  Run 9/10... OK (749736 ms) min=0.499534
+  Run 10/10... OK (750895 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 744840 ms)
+Testing 10 threads...
+  Run 1/10... OK (706773 ms) min=0.499534
+  Run 2/10... OK (708958 ms) min=0.499534
+  Run 3/10... OK (705460 ms) min=0.499534
+  Run 4/10... OK (705417 ms) min=0.499534
+  Run 5/10... OK (705885 ms) min=0.499535
+  Run 6/10... OK (704864 ms) min=0.499534
+  Run 7/10... OK (705070 ms) min=0.499534
+  Run 8/10... OK (704953 ms) min=0.499534
+  Run 9/10... OK (706148 ms) min=0.499536
+  Run 10/10... OK (704651 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 705818 ms)
+Testing 11 threads...
+  Run 1/10... OK (660500 ms) min=0.499534
+  Run 2/10... OK (660907 ms) min=0.499534
+  Run 3/10... OK (659676 ms) min=0.499534
+  Run 4/10... OK (661915 ms) min=0.499534
+  Run 5/10... OK (660043 ms) min=0.499534
+  Run 6/10... OK (660144 ms) min=0.499535
+  Run 7/10... OK (661094 ms) min=0.499534
+  Run 8/10... OK (662282 ms) min=0.499534
+  Run 9/10... OK (659748 ms) min=0.499534
+  Run 10/10... OK (658768 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 660508 ms)
+Testing 12 threads...
+  Run 1/10... OK (647700 ms) min=0.499534
+  Run 2/10... OK (644145 ms) min=0.499534
+  Run 3/10... OK (644917 ms) min=0.499534
+  Run 4/10... OK (647042 ms) min=0.499536
+  Run 5/10... OK (645618 ms) min=0.499534
+  Run 6/10... OK (646873 ms) min=0.499534
+  Run 7/10... OK (644655 ms) min=0.499536
+  Run 8/10... OK (646463 ms) min=0.499537
+  Run 9/10... OK (646545 ms) min=0.499536
+  Run 10/10... OK (643099 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 645706 ms)
+Testing 13 threads...
+  Run 1/10... OK (623337 ms) min=0.499534
+  Run 2/10... OK (623831 ms) min=0.499536
+  Run 3/10... OK (622385 ms) min=0.499534
+  Run 4/10... OK (594925 ms) min=0.499535
+  Run 5/10... OK (594386 ms) min=0.499534
+  Run 6/10... OK (593746 ms) min=0.499537
+  Run 7/10... OK (608882 ms) min=0.499534
+  Run 8/10... OK (612358 ms) min=0.499537
+  Run 9/10... OK (610690 ms) min=0.499534
+  Run 10/10... OK (613454 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 609799 ms)
+Testing 14 threads...
+  Run 1/10... OK (610537 ms) min=0.499535
+  Run 2/10... OK (608666 ms) min=0.499535
+  Run 3/10... OK (610192 ms) min=0.499534
+  Run 4/10... OK (610971 ms) min=0.499534
+  Run 5/10... OK (608847 ms) min=0.499534
+  Run 6/10... OK (610171 ms) min=0.499537
+  Run 7/10... OK (609710 ms) min=0.499534
+  Run 8/10... OK (609310 ms) min=0.499537
+  Run 9/10... OK (609181 ms) min=0.499534
+  Run 10/10... OK (608956 ms) min=0.499534
+  ✓ Completed 10/10 runs, avg: 609654 ms)
+Testing 15 threads...
+  Run 1/10... OK (581282 ms) min=0.499534
+  Run 2/10... OK (583728 ms) min=0.499534
+  Run 3/10... OK (583739 ms) min=0.499534
+  Run 4/10... OK (583311 ms) min=0.499534
+  Run 5/10... OK (582477 ms) min=0.499534
+  Run 6/10... OK (582963 ms) min=0.499534
+  Run 7/10... OK (583030 ms) min=0.499534
+  Run 8/10... OK (583879 ms) min=0.499534
+  Run 9/10... OK (583451 ms) min=0.499536
+  Run 10/10... OK (582981 ms) min=0.499535
+  ✓ Completed 10/10 runs, avg: 583084 ms)
+Threads ; iteration_time (ms) ; probability_time ; agent_time ; pheromone_time ; hash_time ; evaluation_time ; speedup ; parallel_efficiency ; hit_rate ; min_objective ;
+1; 5.09504e+06; 4667.32; 4.29285e+06; 797513; 808267; 136452; 0; 100; 0; 0.499534; 2; 2.61414e+06; 2967.27; 2.21048e+06; 400693; 817033; 138913; 0; 50; 0; 0.499534; 3; 1.7868e+06; 2611.09; 1.47247e+06; 311713; 819033; 135881; 0; 33.3333; 0; 0.499534; 4; 1.34223e+06; 1649.4; 1.10023e+06; 240354; 817182; 135784; 0; 25; 0; 0.499531; 5; 1.15284e+06; 1724.59; 902598; 248513; 832986; 132075; 0; 20; 0; 0.499534; 6; 976292; 1234.89; 755015; 220041; 834003; 132967; 0; 16.6667; 0; 0.499534; 7; 885979; 1292.19; 660988; 223697; 845264; 131388; 0; 14.2857; 0; 0.499534; 8; 795920; 1081.01; 580976; 213861; 848280; 134540; 0; 12.5; 0; 0.499534; 9; 744840; 1151.51; 523203; 220485; 856292; 145514; 0; 11.1111; 0; 0.499534; 10; 705818; 1043.16; 477443; 227330; 869717; 156170; 0; 10; 0; 0.499534; 11; 660508; 1075.73; 441617; 217814; 879396; 158011; 0; 9.09091; 0; 0.499534; 12; 645706; 1013.11; 419519; 225172; 909508; 159928; 0; 8.33333; 0; 0.499534; 13; 609799; 1003; 393746; 215048; 923871; 155793; 0; 7.69231; 0; 0.499534; 14; 609654; 1007.87; 383875; 224770; 967033; 160516; 0; 7.14286; 0; 0.499534; 15; 583084; 971.389; 358989; 223122; 968710; 162927; 0; 6.66667; 0; 0.499534; 
+============================================================
+OPTIMAL CONFIGURATION
+============================================================
+Recommended thread count: 15
+Execution time: 583084 ms
+Speedup: 0x
+Parallel efficiency: 6.66667%
+Best objective value: 0.499534
+
+=== EXPERIMENT COMPLETED SUCCESSFULLY ===
+Results saved to statistics.txt
+Parameters logged to log.txt
+Total experiment duration: 3212 minutes
+Program executed successfully
+End time: Sun Dec 28 22:04:06 MSK 2025
+Execution time: 192742.553643531 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=688128, ANT_SIZE=500!
+Results saved in: results/
+Execution time: 192742.553643531 seconds
+===================================================
+
+===================================================
+Testing with PARAMETR_SIZE=1376256
+===================================================
+Updating parameter file with PARAMETR_SIZE=1376256...
+Updating parametrs.h with PARAMETR_SIZE=1376256 and NAME_FILE_GRAPH=Parametr_Graph/test1376256.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=1376256
+Updating BLOCK_SIZE based on PARAM_SIZE...
+===================================================
+Testing with PARAMETR_SIZE=1376256, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling OpenMP program with GCC...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_1376256_ants_500_20251228_220407.txt
+
+===================================================
+Running OpenMP ACO optimization...
+===================================================
+Start time: Sun Dec 28 22:04:11 MSK 2025
+OpenMP threads: 32
+
+=== OPENMP PERFORMANCE OPTIMIZATION WITH THREAD SCALING ===
+OpenMP version: 201511
+Start time: Sun Dec 28 22:04:11 2025
+
+============================================================
+THREAD SCALING EXPERIMENT
+Hardware threads: 64
+Max OpenMP threads: 32
+Runs per configuration: 10
+============================================================
+Testing thread counts: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+Testing 1 threads...
+  Run 1/10... OK (1.05079e+07 ms) min=0.499768
+  Run 2/10... OK (1.03729e+07 ms) min=0.499768
+  Run 3/10... OK (1.03016e+07 ms) min=0.499768

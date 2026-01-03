@@ -1,0 +1,128 @@
+Start time: Sat Dec 27 14:50:01 MSK 2025
+Launching with 1 MPI processes (one per GPU)...
+Testing different GPU assignment methods...
+Method 1: Using separate CUDA_VISIBLE_DEVICES for each rank
+[node01:252209] MCW rank 0 bound to socket 0[core 0[hwt 0-1]], socket 0[core 1[hwt 0-1]], socket 0[core 2[hwt 0-1]], socket 0[core 3[hwt 0-1]], socket 0[core 4[hwt 0-1]], socket 0[core 5[hwt 0-1]], socket 0[core 6[hwt 0-1]], socket 0[core 7[hwt 0-1]], socket 0[core 8[hwt 0-1]], socket 0[core 9[hwt 0-1]], socket 0[core 10[hwt 0-1]], socket 0[core 11[hwt 0-1]], socket 0[core 12[hwt 0-1]], socket 0[core 13[hwt 0-1]], socket 0[core 14[hwt 0-1]], socket 0[core 15[hwt 0-1]]: [BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB][../../../../../../../../../../../../../../../..]
+--------------------------------------------------------------------------
+WARNING: An invalid value was given for btl_tcp_if_include.  This
+value will be ignored.
+
+  Local host: node01
+  Value:      ib0
+  Message:    Unknown interface name
+--------------------------------------------------------------------------
+Process 0/1 using GPU 0: Tesla V100-SXM2-16GB (Compute 7.0)
+Memory bounds check:
+  PARAMETR_SIZE: 672
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE per process: 512
+  Total ants across all processes: 512
+  Total matrix elements: 3360
+Device 0: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 4.04396 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 7803920 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 5376 bytes (5.25 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 26880 bytes (26.25 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+Device 1: Tesla V100-SXM2-16GB
+Max thread in blocks: 1024
+Total Global Memory: 16151.1 MB
+GPU Global Memory Usage: 4.04396 MB
+GPU Global Memory Hash Table: 16 MB
+Max PARAMETR_SIZE in GPU Global Memory: 7803920 
+Shared memory per block: 49152 bytes (48 KB)
+Shared memory per multiprocessor: 98304 bytes (96 KB)
+Data size in Shared memory per block: 5376 bytes (5.25 KB)
+Constant Memory: 65536 bytes
+Parameter data size (in Constant Memory): 26880 bytes (26.25 KB)
+Registers per Block: 65536
+Warp Size: 32
+Compute Capability: 7.0
+Can Map Host Memory: Yes
+Clock Rate: 1530 MHz
+L2 Cache Size: 6291456 bytes
+Multiprocessor Count: 80
+Max thread in blocks by axis: (1024, 1024, 64)
+Max blocks by axis: (2147483647, 65535, 65535)
+KOL_GPU: 4; PARAMETR_SIZE: 672; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 512; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test672.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 64; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+Warmup 0
+Warmup 1
+Warmup 2
+Warmup 3
+Warmup 4
+Run MPI Combined Run0: Time=100.26ms Kernel=0ms Probabilities=25.7318ms Ant=25.0246ms Update=0ms Memory=100.26ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.91045 MIN=0.0109333 MAX=0.993511 
+Run MPI Combined Run1: Time=100.103ms Kernel=0ms Probabilities=25.7269ms Ant=24.7604ms Update=0ms Memory=100.103ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.92134 MIN=0.0115021 MAX=0.981007 
+Run MPI Combined Run2: Time=100.451ms Kernel=0ms Probabilities=25.8454ms Ant=25.0399ms Update=0ms Memory=100.451ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.89736 MIN=0.0134423 MAX=0.994918 
+Run MPI Combined Run3: Time=99.7351ms Kernel=0ms Probabilities=25.4646ms Ant=24.8096ms Update=0ms Memory=99.7351ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.94685 MIN=0.0108995 MAX=0.992931 
+Run MPI Combined Run4: Time=100.051ms Kernel=0ms Probabilities=25.4029ms Ant=25.0041ms Update=0ms Memory=100.051ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.92492 MIN=0.0108763 MAX=0.980885 
+Run MPI Combined Run5: Time=99.64ms Kernel=0ms Probabilities=25.4774ms Ant=24.7594ms Update=0ms Memory=99.64ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.95347 MIN=0.0108921 MAX=0.986844 
+Run MPI Combined Run6: Time=99.6688ms Kernel=0ms Probabilities=25.3714ms Ant=25.0635ms Update=0ms Memory=99.6688ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.95147 MIN=0.0162966 MAX=0.993532 
+Run MPI Combined Run7: Time=98.2961ms Kernel=0ms Probabilities=25.0932ms Ant=24.7399ms Update=0ms Memory=98.2961ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.04854 MIN=0.0108608 MAX=0.988295 
+Run MPI Combined Run8: Time=98.6636ms Kernel=0ms Probabilities=25.0467ms Ant=24.957ms Update=0ms Memory=98.6636ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.02229 MIN=0.0012788 MAX=0.980885 
+Run MPI Combined Run9: Time=98.8204ms Kernel=0ms Probabilities=25.1534ms Ant=24.826ms Update=0ms Memory=98.8204ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.01115 MIN=0.0115465 MAX=0.994255 
+Run MPI Combined Run10: Time=99.0175ms Kernel=0ms Probabilities=25.2345ms Ant=25.0707ms Update=0ms Memory=99.0175ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.99719 MIN=0.0108921 MAX=0.994768 
+Run MPI Combined Run11: Time=98.6529ms Kernel=0ms Probabilities=25.1465ms Ant=24.7747ms Update=0ms Memory=98.6529ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.02305 MIN=0.0117413 MAX=0.994118 
+Run MPI Combined Run12: Time=99.3463ms Kernel=0ms Probabilities=25.1513ms Ant=25.0441ms Update=0ms Memory=99.3463ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=6.97403 MIN=0.0110074 MAX=0.980798 
+Run MPI Combined Run13: Time=98.7929ms Kernel=0ms Probabilities=25.1199ms Ant=24.786ms Update=0ms Memory=98.7929ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.0131 MIN=0.0108569 MAX=0.980981 
+Run MPI Combined Run14: Time=98.6682ms Kernel=0ms Probabilities=25.1149ms Ant=24.9908ms Update=0ms Memory=98.6682ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.02197 MIN=0.0161946 MAX=0.994894 
+Run MPI Combined Run15: Time=98.2029ms Kernel=0ms Probabilities=25.0545ms Ant=24.7553ms Update=0ms Memory=98.2029ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05523 MIN=0.0108905 MAX=0.99464 
+Run MPI Combined Run16: Time=98.7655ms Kernel=0ms Probabilities=24.982ms Ant=24.9734ms Update=0ms Memory=98.7655ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.01504 MIN=0.0134966 MAX=0.981019 
+Run MPI Combined Run17: Time=97.8714ms Kernel=0ms Probabilities=24.76ms Ant=24.7328ms Update=0ms Memory=97.8714ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07913 MIN=0.0154999 MAX=1 
+Run MPI Combined Run18: Time=98.1581ms Kernel=0ms Probabilities=24.8906ms Ant=24.9222ms Update=0ms Memory=98.1581ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05845 MIN=0.0108581 MAX=0.993146 
+Run MPI Combined Run19: Time=98.3525ms Kernel=0ms Probabilities=25.1303ms Ant=24.7532ms Update=0ms Memory=98.3525ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.0445 MIN=0.0123198 MAX=0.990142 
+Run MPI Combined Run20: Time=98.3395ms Kernel=0ms Probabilities=24.8472ms Ant=25.0287ms Update=0ms Memory=98.3395ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.04543 MIN=0.0121222 MAX=0.982558 
+Run MPI Combined Run21: Time=97.7448ms Kernel=0ms Probabilities=24.7639ms Ant=24.7778ms Update=0ms Memory=97.7448ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.0883 MIN=0.0112422 MAX=0.98097 
+Run MPI Combined Run22: Time=98.2111ms Kernel=0ms Probabilities=24.8689ms Ant=24.9898ms Update=0ms Memory=98.2111ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05464 MIN=0.0110264 MAX=0.984734 
+Run MPI Combined Run23: Time=97.9461ms Kernel=0ms Probabilities=24.7872ms Ant=24.7973ms Update=0ms Memory=97.9461ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07373 MIN=0.0112225 MAX=0.994865 
+Run MPI Combined Run24: Time=98.0956ms Kernel=0ms Probabilities=24.7755ms Ant=25.0164ms Update=0ms Memory=98.0956ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06295 MIN=0.0232024 MAX=0.989216 
+Run MPI Combined Run25: Time=97.7867ms Kernel=0ms Probabilities=24.7586ms Ant=24.7573ms Update=0ms Memory=97.7867ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.08526 MIN=0.0119338 MAX=0.981019 
+Run MPI Combined Run26: Time=98.1362ms Kernel=0ms Probabilities=24.906ms Ant=24.871ms Update=0ms Memory=98.1362ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06003 MIN=0.0137512 MAX=0.98091 
+Run MPI Combined Run27: Time=97.7538ms Kernel=0ms Probabilities=24.7315ms Ant=24.7246ms Update=0ms Memory=97.7538ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.08764 MIN=0.0108571 MAX=0.995098 
+Run MPI Combined Run28: Time=97.866ms Kernel=0ms Probabilities=24.8107ms Ant=24.9724ms Update=0ms Memory=97.866ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07952 MIN=0.0113708 MAX=0.984347 
+Run MPI Combined Run29: Time=98.0303ms Kernel=0ms Probabilities=24.821ms Ant=24.7881ms Update=0ms Memory=98.0303ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06765 MIN=0.0166441 MAX=0.980772 
+Run MPI Combined Run30: Time=98.1918ms Kernel=0ms Probabilities=24.9119ms Ant=24.958ms Update=0ms Memory=98.1918ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05603 MIN=0.00791954 MAX=0.981772 
+Run MPI Combined Run31: Time=97.8904ms Kernel=0ms Probabilities=24.7888ms Ant=24.7563ms Update=0ms Memory=97.8904ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07776 MIN=0.0119254 MAX=0.980999 
+Run MPI Combined Run32: Time=97.9941ms Kernel=0ms Probabilities=24.7728ms Ant=24.9683ms Update=0ms Memory=97.9941ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07027 MIN=0.0109874 MAX=0.98991 
+Run MPI Combined Run33: Time=97.9275ms Kernel=0ms Probabilities=24.8373ms Ant=24.8034ms Update=0ms Memory=97.9275ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07508 MIN=0.0109596 MAX=0.994859 
+Run MPI Combined Run34: Time=98.2357ms Kernel=0ms Probabilities=24.9518ms Ant=24.9867ms Update=0ms Memory=98.2357ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05288 MIN=0.0111367 MAX=0.984625 
+Run MPI Combined Run35: Time=98.0793ms Kernel=0ms Probabilities=24.8493ms Ant=24.7911ms Update=0ms Memory=98.0793ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06413 MIN=0.0119887 MAX=0.993653 
+Run MPI Combined Run36: Time=98.1663ms Kernel=0ms Probabilities=24.7649ms Ant=24.9713ms Update=0ms Memory=98.1663ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05786 MIN=0.0126084 MAX=0.981019 
+Run MPI Combined Run37: Time=98.0888ms Kernel=0ms Probabilities=24.8668ms Ant=24.7666ms Update=0ms Memory=98.0888ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06344 MIN=0.0110181 MAX=0.980985 
+Run MPI Combined Run38: Time=98.2282ms Kernel=0ms Probabilities=24.944ms Ant=24.9744ms Update=0ms Memory=98.2282ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05341 MIN=0.0229936 MAX=0.993397 
+Run MPI Combined Run39: Time=97.7501ms Kernel=0ms Probabilities=24.7896ms Ant=24.7993ms Update=0ms Memory=97.7501ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.08792 MIN=0.0111593 MAX=0.99507 
+Run MPI Combined Run40: Time=98.0446ms Kernel=0ms Probabilities=24.8199ms Ant=24.9171ms Update=0ms Memory=98.0446ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06663 MIN=0.0112331 MAX=0.984298 
+Run MPI Combined Run41: Time=97.9115ms Kernel=0ms Probabilities=24.7722ms Ant=24.7963ms Update=0ms Memory=97.9115ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07623 MIN=0.0111156 MAX=0.981003 
+Run MPI Combined Run42: Time=98.2355ms Kernel=0ms Probabilities=24.9026ms Ant=24.9888ms Update=0ms Memory=98.2355ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05289 MIN=0.0122289 MAX=0.980821 
+Run MPI Combined Run43: Time=97.898ms Kernel=0ms Probabilities=24.7735ms Ant=24.7983ms Update=0ms Memory=97.898ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.07721 MIN=0.0111028 MAX=0.992121 
+Run MPI Combined Run44: Time=98.213ms Kernel=0ms Probabilities=24.8453ms Ant=25.0758ms Update=0ms Memory=98.213ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.05451 MIN=0.0117384 MAX=0.980975 
+Run MPI Combined Run45: Time=98.3036ms Kernel=0ms Probabilities=24.9323ms Ant=24.7942ms Update=0ms Memory=98.3036ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.04801 MIN=0.0113356 MAX=0.991946 
+Run MPI Combined Run46: Time=98.5231ms Kernel=0ms Probabilities=24.9791ms Ant=25.0297ms Update=0ms Memory=98.5231ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.0323 MIN=0.00615311 MAX=0.994791 
+Run MPI Combined Run47: Time=98.3243ms Kernel=0ms Probabilities=24.9402ms Ant=24.7922ms Update=0ms Memory=98.3243ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.04652 MIN=0.0109454 MAX=0.995018 
+Run MPI Combined Run48: Time=98.0599ms Kernel=0ms Probabilities=24.8428ms Ant=25.0195ms Update=0ms Memory=98.0599ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.06553 MIN=0.0108653 MAX=0.982528 
+Run MPI Combined Run49: Time=97.2374ms Kernel=0ms Probabilities=24.7064ms Ant=24.7256ms Update=0ms Memory=97.2374ms HitRate=-nan% Occupancy=100% memory_throughput_gbs=7.12529 MIN=0.0115887 MAX=0.995099 
+End time: Sat Dec 27 14:50:09 MSK 2025
+Execution time: 8.173495454 seconds
+MPI execution completed successfully
+Log file saved to results
+GPU utilization after run:
+index, name, utilization.gpu [%], memory.used [MiB], memory.free [MiB]
+0, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+1, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+2, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+3, Tesla V100-SXM2-16GB, 1 %, 0 MiB, 16151 MiB

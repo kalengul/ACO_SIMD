@@ -1,0 +1,26 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_4.exe aco_cuda_4.cu -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" -lmsmpi -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_4.cu(359): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_4.cu(1423): error: variable "std::cout" is not a type name
+          std::cout iter << " ant=" << 512 << std::endl;
+          ^
+
+aco_cuda_4.cu(1423): error: "iter", declared in for-loop initialization, may not be redeclared in this scope
+          std::cout iter << " ant=" << 512 << std::endl;
+                    ^
+
+aco_cuda_4.cu(1423): error: expected a ";"
+          std::cout iter << " ant=" << 512 << std::endl;
+                         ^
+
+3 errors detected in the compilation of "aco_cuda_4.cu".
+aco_cuda_4.cu
+========== COMPILATION END ========== 
+Exit code: 2 

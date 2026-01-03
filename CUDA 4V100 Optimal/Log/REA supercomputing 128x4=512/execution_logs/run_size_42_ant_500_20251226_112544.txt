@@ -1,0 +1,47 @@
+Start time: Fri Dec 26 11:25:51 MSK 2025
+Launching with 2 MPI processes (one per GPU)...
+Testing different GPU assignment methods...
+Method 1: Using separate CUDA_VISIBLE_DEVICES for each rank
+[node01:253838] MCW rank 0 bound to socket 0[core 0[hwt 0-1]], socket 0[core 1[hwt 0-1]], socket 0[core 2[hwt 0-1]], socket 0[core 3[hwt 0-1]], socket 0[core 4[hwt 0-1]], socket 0[core 5[hwt 0-1]], socket 0[core 6[hwt 0-1]], socket 0[core 7[hwt 0-1]], socket 0[core 8[hwt 0-1]], socket 0[core 9[hwt 0-1]], socket 0[core 10[hwt 0-1]], socket 0[core 11[hwt 0-1]], socket 0[core 12[hwt 0-1]], socket 0[core 13[hwt 0-1]], socket 0[core 14[hwt 0-1]], socket 0[core 15[hwt 0-1]]: [BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB][../../../../../../../../../../../../../../../..]
+[node01:253838] MCW rank 1 bound to socket 1[core 16[hwt 0-1]], socket 1[core 17[hwt 0-1]], socket 1[core 18[hwt 0-1]], socket 1[core 19[hwt 0-1]], socket 1[core 20[hwt 0-1]], socket 1[core 21[hwt 0-1]], socket 1[core 22[hwt 0-1]], socket 1[core 23[hwt 0-1]], socket 1[core 24[hwt 0-1]], socket 1[core 25[hwt 0-1]], socket 1[core 26[hwt 0-1]], socket 1[core 27[hwt 0-1]], socket 1[core 28[hwt 0-1]], socket 1[core 29[hwt 0-1]], socket 1[core 30[hwt 0-1]], socket 1[core 31[hwt 0-1]]: [../../../../../../../../../../../../../../../..][BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB/BB]
+--------------------------------------------------------------------------
+WARNING: An invalid value was given for btl_tcp_if_include.  This
+value will be ignored.
+
+  Local host: node01
+  Value:      ib0
+  Message:    Unknown interface name
+--------------------------------------------------------------------------
+Process 1/2 using GPU 2
+Process 0/2 using GPU 2
+Memory bounds check:
+  PARAMETR_SIZE: 42
+  MAX_VALUE_SIZE: 5
+  ANT_SIZE per process: 500
+  Total ants across all processes: 1000
+  Total matrix elements: 210
+Warmup 0
+CUDA error aco_cuda_4.cu:1474 invalid resource handle
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[49387,1],1]
+  Exit code:    1
+--------------------------------------------------------------------------
+[node01:253838] 1 more process has sent help message help-mpi-btl-tcp.txt / invalid if_inexclude
+[node01:253838] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+End time: Fri Dec 26 11:25:53 MSK 2025
+Execution time: 1.870174738 seconds
+MPI execution completed successfully
+Log file saved to results
+GPU utilization after run:
+index, name, utilization.gpu [%], memory.used [MiB], memory.free [MiB]
+0, Tesla V100-SXM2-16GB, 20 %, 509 MiB, 15641 MiB
+1, Tesla V100-SXM2-16GB, 0 %, 3 MiB, 16147 MiB
+2, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB
+3, Tesla V100-SXM2-16GB, 0 %, 0 MiB, 16151 MiB

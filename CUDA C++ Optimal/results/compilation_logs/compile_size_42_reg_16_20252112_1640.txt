@@ -1,0 +1,54 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(2159): error: expected a ";"
+              auto metrics = run_aco_iterations_4function(go_min_parametrs, go_transposed, 500);
+              ^
+
+aco_cuda_global_while.cu(2160): error: identifier "metrics" is undefined
+              print_metrics(metrics, "4 function ACO 4start", i);
+                            ^
+
+aco_cuda_global_while.cu(2175): error: expected a ";"
+              auto metrics = run_aco_iterations(go_min_parametrs, go_transposed, 500);
+              ^
+
+aco_cuda_global_while.cu(2176): error: identifier "metrics" is undefined
+              print_metrics(metrics, "Original ACO 3start", i);
+                            ^
+
+aco_cuda_global_while.cu(2192): error: expected a ";"
+              auto metrics = run_combined_iterations(go_min_parametrs, go_transposed, 500, true);
+              ^
+
+aco_cuda_global_while.cu(2193): error: identifier "metrics" is undefined
+              print_metrics(metrics, "Combined Run 2start", i);
+                            ^
+
+aco_cuda_global_while.cu(2208): error: expected a ";"
+              auto metrics = run_combined_iterations_ant_and_deposit(go_min_parametrs, go_transposed, 500, true);
+              ^
+
+aco_cuda_global_while.cu(2209): error: identifier "metrics" is undefined
+              print_metrics(metrics, "Combined Run 2start ant and deposit", i);
+                            ^
+
+aco_cuda_global_while.cu(2231): error: expected a ";"
+                  auto metrics = run_aco_iterations_4function(go_min_parametrs, go_transposed, 500);
+                  ^
+
+aco_cuda_global_while.cu(2232): error: identifier "metrics" is undefined
+                  print_metrics(metrics, "4 function ACO 4start transposed", i);
+                                ^
+
+10 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

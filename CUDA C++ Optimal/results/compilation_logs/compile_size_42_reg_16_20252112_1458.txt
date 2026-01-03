@@ -1,0 +1,74 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(975): error: argument of type "const double *" is incompatible with parameter of type "double *"
+      evaporatePheromones_dev(pheromon);
+                              ^
+
+aco_cuda_global_while.cu(1014): error: expression must be a modifiable lvalue
+          pheromon[base_idx] = v0;
+          ^
+
+aco_cuda_global_while.cu(1015): error: expression must be a modifiable lvalue
+          pheromon[base_idx + 1] = v1;
+          ^
+
+aco_cuda_global_while.cu(1016): error: expression must be a modifiable lvalue
+          pheromon[base_idx + 2] = v2;
+          ^
+
+aco_cuda_global_while.cu(1017): error: expression must be a modifiable lvalue
+          pheromon[base_idx + 3] = v3;
+          ^
+
+aco_cuda_global_while.cu(1018): error: expression must be a modifiable lvalue
+          pheromon[base_idx + 4] = v4;
+          ^
+
+aco_cuda_global_while.cu(1078): error: no instance of overloaded function "atomicAdd" matches the argument list
+            argument types are: (const double *, double)
+                  atomicAdd(&pheromon[idx], pheromon_delta[k]);
+                  ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\crt\sm_90_rt.h(112): note #3326-D: function "atomicAdd(float4 *, float4)" does not match because argument #1 does not match parameter
+  static __declspec(__device__) __inline float4 atomicAdd(float4 *__address, float4 val) { }
+                                                ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\crt\sm_90_rt.h(109): note #3326-D: function "atomicAdd(float2 *, float2)" does not match because argument #1 does not match parameter
+  static __declspec(__device__) __inline float2 atomicAdd(float2 *__address, float2 val) { }
+                                                ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\sm_60_atomic_functions.h(93): note #3326-D: function "atomicAdd(double *, double)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) double atomicAdd(double *address, double val) { }
+                                                ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\sm_20_atomic_functions.h(88): note #3326-D: function "atomicAdd(float *, float)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) float atomicAdd(float *address, float val) { }
+                                               ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\device_atomic_functions.h(169): note #3326-D: function "atomicAdd(unsigned long long *, unsigned long long)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) unsigned long long int atomicAdd(unsigned long long int *address, unsigned long long int val) { }
+                                                                ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\device_atomic_functions.h(91): note #3326-D: function "atomicAdd(unsigned int *, unsigned int)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) unsigned int atomicAdd(unsigned int *address, unsigned int val) { }
+                                                      ^
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include\device_atomic_functions.h(89): note #3326-D: function "atomicAdd(int *, int)" does not match because argument #1 does not match parameter
+  static __inline __declspec(__device__) int atomicAdd(int *address, int val) { }
+                                             ^
+
+aco_cuda_global_while.cu(1425): error: "hash_fails" has already been declared in the current scope
+      int hash_fails = 0;
+          ^
+
+aco_cuda_global_while.cu(1564): error: "hash_fails" has already been declared in the current scope
+      int hash_fails = 0;
+          ^
+
+aco_cuda_global_while.cu(1672): error: "hash_fails" has already been declared in the current scope
+      int hash_fails = 0;
+          ^
+
+aco_cuda_global_while.cu(1780): error: "hash_fails" has already been declared in the current scope
+      int hash_fails = 0;
+          ^
+
+11 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

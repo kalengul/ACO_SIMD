@@ -1,0 +1,7 @@
+========== COMPILATION START ==========
+Parameters: PARAMETR_SIZE=42, ANT_SIZE=500
+MPI: Enabled
+Compile command: mpicxx -O3 -arch=sm_70 -std=c++17 -o aco_cuda_mpi aco_cuda_4.cu -Xcompiler "-O2 -ffast-math -fopenmp" -use_fast_math -lcudart -lmpi -Xptxas "-O3,-v,-maxrregcount=32" --resource-usage
+
+========== COMPILATION END ==========
+Exit code: 1

@@ -1,0 +1,306 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_4.exe aco_cuda_4.cu -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" -lmsmpi -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_4.cu(398): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_4.cu(2258): error: namespace "std" has no member "to_string"
+          print_line("Device " + std::to_string(device) + ": " + prop.name,
+                                      ^
+
+aco_cuda_4.cu(2259): error: namespace "std" has no member "to_string"
+              "Device " + std::to_string(device) + ": " + prop.name + "; ");
+                               ^
+
+aco_cuda_4.cu(2261): error: namespace "std" has no member "to_string"
+          print_line("Max thread in blocks: " + std::to_string(prop.maxThreadsPerBlock),
+                                                     ^
+
+aco_cuda_4.cu(2262): error: namespace "std" has no member "to_string"
+              "Max thread in blocks: " + std::to_string(prop.maxThreadsPerBlock) + " ");
+                                              ^
+
+aco_cuda_4.cu(2265): error: namespace "std" has no member "to_string"
+          print_line("Total Global Memory: " + std::to_string(totalMemMB) + " MB",
+                                                    ^
+
+aco_cuda_4.cu(2266): error: namespace "std" has no member "to_string"
+              "Total Global Memory: " + std::to_string(totalMemMB) + " MB ");
+                                             ^
+
+aco_cuda_4.cu(2269): error: namespace "std" has no member "to_string"
+          print_line("GPU Global Memory Usage: " + std::to_string(gpuMemUsageMB) + " MB",
+                                                        ^
+
+aco_cuda_4.cu(2270): error: namespace "std" has no member "to_string"
+              "GPU Global Memory Usage: " + std::to_string(gpuMemUsageMB) + " MB ");
+                                                 ^
+
+aco_cuda_4.cu(2273): error: namespace "std" has no member "to_string"
+          print_line("GPU Global Memory Hash Table: " + std::to_string(hashTableMemMB) + " MB",
+                                                             ^
+
+aco_cuda_4.cu(2274): error: namespace "std" has no member "to_string"
+              "GPU Global Memory Hash Table: " + std::to_string(hashTableMemMB) + " MB ");
+                                                      ^
+
+aco_cuda_4.cu(2277): error: namespace "std" has no member "to_string"
+          print_line("Max PARAMETR_SIZE in GPU Global Memory: " + std::to_string(maxParamSize) + " ",
+                                                                       ^
+
+aco_cuda_4.cu(2278): error: namespace "std" has no member "to_string"
+              "Max PARAMETR_SIZE in GPU Global Memory: " + std::to_string(maxParamSize) + " ");
+                                                                ^
+
+aco_cuda_4.cu(2280): error: namespace "std" has no member "to_string"
+          print_line("Shared memory per block: " + std::to_string(prop.sharedMemPerBlock) +
+                                                        ^
+
+aco_cuda_4.cu(2281): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(prop.sharedMemPerBlock / 1024) + " KB)",
+                                ^
+
+aco_cuda_4.cu(2282): error: namespace "std" has no member "to_string"
+              "Shared memory per block: " + std::to_string(prop.sharedMemPerBlock) +
+                                                 ^
+
+aco_cuda_4.cu(2283): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(prop.sharedMemPerBlock / 1024) + " KB) ");
+                                ^
+
+aco_cuda_4.cu(2285): error: namespace "std" has no member "to_string"
+          print_line("Shared memory per multiprocessor: " + std::to_string(prop.sharedMemPerMultiprocessor) +
+                                                                 ^
+
+aco_cuda_4.cu(2286): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(prop.sharedMemPerMultiprocessor / 1024) + " KB)",
+                                ^
+
+aco_cuda_4.cu(2287): error: namespace "std" has no member "to_string"
+              "Shared memory per multiprocessor: " + std::to_string(prop.sharedMemPerMultiprocessor) +
+                                                          ^
+
+aco_cuda_4.cu(2288): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(prop.sharedMemPerMultiprocessor / 1024) + " KB) ");
+                                ^
+
+aco_cuda_4.cu(2291): error: namespace "std" has no member "to_string"
+          print_line("Data size in Shared memory per block: " + std::to_string(42 * sizeof(double)) +
+                                                                     ^
+
+aco_cuda_4.cu(2292): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(sharedDataSizeKB) + " KB)",
+                                ^
+
+aco_cuda_4.cu(2293): error: namespace "std" has no member "to_string"
+              "Data size in Shared memory per block: " + std::to_string(42 * sizeof(double)) +
+                                                              ^
+
+aco_cuda_4.cu(2294): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(sharedDataSizeKB) + " KB) ");
+                                ^
+
+aco_cuda_4.cu(2296): error: namespace "std" has no member "to_string"
+          print_line("Constant Memory: " + std::to_string(prop.totalConstMem) + " bytes",
+                                                ^
+
+aco_cuda_4.cu(2297): error: namespace "std" has no member "to_string"
+              "Constant Memory: " + std::to_string(prop.totalConstMem) + " bytes ");
+                                         ^
+
+aco_cuda_4.cu(2301): error: namespace "std" has no member "to_string"
+              std::to_string(5 * 42 * sizeof(double)) +
+                   ^
+
+aco_cuda_4.cu(2302): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(constDataSizeKB) + " KB)",
+                                ^
+
+aco_cuda_4.cu(2304): error: namespace "std" has no member "to_string"
+              std::to_string(5 * 42 * sizeof(double)) +
+                   ^
+
+aco_cuda_4.cu(2305): error: namespace "std" has no member "to_string"
+              " bytes (" + std::to_string(constDataSizeKB) + " KB) ");
+                                ^
+
+aco_cuda_4.cu(2307): error: namespace "std" has no member "to_string"
+          print_line("Registers per Block: " + std::to_string(prop.regsPerBlock),
+                                                    ^
+
+aco_cuda_4.cu(2308): error: namespace "std" has no member "to_string"
+              "Registers per Block: " + std::to_string(prop.regsPerBlock) + " ");
+                                             ^
+
+aco_cuda_4.cu(2310): error: namespace "std" has no member "to_string"
+          print_line("Warp Size: " + std::to_string(prop.warpSize),
+                                          ^
+
+aco_cuda_4.cu(2311): error: namespace "std" has no member "to_string"
+              "Warp Size: " + std::to_string(prop.warpSize) + " ");
+                                   ^
+
+aco_cuda_4.cu(2313): error: namespace "std" has no member "to_string"
+          print_line("Compute Capability: " + std::to_string(prop.major) + "." + std::to_string(prop.minor),
+                                                   ^
+
+aco_cuda_4.cu(2313): error: namespace "std" has no member "to_string"
+          print_line("Compute Capability: " + std::to_string(prop.major) + "." + std::to_string(prop.minor),
+                                                                                      ^
+
+aco_cuda_4.cu(2314): error: namespace "std" has no member "to_string"
+              "Compute Capability: " + std::to_string(prop.major) + "." + std::to_string(prop.minor) + " ");
+                                            ^
+
+aco_cuda_4.cu(2314): error: namespace "std" has no member "to_string"
+              "Compute Capability: " + std::to_string(prop.major) + "." + std::to_string(prop.minor) + " ");
+                                                                               ^
+
+aco_cuda_4.cu(2320): error: namespace "std" has no member "to_string"
+          print_line("Clock Rate: " + std::to_string(clockRateMHz) + " MHz",
+                                           ^
+
+aco_cuda_4.cu(2321): error: namespace "std" has no member "to_string"
+              "Clock Rate: " + std::to_string(clockRateMHz) + " MHz ");
+                                    ^
+
+aco_cuda_4.cu(2323): error: namespace "std" has no member "to_string"
+          print_line("L2 Cache Size: " + std::to_string(prop.l2CacheSize == 0 ? 0 : prop.l2CacheSize) + " bytes",
+                                              ^
+
+aco_cuda_4.cu(2324): error: namespace "std" has no member "to_string"
+              "L2 Cache Size: " + std::to_string(prop.l2CacheSize == 0 ? 0 : prop.l2CacheSize) + " bytes ");
+                                       ^
+
+aco_cuda_4.cu(2326): error: namespace "std" has no member "to_string"
+          print_line("Multiprocessor Count: " + std::to_string(prop.multiProcessorCount),
+                                                     ^
+
+aco_cuda_4.cu(2327): error: namespace "std" has no member "to_string"
+              "Multiprocessor Count: " + std::to_string(prop.multiProcessorCount) + "; ");
+                                              ^
+
+aco_cuda_4.cu(2330): error: namespace "std" has no member "to_string"
+              std::to_string(prop.maxThreadsDim[0]) + ", " +
+                   ^
+
+aco_cuda_4.cu(2331): error: namespace "std" has no member "to_string"
+              std::to_string(prop.maxThreadsDim[1]) + ", " +
+                   ^
+
+aco_cuda_4.cu(2332): error: namespace "std" has no member "to_string"
+              std::to_string(prop.maxThreadsDim[2]) + ")";
+                   ^
+
+aco_cuda_4.cu(2336): error: namespace "std" has no member "to_string"
+              std::to_string(prop.maxGridSize[0]) + ", " +
+                   ^
+
+aco_cuda_4.cu(2337): error: namespace "std" has no member "to_string"
+              std::to_string(prop.maxGridSize[1]) + ", " +
+                   ^
+
+aco_cuda_4.cu(2338): error: namespace "std" has no member "to_string"
+              std::to_string(prop.maxGridSize[2]) + ")";
+                   ^
+
+aco_cuda_4.cu(2361): error: namespace "std" has no member "to_string"
+          "KOL_GPU: " + std::to_string(4) + "; " +
+                             ^
+
+aco_cuda_4.cu(2362): error: namespace "std" has no member "to_string"
+          "PARAMETR_SIZE: " + std::to_string(42) + "; " +
+                                   ^
+
+aco_cuda_4.cu(2363): error: namespace "std" has no member "to_string"
+          "MAX_VALUE_SIZE: " + std::to_string(5) + "; " +
+                                    ^
+
+aco_cuda_4.cu(2364): error: namespace "std" has no member "to_string"
+          "SET_PARAMETR_SIZE_ONE_X: " + std::to_string(21) + "; " +
+                                             ^
+
+aco_cuda_4.cu(2365): error: namespace "std" has no member "to_string"
+          "ANT_SIZE: " + std::to_string(512) + "; " +
+                              ^
+
+aco_cuda_4.cu(2366): error: namespace "std" has no member "to_string"
+          "MAX_THREAD_CUDA: " + std::to_string(512) + "; " +
+                                     ^
+
+aco_cuda_4.cu(2368): error: namespace "std" has no member "to_string"
+          "KOL_ITERATION: " + std::to_string(500) + "; " +
+                                   ^
+
+aco_cuda_4.cu(2369): error: namespace "std" has no member "to_string"
+          "KOL_PROGREV: " + std::to_string(5) + "; " +
+                                 ^
+
+aco_cuda_4.cu(2370): error: namespace "std" has no member "to_string"
+          "KOL_PROGON_STATISTICS: " + std::to_string(50) + "; " +
+                                           ^
+
+aco_cuda_4.cu(2371): error: namespace "std" has no member "to_string"
+          "PARAMETR_RO: " + std::to_string(0.999) + "; " +
+                                 ^
+
+aco_cuda_4.cu(2372): error: namespace "std" has no member "to_string"
+          "PARAMETR_Q: " + std::to_string(1) + "; " +
+                                ^
+
+aco_cuda_4.cu(2373): error: namespace "std" has no member "to_string"
+          "PRINT_INFORMATION: " + std::to_string(0) + "; " +
+                                       ^
+
+aco_cuda_4.cu(2374): error: namespace "std" has no member "to_string"
+          "MAX_PARAMETR_VALUE_TO_MIN_OPT: " + std::to_string(1) + "; " +
+                                                   ^
+
+aco_cuda_4.cu(2377): error: namespace "std" has no member "to_string"
+          "GO_HASH: " + std::to_string(0) + "; " +
+                             ^
+
+aco_cuda_4.cu(2378): error: namespace "std" has no member "to_string"
+          "HASH_TABLE_SIZE: " + std::to_string(1048576) + "; " +
+                                     ^
+
+aco_cuda_4.cu(2379): error: namespace "std" has no member "to_string"
+          "ZERO_HASH_RESULT: " + std::to_string(-1) + "; " +
+                                      ^
+
+aco_cuda_4.cu(2380): error: namespace "std" has no member "to_string"
+          "ZERO_HASH: " + std::to_string(0xFFFFFFFFFFFFFFFFULL) + "; " +
+                               ^
+
+aco_cuda_4.cu(2381): error: namespace "std" has no member "to_string"
+          "MAX_PROBES: " + std::to_string(10000) + "; " +
+                                ^
+
+aco_cuda_4.cu(2382): error: namespace "std" has no member "to_string"
+          "MAX_CONST: " + std::to_string(8192) + "; " +
+                               ^
+
+aco_cuda_4.cu(2383): error: namespace "std" has no member "to_string"
+          "MAX_SHARED: " + std::to_string(49152) + "; " +
+                                ^
+
+aco_cuda_4.cu(2384): error: namespace "std" has no member "to_string"
+          "BLOCK_SIZE: " + std::to_string(256) + "; " +
+                                ^
+
+aco_cuda_4.cu(2385): error: namespace "std" has no member "to_string"
+          "BIN_SEARCH: " + std::to_string(0) + "; " +
+                                ^
+
+aco_cuda_4.cu(2386): error: namespace "std" has no member "to_string"
+          "NON_WHILE_ANT: " + std::to_string(1) + "; ";
+                                   ^
+
+73 errors detected in the compilation of "aco_cuda_4.cu".
+aco_cuda_4.cu
+========== COMPILATION END ========== 
+Exit code: 2 

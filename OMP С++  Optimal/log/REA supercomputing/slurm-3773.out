@@ -1,0 +1,462 @@
+===================================================
+    OMP ACO Benchmark Launcher
+===================================================
+Checking GCC compiler...
+/opt/gcc/v9.1/bin/g++
+g++ (GCC) 9.1.0
+Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+OpenMP environment:
+OMP_NUM_THREADS=32
+OMP_PLACES=cores
+OMP_PROC_BIND=close
+
+Cleaning previous builds...
+
+===================================================
+Testing with PARAMETR_SIZE=172032
+===================================================
+Updating parameter file with PARAMETR_SIZE=172032...
+Updating parametrs.h with PARAMETR_SIZE=172032 and NAME_FILE_GRAPH=Parametr_Graph/test172032.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=172032
+Updating BLOCK_SIZE based on PARAM_SIZE...
+===================================================
+Testing with PARAMETR_SIZE=172032, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling OpenMP program with GCC...
+Compilation successful. Log saved to: results/compilation_logs/compile_size_172032_ants_500_20260102_123304.txt
+
+===================================================
+Running OpenMP ACO optimization...
+===================================================
+Start time: Fri Jan  2 12:33:08 MSK 2026
+OpenMP threads: 32
+
+=== OPENMP PERFORMANCE OPTIMIZATION WITH THREAD SCALING ===
+OpenMP version: 201511
+Start time: Fri Jan  2 12:33:08 2026
+
+============================================================
+THREAD SCALING EXPERIMENT
+Hardware threads: 64
+Max OpenMP threads: 32
+Runs per configuration: 10
+============================================================
+Testing thread counts: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
+
+Testing 1 threads...
+  Run 1/10... OK (1.54436e+06 ms) min=0.498112
+  Run 2/10... OK (1.49473e+06 ms) min=0.498112
+  Run 3/10... OK (1.47409e+06 ms) min=0.498112
+  Run 4/10... OK (1.43727e+06 ms) min=0.498113
+  Run 5/10... OK (1.47084e+06 ms) min=0.498112
+  Run 6/10... OK (1.42877e+06 ms) min=0.498112
+  Run 7/10... OK (1.43504e+06 ms) min=0.498096
+  Run 8/10... OK (1.43917e+06 ms) min=0.498112
+  Run 9/10... OK (1.46745e+06 ms) min=0.498112
+  Run 10/10... OK (1.44385e+06 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 1.46356e+06 ms)
+Testing 2 threads...
+  Run 1/10... OK (845747 ms) min=0.498112
+  Run 2/10... OK (892198 ms) min=0.498116
+  Run 3/10... OK (887688 ms) min=0.498112
+  Run 4/10... OK (832807 ms) min=0.498112
+  Run 5/10... OK (916546 ms) min=0.498112
+  Run 6/10... OK (843507 ms) min=0.498112
+  Run 7/10... OK (909576 ms) min=0.498112
+  Run 8/10... OK (804695 ms) min=0.498112
+  Run 9/10... OK (911353 ms) min=0.498112
+  Run 10/10... OK (894435 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 873855 ms)
+Testing 3 threads...
+  Run 1/10... OK (534722 ms) min=0.498112
+  Run 2/10... OK (629077 ms) min=0.498112
+  Run 3/10... OK (628304 ms) min=0.498112
+  Run 4/10... OK (525030 ms) min=0.498099
+  Run 5/10... OK (599121 ms) min=0.498097
+  Run 6/10... OK (630739 ms) min=0.498112
+  Run 7/10... OK (630339 ms) min=0.498112
+  Run 8/10... OK (535099 ms) min=0.498112
+  Run 9/10... OK (629316 ms) min=0.498113
+  Run 10/10... OK (630711 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 597246 ms)
+Testing 4 threads...
+  Run 1/10... OK (402982 ms) min=0.498112
+  Run 2/10... OK (422990 ms) min=0.498112
+  Run 3/10... OK (437860 ms) min=0.498113
+  Run 4/10... OK (431499 ms) min=0.498112
+  Run 5/10... OK (417544 ms) min=0.498112
+  Run 6/10... OK (386627 ms) min=0.498112
+  Run 7/10... OK (478314 ms) min=0.498112
+  Run 8/10... OK (415585 ms) min=0.498112
+  Run 9/10... OK (440218 ms) min=0.498113
+  Run 10/10... OK (423777 ms) min=0.498111
+  ✓ Completed 10/10 runs, avg: 425740 ms)
+Testing 5 threads...
+  Run 1/10... OK (305309 ms) min=0.498096
+  Run 2/10... OK (363990 ms) min=0.498089
+  Run 3/10... OK (354259 ms) min=0.498112
+  Run 4/10... OK (339855 ms) min=0.498112
+  Run 5/10... OK (343225 ms) min=0.498112
+  Run 6/10... OK (388274 ms) min=0.498112
+  Run 7/10... OK (336597 ms) min=0.498114
+  Run 8/10... OK (379654 ms) min=0.498112
+  Run 9/10... OK (343291 ms) min=0.498112
+  Run 10/10... OK (354118 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 350857 ms)
+Testing 6 threads...
+  Run 1/10... OK (315554 ms) min=0.498112
+  Run 2/10... OK (300416 ms) min=0.498112
+  Run 3/10... OK (273944 ms) min=0.498116
+  Run 4/10... OK (207862 ms) min=0.498112
+  Run 5/10... OK (206941 ms) min=0.498112
+  Run 6/10... OK (208010 ms) min=0.498112
+  Run 7/10... OK (207205 ms) min=0.498112
+  Run 8/10... OK (206882 ms) min=0.498112
+  Run 9/10... OK (206637 ms) min=0.498112
+  Run 10/10... OK (206472 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 233992 ms)
+Testing 7 threads...
+  Run 1/10... OK (187406 ms) min=0.498112
+  Run 2/10... OK (188157 ms) min=0.498112
+  Run 3/10... OK (189089 ms) min=0.498114
+  Run 4/10... OK (188573 ms) min=0.498112
+  Run 5/10... OK (188039 ms) min=0.49809
+  Run 6/10... OK (187575 ms) min=0.498112
+  Run 7/10... OK (187615 ms) min=0.498112
+  Run 8/10... OK (187591 ms) min=0.498112
+  Run 9/10... OK (187923 ms) min=0.498112
+  Run 10/10... OK (186824 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 187879 ms)
+Testing 8 threads...
+  Run 1/10... OK (169789 ms) min=0.498112
+  Run 2/10... OK (171216 ms) min=0.498112
+  Run 3/10... OK (252066 ms) min=0.498112
+  Run 4/10... OK (248955 ms) min=0.498112
+  Run 5/10... OK (242443 ms) min=0.498112
+  Run 6/10... OK (249529 ms) min=0.498112
+  Run 7/10... OK (237492 ms) min=0.498112
+  Run 8/10... OK (242200 ms) min=0.498112
+  Run 9/10... OK (248845 ms) min=0.498112
+  Run 10/10... OK (237250 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 229978 ms)
+Testing 9 threads...
+  Run 1/10... OK (200655 ms) min=0.498112
+  Run 2/10... OK (216835 ms) min=0.498112
+  Run 3/10... OK (232684 ms) min=0.498112
+  Run 4/10... OK (233349 ms) min=0.498089
+  Run 5/10... OK (232968 ms) min=0.498103
+  Run 6/10... OK (233216 ms) min=0.498113
+  Run 7/10... OK (231821 ms) min=0.498112
+  Run 8/10... OK (223610 ms) min=0.498112
+  Run 9/10... OK (232890 ms) min=0.498112
+  Run 10/10... OK (228610 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 226664 ms)
+Testing 10 threads...
+  Run 1/10... OK (187918 ms) min=0.498098
+  Run 2/10... OK (211783 ms) min=0.498113
+  Run 3/10... OK (209734 ms) min=0.498112
+  Run 4/10... OK (211170 ms) min=0.498112
+  Run 5/10... OK (209692 ms) min=0.498112
+  Run 6/10... OK (212623 ms) min=0.498112
+  Run 7/10... OK (214700 ms) min=0.498112
+  Run 8/10... OK (213727 ms) min=0.498097
+  Run 9/10... OK (209999 ms) min=0.498113
+  Run 10/10... OK (217567 ms) min=0.498093
+  ✓ Completed 10/10 runs, avg: 209891 ms)
+Testing 11 threads...
+  Run 1/10... OK (199397 ms) min=0.498112
+  Run 2/10... OK (166248 ms) min=0.498112
+  Run 3/10... OK (197529 ms) min=0.498102
+  Run 4/10... OK (193438 ms) min=0.498112
+  Run 5/10... OK (200023 ms) min=0.498112
+  Run 6/10... OK (195962 ms) min=0.498112
+  Run 7/10... OK (194590 ms) min=0.498113
+  Run 8/10... OK (197396 ms) min=0.498112
+  Run 9/10... OK (196531 ms) min=0.498113
+  Run 10/10... OK (198574 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 193969 ms)
+Testing 12 threads...
+  Run 1/10... OK (190764 ms) min=0.498112
+  Run 2/10... OK (190470 ms) min=0.498093
+  Run 3/10... OK (191887 ms) min=0.498102
+  Run 4/10... OK (166609 ms) min=0.498112
+  Run 5/10... OK (190983 ms) min=0.498094
+  Run 6/10... OK (189308 ms) min=0.498112
+  Run 7/10... OK (189358 ms) min=0.498112
+  Run 8/10... OK (191909 ms) min=0.498112
+  Run 9/10... OK (192171 ms) min=0.498112
+  Run 10/10... OK (192562 ms) min=0.498103
+  ✓ Completed 10/10 runs, avg: 188602 ms)
+Testing 13 threads...
+  Run 1/10... OK (179442 ms) min=0.498112
+  Run 2/10... OK (176164 ms) min=0.498112
+  Run 3/10... OK (177480 ms) min=0.498105
+  Run 4/10... OK (176450 ms) min=0.498112
+  Run 5/10... OK (176861 ms) min=0.498112
+  Run 6/10... OK (172751 ms) min=0.498112
+  Run 7/10... OK (154091 ms) min=0.498112
+  Run 8/10... OK (176333 ms) min=0.498112
+  Run 9/10... OK (181063 ms) min=0.498112
+  Run 10/10... OK (181480 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 175212 ms)
+Testing 14 threads...
+  Run 1/10... OK (173281 ms) min=0.498112
+  Run 2/10... OK (172047 ms) min=0.498112
+  Run 3/10... OK (171744 ms) min=0.498112
+  Run 4/10... OK (170888 ms) min=0.498112
+  Run 5/10... OK (171218 ms) min=0.498113
+  Run 6/10... OK (172081 ms) min=0.498112
+  Run 7/10... OK (170612 ms) min=0.498112
+  Run 8/10... OK (170438 ms) min=0.498112
+  Run 9/10... OK (169970 ms) min=0.498105
+  Run 10/10... OK (168166 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 171045 ms)
+Testing 15 threads...
+  Run 1/10... OK (152087 ms) min=0.498112
+  Run 2/10... OK (165797 ms) min=0.498112
+  Run 3/10... OK (162833 ms) min=0.498094
+  Run 4/10... OK (162319 ms) min=0.498113
+  Run 5/10... OK (162328 ms) min=0.49809
+  Run 6/10... OK (163820 ms) min=0.498112
+  Run 7/10... OK (163981 ms) min=0.498113
+  Run 8/10... OK (163644 ms) min=0.498112
+  Run 9/10... OK (166181 ms) min=0.498112
+  Run 10/10... OK (167346 ms) min=0.498113
+  ✓ Completed 10/10 runs, avg: 163034 ms)
+Testing 16 threads...
+  Run 1/10... OK (159250 ms) min=0.498113
+  Run 2/10... OK (158987 ms) min=0.498112
+  Run 3/10... OK (160880 ms) min=0.498112
+  Run 4/10... OK (159435 ms) min=0.498114
+  Run 5/10... OK (159296 ms) min=0.498112
+  Run 6/10... OK (145775 ms) min=0.498112
+  Run 7/10... OK (159907 ms) min=0.498112
+  Run 8/10... OK (162859 ms) min=0.498112
+  Run 9/10... OK (160022 ms) min=0.498112
+  Run 10/10... OK (159739 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 158615 ms)
+Testing 17 threads...
+  Run 1/10... OK (156130 ms) min=0.498103
+  Run 2/10... OK (156630 ms) min=0.498112
+  Run 3/10... OK (152551 ms) min=0.498112
+  Run 4/10... OK (153216 ms) min=0.498112
+  Run 5/10... OK (154321 ms) min=0.498112
+  Run 6/10... OK (156222 ms) min=0.498089
+  Run 7/10... OK (154445 ms) min=0.498112
+  Run 8/10... OK (154782 ms) min=0.498112
+  Run 9/10... OK (155472 ms) min=0.498112
+  Run 10/10... OK (156187 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 154996 ms)
+Testing 18 threads...
+  Run 1/10... OK (152807 ms) min=0.498112
+  Run 2/10... OK (135790 ms) min=0.498112
+  Run 3/10... OK (153396 ms) min=0.498112
+  Run 4/10... OK (152866 ms) min=0.498112
+  Run 5/10... OK (153433 ms) min=0.498112
+  Run 6/10... OK (153524 ms) min=0.498112
+  Run 7/10... OK (153024 ms) min=0.498112
+  Run 8/10... OK (152647 ms) min=0.498112
+  Run 9/10... OK (153084 ms) min=0.498112
+  Run 10/10... OK (153870 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 151444 ms)
+Testing 19 threads...
+  Run 1/10... OK (150035 ms) min=0.498112
+  Run 2/10... OK (151448 ms) min=0.498112
+  Run 3/10... OK (148700 ms) min=0.498112
+  Run 4/10... OK (148467 ms) min=0.498112
+  Run 5/10... OK (148288 ms) min=0.498112
+  Run 6/10... OK (148079 ms) min=0.498113
+  Run 7/10... OK (149832 ms) min=0.498114
+  Run 8/10... OK (149677 ms) min=0.498112
+  Run 9/10... OK (142155 ms) min=0.498116
+  Run 10/10... OK (148750 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 148543 ms)
+Testing 20 threads...
+  Run 1/10... OK (147660 ms) min=0.498112
+  Run 2/10... OK (148183 ms) min=0.498112
+  Run 3/10... OK (148046 ms) min=0.498089
+  Run 4/10... OK (147401 ms) min=0.498112
+  Run 5/10... OK (148165 ms) min=0.498112
+  Run 6/10... OK (148596 ms) min=0.498112
+  Run 7/10... OK (148572 ms) min=0.498112
+  Run 8/10... OK (148373 ms) min=0.498114
+  Run 9/10... OK (147795 ms) min=0.498113
+  Run 10/10... OK (148692 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 148148 ms)
+Testing 21 threads...
+  Run 1/10... OK (147845 ms) min=0.498112
+  Run 2/10... OK (147329 ms) min=0.498112
+  Run 3/10... OK (147298 ms) min=0.498106
+  Run 4/10... OK (146629 ms) min=0.498112
+  Run 5/10... OK (147037 ms) min=0.498112
+  Run 6/10... OK (142334 ms) min=0.498112
+  Run 7/10... OK (145607 ms) min=0.498102
+  Run 8/10... OK (145861 ms) min=0.498112
+  Run 9/10... OK (145930 ms) min=0.498112
+  Run 10/10... OK (145837 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 146171 ms)
+Testing 22 threads...
+  Run 1/10... OK (146459 ms) min=0.498112
+  Run 2/10... OK (147218 ms) min=0.498113
+  Run 3/10... OK (147132 ms) min=0.498112
+  Run 4/10... OK (147100 ms) min=0.498112
+  Run 5/10... OK (147230 ms) min=0.498089
+  Run 6/10... OK (146504 ms) min=0.498107
+  Run 7/10... OK (146418 ms) min=0.498094
+  Run 8/10... OK (147331 ms) min=0.498112
+  Run 9/10... OK (146461 ms) min=0.498112
+  Run 10/10... OK (146804 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 146866 ms)
+Testing 23 threads...
+  Run 1/10... OK (145881 ms) min=0.498112
+  Run 2/10... OK (146227 ms) min=0.498112
+  Run 3/10... OK (146607 ms) min=0.498089
+  Run 4/10... OK (144912 ms) min=0.498089
+  Run 5/10... OK (146218 ms) min=0.498112
+  Run 6/10... OK (145522 ms) min=0.498112
+  Run 7/10... OK (145153 ms) min=0.498112
+  Run 8/10... OK (145641 ms) min=0.498112
+  Run 9/10... OK (145489 ms) min=0.498112
+  Run 10/10... OK (146854 ms) min=0.49809
+  ✓ Completed 10/10 runs, avg: 145851 ms)
+Testing 24 threads...
+  Run 1/10... OK (144753 ms) min=0.498112
+  Run 2/10... OK (144538 ms) min=0.498097
+  Run 3/10... OK (145072 ms) min=0.498112
+  Run 4/10... OK (145484 ms) min=0.498112
+  Run 5/10... OK (145135 ms) min=0.498112
+  Run 6/10... OK (144767 ms) min=0.498112
+  Run 7/10... OK (145327 ms) min=0.498112
+  Run 8/10... OK (145089 ms) min=0.498112
+  Run 9/10... OK (144185 ms) min=0.498112
+  Run 10/10... OK (144628 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 144898 ms)
+Testing 25 threads...
+  Run 1/10... OK (144899 ms) min=0.498112
+  Run 2/10... OK (143519 ms) min=0.498112
+  Run 3/10... OK (145399 ms) min=0.498112
+  Run 4/10... OK (145262 ms) min=0.498113
+  Run 5/10... OK (145361 ms) min=0.498112
+  Run 6/10... OK (143474 ms) min=0.498112
+  Run 7/10... OK (144184 ms) min=0.49809
+  Run 8/10... OK (144428 ms) min=0.498113
+  Run 9/10... OK (145607 ms) min=0.498112
+  Run 10/10... OK (145230 ms) min=0.498089
+  ✓ Completed 10/10 runs, avg: 144736 ms)
+Testing 26 threads...
+  Run 1/10... OK (144743 ms) min=0.498112
+  Run 2/10... OK (145817 ms) min=0.498112
+  Run 3/10... OK (146109 ms) min=0.498112
+  Run 4/10... OK (145303 ms) min=0.498112
+  Run 5/10... OK (145767 ms) min=0.498112
+  Run 6/10... OK (144800 ms) min=0.498113
+  Run 7/10... OK (146034 ms) min=0.498112
+  Run 8/10... OK (145582 ms) min=0.498112
+  Run 9/10... OK (144714 ms) min=0.498117
+  Run 10/10... OK (144805 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 145367 ms)
+Testing 27 threads...
+  Run 1/10... OK (144400 ms) min=0.498112
+  Run 2/10... OK (144302 ms) min=0.498112
+  Run 3/10... OK (145597 ms) min=0.498112
+  Run 4/10... OK (144763 ms) min=0.498112
+  Run 5/10... OK (144872 ms) min=0.498112
+  Run 6/10... OK (144643 ms) min=0.498112
+  Run 7/10... OK (144028 ms) min=0.498112
+  Run 8/10... OK (144740 ms) min=0.498112
+  Run 9/10... OK (144228 ms) min=0.498112
+  Run 10/10... OK (144794 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 144637 ms)
+Testing 28 threads...
+  Run 1/10... OK (144328 ms) min=0.498112
+  Run 2/10... OK (144257 ms) min=0.498106
+  Run 3/10... OK (144132 ms) min=0.498112
+  Run 4/10... OK (144609 ms) min=0.498112
+  Run 5/10... OK (144310 ms) min=0.498112
+  Run 6/10... OK (144807 ms) min=0.498112
+  Run 7/10... OK (144891 ms) min=0.498114
+  Run 8/10... OK (144652 ms) min=0.498112
+  Run 9/10... OK (144050 ms) min=0.498089
+  Run 10/10... OK (144916 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 144495 ms)
+Testing 29 threads...
+  Run 1/10... OK (145742 ms) min=0.498112
+  Run 2/10... OK (144928 ms) min=0.498112
+  Run 3/10... OK (145187 ms) min=0.498112
+  Run 4/10... OK (145319 ms) min=0.498112
+  Run 5/10... OK (144506 ms) min=0.498112
+  Run 6/10... OK (146495 ms) min=0.498112
+  Run 7/10... OK (145188 ms) min=0.498112
+  Run 8/10... OK (145860 ms) min=0.498114
+  Run 9/10... OK (146437 ms) min=0.498113
+  Run 10/10... OK (144417 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 145408 ms)
+Testing 30 threads...
+  Run 1/10... OK (145363 ms) min=0.498112
+  Run 2/10... OK (146451 ms) min=0.498112
+  Run 3/10... OK (145301 ms) min=0.498093
+  Run 4/10... OK (145023 ms) min=0.498112
+  Run 5/10... OK (144829 ms) min=0.498112
+  Run 6/10... OK (145719 ms) min=0.498112
+  Run 7/10... OK (144675 ms) min=0.498112
+  Run 8/10... OK (146622 ms) min=0.498113
+  Run 9/10... OK (145276 ms) min=0.498113
+  Run 10/10... OK (146055 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 145531 ms)
+Testing 31 threads...
+  Run 1/10... OK (145845 ms) min=0.498112
+  Run 2/10... OK (145112 ms) min=0.498112
+  Run 3/10... OK (146877 ms) min=0.498112
+  Run 4/10... OK (145911 ms) min=0.498098
+  Run 5/10... OK (147051 ms) min=0.498114
+  Run 6/10... OK (145997 ms) min=0.498112
+  Run 7/10... OK (146992 ms) min=0.498112
+  Run 8/10... OK (146545 ms) min=0.498112
+  Run 9/10... OK (147544 ms) min=0.498112
+  Run 10/10... OK (146344 ms) min=0.498089
+  ✓ Completed 10/10 runs, avg: 146422 ms)
+Testing 32 threads...
+  Run 1/10... OK (149680 ms) min=0.498112
+  Run 2/10... OK (148588 ms) min=0.498112
+  Run 3/10... OK (149158 ms) min=0.498112
+  Run 4/10... OK (148806 ms) min=0.498112
+  Run 5/10... OK (145763 ms) min=0.498112
+  Run 6/10... OK (150259 ms) min=0.498112
+  Run 7/10... OK (148111 ms) min=0.498112
+  Run 8/10... OK (147670 ms) min=0.498112
+  Run 9/10... OK (149080 ms) min=0.498112
+  Run 10/10... OK (149911 ms) min=0.498112
+  ✓ Completed 10/10 runs, avg: 148702 ms)
+Threads ; iteration_time (ms) ; probability_time ; agent_time ; pheromone_time ; hash_time ; evaluation_time ; speedup ; parallel_efficiency ; hit_rate ; min_objective ;
+1; 1.46356e+06; 1594.15; 1.33806e+06; 123899; 248360; 32979.9; 0; 100; 0; 0.498096; 2; 873855; 972.313; 804565; 68316.1; 262351; 35558; 0; 50; 0; 0.498112; 3; 597246; 662.078; 535631; 60951; 259391; 35894.5; 0; 33.3333; 0; 0.498097; 4; 425740; 542.332; 378237; 46959; 258652; 37245.1; 0; 25; 0; 0.498111; 5; 350857; 468.79; 305564; 44823.3; 259863; 36441.5; 0; 20; 0; 0.498089; 6; 233992; 310.395; 198778; 34902.9; 221837; 35256.8; 0; 16.6667; 0; 0.498112; 7; 187879; 324.926; 149990; 37562.8; 205581; 32399.4; 0; 14.2857; 0; 0.49809; 8; 229978; 341.659; 191787; 37848.3; 256695; 38023.8; 0; 12.5; 0; 0.498112; 9; 226664; 393.169; 184634; 41635.1; 267097; 37715; 0; 11.1111; 0; 0.498089; 10; 209891; 370.303; 167474; 42045.6; 269752; 39639.9; 0; 10; 0; 0.498093; 11; 193969; 503.235; 150923; 42541.6; 267800; 38518.4; 0; 9.09091; 0; 0.498102; 12; 188602; 573.496; 142820; 45206.7; 271532; 40626.5; 0; 8.33333; 0; 0.498093; 13; 175211; 485.602; 130051; 44673.7; 269481; 39228; 0; 7.6923; 0; 0.498105; 14; 171044; 576.665; 122655; 47811.6; 270080; 40137.3; 0; 7.14285; 0; 0.498105; 15; 163033; 598.095; 114835; 47599.4; 272060; 40265.5; 0; 6.66666; 0; 0.49809; 16; 158615; 714.644; 107258; 50640.3; 270205; 42372.7; 0; 6.25; 0; 0.498112; 17; 154996; 700.414; 103508; 50785.4; 273173; 39744.4; 0; 5.88235; 0; 0.498089; 18; 151444; 847.859; 96723; 53871.7; 272140; 42653.9; 0; 5.55555; 0; 0.498112; 19; 148543; 784.75; 93664.7; 54092; 275596; 41507.6; 0; 5.26315; 0; 0.498112; 20; 148148; 940.567; 89751.4; 57454.7; 278061; 42131.3; 0; 5; 0; 0.498089; 21; 146171; 971.508; 86927.4; 58270.4; 279929; 43295.7; 0; 4.7619; 0; 0.498102; 22; 146866; 1092.22; 85136.7; 60635.2; 284568; 44481.6; 0; 4.54545; 0; 0.498089; 23; 145850; 1340.85; 82794.5; 61713.6; 285318; 45102.2; 0; 4.34782; 0; 0.498089; 24; 144898; 1438.52; 79711.4; 63746.2; 286993; 46685; 0; 4.16666; 0; 0.498097; 25; 144736; 1558.66; 78214; 64962.2; 289350; 46778.1; 0; 4; 0; 0.498089; 26; 145367; 2226.51; 76692.7; 66446.8; 290741; 50710.1; 0; 3.84615; 0; 0.498112; 27; 144637; 2418.13; 74574.3; 67643; 292070; 51425.8; 0; 3.7037; 0; 0.498112; 28; 144495; 2636.79; 72686.3; 69170.7; 293778; 54720.4; 0; 3.57143; 0; 0.498089; 29; 145408; 3280.91; 71400.5; 70725; 294863; 55016.6; 0; 3.44827; 0; 0.498112; 30; 145531; 3359.28; 70315.6; 71855; 295803; 56365.9; 0; 3.33333; 0; 0.498093; 31; 146422; 3534.02; 69486.7; 73399.6; 295256; 55745; 0; 3.2258; 0; 0.498089; 32; 148702; 3113.18; 70999; 74588.9; 298478; 60246; 0; 3.125; 0; 0.498112; 
+============================================================
+OPTIMAL CONFIGURATION
+============================================================
+Recommended thread count: 28
+Execution time: 144495 ms
+Speedup: 0x
+Parallel efficiency: 3.57143%
+Best objective value: 0.498089
+
+=== EXPERIMENT COMPLETED SUCCESSFULLY ===
+Results saved to statistics.txt
+Parameters logged to log.txt
+Total experiment duration: 1379 minutes
+Program executed successfully
+End time: Sat Jan  3 11:32:22 MSK 2026
+Execution time: 82754.152853120 seconds
+Log file saved to results
+
+===================================================
+Benchmark completed for PARAMETR_SIZE=172032, ANT_SIZE=500!
+Results saved in: results/
+Execution time: 82754.152853120 seconds
+===================================================
+All OpenMP benchmarks completed successfully!

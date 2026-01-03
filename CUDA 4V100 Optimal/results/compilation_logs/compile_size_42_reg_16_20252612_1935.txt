@@ -1,0 +1,117 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_4.exe aco_cuda_4.cu -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" -lmsmpi -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_4.cu(398): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_4.cu(1262): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1265): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1268): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1271): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1274): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1277): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1280): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1283): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1286): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1289): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1292): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1302): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+          goto cleanup_error;
+          ^
+
+aco_cuda_4.cu(1313): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1317): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1321): warning #546-D: transfer of control bypasses initialization of:
+            variable "threads" (declared at line 1324)
+            variable "blocks" (declared at line 1325)
+      if (cuda_status != cudaSuccess) goto cleanup_error;
+                                      ^
+
+aco_cuda_4.cu(1351): error: identifier "cleanup_cuda_resources_mpi_partial" is undefined
+      cleanup_cuda_resources_mpi_partial();
+      ^
+
+aco_cuda_4.cu(2033): error: identifier "init_success" is undefined
+          int local_success = init_success ? 1 : 0;
+                              ^
+
+At end of source: error: expected a "}"
+aco_cuda_4.cu(1993): note #3196-D: to match this "{"
+  int main(int argc, char** argv) {
+                                  ^
+
+3 errors detected in the compilation of "aco_cuda_4.cu".
+aco_cuda_4.cu
+========== COMPILATION END ========== 
+Exit code: 2 

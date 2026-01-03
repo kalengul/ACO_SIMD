@@ -1,0 +1,12 @@
+========== COMPILATION START ==========
+Parameters: PARAMETR_SIZE=42, ANT_SIZE=500
+MPI: Enabled
+Compile command: mpicxx -O3 -arch=sm_70 -std=c++17 -o aco_cuda_mpi aco_cuda_global_while.cu -Xcompiler "-O2 -ffast-math -fopenmp" -use_fast_math -lcudart -lmpi -Xptxas "-O3,-v,-maxrregcount=32" --resource-usage
+
+g++: error: aco_cuda_global_while.cu: No such file or directory
+g++: error: unrecognized command line option ‘-arch=sm_70’
+g++: error: unrecognized command line option ‘-Xcompiler’; did you mean ‘--compile’?
+g++: error: unrecognized command line option ‘-Xptxas’
+g++: error: unrecognized command line option ‘--resource-usage’
+========== COMPILATION END ==========
+Exit code: 1

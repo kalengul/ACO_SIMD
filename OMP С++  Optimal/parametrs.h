@@ -52,7 +52,7 @@
 #define ANT_SIZE 500
 #define KOL_ITERATION 500   // ���������� �������� ��� 500
 #define KOL_STAT_LEVEL 20    // ���������� ������ ����� ���������� 20
-#define KOL_PROGON_STATISTICS 10 //��� ����� ���������� 50
+#define KOL_PROGON_STATISTICS 50 //��� ����� ���������� 50
 #define KOL_PROGREV 5 //���������� �������� ��� ����������� ������� ������� 5
 #define PARAMETR_Q 1        // �������� ��� ��� �������� �������� Q 
 #define MAX_PARAMETR_VALUE_TO_MIN_OPT 1        // ������������ �������� ��������� ����� ��������� ������� max-x

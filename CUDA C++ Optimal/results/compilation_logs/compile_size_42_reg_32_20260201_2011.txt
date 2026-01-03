@@ -1,0 +1,50 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(465): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(1944): error: a value of type "double *" cannot be used to initialize an entity of type "int *"
+      int* ant_parametr = new double[42 * 10];
+                          ^
+
+aco_cuda_global_while.cu(1945): error: a value of type "int *" cannot be used to initialize an entity of type "double *"
+      double* paths = new int[42 * 10];
+                      ^
+
+aco_cuda_global_while.cu(1976): error: argument of type "int *" is incompatible with parameter of type "double *"
+              antOF[agent] = benchmark_function(&ant_parametr[agent * 42]);
+                                                ^
+
+aco_cuda_global_while.cu(2203): error: a value of type "double *" cannot be used to initialize an entity of type "int *"
+      int* ant_parametr = new double[42 * 10];
+                          ^
+
+aco_cuda_global_while.cu(2204): error: a value of type "int *" cannot be used to initialize an entity of type "double *"
+      double* paths = new int[42 * 10];
+                      ^
+
+aco_cuda_global_while.cu(2273): error: argument of type "int *" is incompatible with parameter of type "double *"
+              antOF[agent] = benchmark_function(&ant_parametr[agent * 42]);
+                                                ^
+
+aco_cuda_global_while.cu(2467): error: a value of type "double *" cannot be used to initialize an entity of type "int *"
+      int* ant_parametr = new double[42 * 10];
+                          ^
+
+aco_cuda_global_while.cu(2468): error: a value of type "int *" cannot be used to initialize an entity of type "double *"
+      double* paths = new int[42 * 10];
+                      ^
+
+aco_cuda_global_while.cu(2512): error: argument of type "int *" is incompatible with parameter of type "double *"
+              antOF[agent] = benchmark_function(&ant_parametr[agent * 42]);
+                                                ^
+
+9 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

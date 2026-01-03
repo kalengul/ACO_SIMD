@@ -1,0 +1,26 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(466): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(1977): error: identifier "num_params" is undefined
+              scores[agent] = lookup_or_compute(hash_table, &paths[agent * num_params], &agents[agent * num_params], iteration, metrics);
+                                                                           ^
+
+aco_cuda_global_while.cu(1977): error: identifier "iteration" is undefined
+              scores[agent] = lookup_or_compute(hash_table, &paths[agent * num_params], &agents[agent * num_params], iteration, metrics);
+                                                                                                                     ^
+
+aco_cuda_global_while.cu(1977): error: too many arguments in function call
+              scores[agent] = lookup_or_compute(hash_table, &paths[agent * num_params], &agents[agent * num_params], iteration, metrics);
+                                                                                                                                ^
+
+3 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

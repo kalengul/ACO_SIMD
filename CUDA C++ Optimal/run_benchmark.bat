@@ -9,8 +9,8 @@ echo ===================================================
 set EXE_NAME=aco_cuda_const_while.exe
 set OUTPUT_DIR=results
 set CONFIG_FILE=parametrs.h
-
-set REGISTER_COUNTS=16 32 64 128 256
+::16 32 64 128 256
+set REGISTER_COUNTS=32
 ::42 84 168 336 672 1344 2688 5376 10752 21504 43008 86016 172032 344064 688128 1376256
 set PARAM_SIZES=42 84 168 336 672 1344 2688 5376 10752 21504 43008 86016 172032 344064 688128 1376256
 
@@ -86,10 +86,10 @@ for %%S in (%PARAM_SIZES%) do (
         :: Расширенная компиляция с сохранением вывода в файл
         echo ========== COMPILATION START ========== > "!COMPILE_LOG!"
         echo Parameters: PARAMETR_SIZE=%%S, MAXREGCOUNT=%%R >> "!COMPILE_LOG!"
-        echo Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o %EXE_NAME% aco_cuda_const_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=%%R -Xptxas "-O3,-v" --resource-usage >> "!COMPILE_LOG!"
+        echo Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o %EXE_NAME% aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=%%R -Xptxas "-O3,-v" --resource-usage >> "!COMPILE_LOG!"
         echo. >> "!COMPILE_LOG!"
         
-        nvcc -O3 -arch=!ARCH! -std=c++17 -o %EXE_NAME% aco_cuda_const_while.cu ^
+        nvcc -O3 -arch=!ARCH! -std=c++17 -o %EXE_NAME% aco_cuda_global_while.cu ^
              -Xcompiler "/O2 /fp:fast /openmp /MT" ^
              -use_fast_math ^
              -lcudart ^

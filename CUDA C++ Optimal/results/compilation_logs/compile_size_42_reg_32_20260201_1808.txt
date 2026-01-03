@@ -1,0 +1,22 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(466): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(1969): error: expected an expression
+          do { cudaError_t err = cudaMemcpyAsync(, dev_agent_node, 42 * 10 * sizeof(int), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1969 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                 ^
+
+aco_cuda_global_while.cu(1970): error: expected an expression
+          do { cudaError_t err = cudaMemcpyAsync(, dev_agent_params, 42 * 10 * sizeof(double), cudaMemcpyDeviceToHost, compute_stream); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1970 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                                 ^
+
+2 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

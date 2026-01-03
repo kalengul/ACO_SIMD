@@ -1,0 +1,20 @@
+Device 0: NVIDIA GeForce RTX 3060 Laptop GPU; Max thread in blocks: 1024 Total Global Memory: 6143.5 MB GPU Global Memory Usage: 0.256428 MB GPU Global Memory Hash Table: 16 MB Max PARAMETR_SIZE in GPU Global Memory: 2963627 Shared memory per block: 49152 bytes (48 KB) Shared memory per multiprocessor: 102400 bytes (100 KB) Data size in Shared memory per block: 336 bytes (0.328125 KB) Constant Memory: 65536 bytes Parameter data size (in Constant Memory): 1680 bytes (1.64062 KB) Registers per Block: 65536 Warp Size: 32 Compute Capability: 8.6 Can Map Host Memory: Yes Clock Rate: 1425 MHz L2 Cache Size: 3145728 bytes Multiprocessor Count: 30; Max thread in blocks by axis: (1024, 1024, 64); Max blocks by axis: (2147483647, 65535, 65535);
+PARAMETR_SIZE: 42; MAX_VALUE_SIZE: 5; SET_PARAMETR_SIZE_ONE_X: 21; ANT_SIZE: 512; MAX_THREAD_CUDA: 512; NAME_FILE_GRAPH: Parametr_Graph/test42.txt; KOL_ITERATION: 500; KOL_PROGREV: 5; KOL_PROGON_STATISTICS: 50; PARAMETR_RO: 0.999; PARAMETR_Q: 1; PRINT_INFORMATION: 0; MAX_PARAMETR_VALUE_TO_MIN_OPT: 1; OPTIMIZE: OPTIMIZE_MIN_1 ; FUNCTION: SHAFFERA GO_HASH: 0; HASH_TABLE_SIZE: 1048576; ZERO_HASH_RESULT: -1; ZERO_HASH: 18446744073709551615; MAX_PROBES: 10000; MAX_CONST: 8192; MAX_SHARED: 49152; BLOCK_SIZE: 256; BIN_SEARCH: 0; NON_WHILE_ANT: 1; 
+USE CONST MEMORY
+USE SHARED MEMORY
+Run MPI Combined Run0; 90.1841; 0; 41.4785; 17.8876; 0; 90.1841; -nan(ind); 100; 0.499987; 0.00123006; 1; 
+Run MPI Combined Run1; 83.6257; 0; 39.0799; 17.7951; 0; 83.6257; -nan(ind); 100; 0.539199; 0.00123017; 1; 
+Run MPI Combined Run2; 80.7122; 0; 38.2104; 17.7352; 0; 80.7122; -nan(ind); 100; 0.558663; 0.00123029; 1; 
+Run MPI Combined Run3; 89.3321; 0; 42.0459; 17.8383; 0; 89.3321; -nan(ind); 100; 0.504756; 0.00123008; 1; 
+Run MPI Combined Run4; 83.9541; 0; 39.9467; 17.7829; 0; 83.9541; -nan(ind); 100; 0.53709; 0.00123006; 1; 
+Run MPI Combined Run5; 88.6321; 0; 42.0132; 17.8656; 0; 88.6321; -nan(ind); 100; 0.508742; 0.00123139; 1; 
+Run MPI Combined Run6; 89.9046; 0; 41.2653; 18.1579; 0; 89.9046; -nan(ind); 100; 0.501542; 0.0012302; 1; 
+Run MPI Combined Run7; 89.0661; 0; 40.6269; 18.0504; 0; 89.0661; -nan(ind); 100; 0.506263; 0.0012301; 1; 
+Run MPI Combined Run8; 88.9343; 0; 40.4456; 18.1964; 0; 88.9343; -nan(ind); 100; 0.507014; 0.00123072; 1; 
+Run MPI Combined Run9; 80.4378; 0; 38.8355; 17.7731; 0; 80.4378; -nan(ind); 100; 0.560569; 0.00123006; 1; 
+Run MPI Combined Run10; 83.5732; 0; 39.7075; 17.8054; 0; 83.5732; -nan(ind); 100; 0.539538; 0.00123023; 1; 
+Run MPI Combined Run11; 86.8832; 0; 40.2828; 17.8934; 0; 86.8832; -nan(ind); 100; 0.518983; 0.00123006; 1; 
+Run MPI Combined Run12; 82.5112; 0; 38.472; 17.6072; 0; 82.5112; -nan(ind); 100; 0.546482; 0.00123007; 1; 
+Run MPI Combined Run13; 79.4077; 0; 38.0429; 17.6223; 0; 79.4077; -nan(ind); 100; 0.567841; 0.00123025; 1; 
+Run MPI Combined Run14; 86.291; 0; 40.0528; 17.6913; 0; 86.291; -nan(ind); 100; 0.522545; 0.00123006; 1; 
+Run MPI Combined Run15; 86.4665; 0; 41.4523; 17.6209; 0; 86.4665; -nan(ind); 100; 0.521484; 0.00123006; 1; 

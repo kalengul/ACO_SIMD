@@ -1,0 +1,158 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=32 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=32 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(465): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(465): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(507): warning #177-D: variable "warp_id" was declared but never referenced
+      const int warp_id = threadIdx.x / 32; 
+                ^
+
+aco_cuda_global_while.cu(509): warning #177-D: variable "warps_per_block" was declared but never referenced
+      const int warps_per_block = blockDim.x / 32; 
+                ^
+
+aco_cuda_global_while.cu(919): warning #177-D: variable "p4" was declared but never referenced
+              double p4 = norm_matrix_probability_transposed[4 * 42 + i];
+                     ^
+
+aco_cuda_global_while.cu(963): warning #177-D: variable "p4" was declared but never referenced
+                  double p4 = norm_matrix_probability_transposed[4 * 42 + i];
+                         ^
+
+aco_cuda_global_while.cu(1040): warning #177-D: variable "params_per_thread" was declared but never referenced
+      const int params_per_thread = (42 + blockDim.x - 1) / blockDim.x;
+                ^
+
+aco_cuda_global_while.cu(1463): warning #177-D: variable "warp_id" was declared but never referenced
+      const int warp_id = threadIdx.x / 32; 
+                ^
+
+aco_cuda_global_while.cu(1465): warning #177-D: variable "warps_per_block" was declared but never referenced
+      const int warps_per_block = blockDim.x / 32;
+                ^
+
+aco_cuda_global_while.cu(1830): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_global_while.cu(1834): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(1934): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_global_while.cu(2055): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_global_while.cu(2059): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(2191): warning #177-D: variable "sharedev_mem" was declared but never referenced
+      size_t sharedev_mem = 42 * sizeof(double);
+             ^
+
+aco_cuda_global_while.cu(2349): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(2454): warning #177-D: variable "agents_size" was declared but never referenced
+      const int agents_size = 42 * 10;
+                ^
+
+aco_cuda_global_while.cu(2582): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_global_while.cu(2731): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_global_while.cu(2900): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_global_while.cu(2901): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+ptxas info    : Overriding maximum register limit 256 for '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26updateAndComputePheromonesbPKdPKiPdS3_S3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z32computeProbabilitiesAndEvaporetebPdS_S_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z17depositPheromonesbbPKdPKiPdS3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19evaporatePheromonesPd' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z16updatePheromonesbbPKdPKiPdS3_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z20computeProbabilitiesbPKdS0_Pd' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z31antColonyOptimizationAndDepositPdS_P9HashEntryS_S_PiS_S_S2_S_S_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26antColonyOptimizationNotOFbPdS_PiS_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z21antColonyOptimizationbPdS_PiS_P9HashEntryS_S_S0_S_' with  32 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  32 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_' for 'sm_86'
+ptxas info    : Function properties for _Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 48 bytes cumulative stack size, 20480 bytes smem, 464 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26updateAndComputePheromonesbPKdPKiPdS3_S3_' for 'sm_86'
+ptxas info    : Function properties for _Z26updateAndComputePheromonesbPKdPKiPdS3_S3_
+    88 bytes stack frame, 4 bytes spill stores, 4 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 88 bytes cumulative stack size, 20480 bytes smem, 400 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z32computeProbabilitiesAndEvaporetebPdS_S_' for 'sm_86'
+ptxas info    : Function properties for _Z32computeProbabilitiesAndEvaporetebPdS_S_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 40960 bytes smem, 384 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z17depositPheromonesbbPKdPKiPdS3_' for 'sm_86'
+ptxas info    : Function properties for _Z17depositPheromonesbbPKdPKiPdS3_
+    80 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 80 bytes cumulative stack size, 2560 bytes smem, 392 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z19evaporatePheromonesPd' for 'sm_86'
+ptxas info    : Function properties for _Z19evaporatePheromonesPd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 26 registers, used 0 barriers, 360 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z16updatePheromonesbbPKdPKiPdS3_' for 'sm_86'
+ptxas info    : Function properties for _Z16updatePheromonesbbPKdPKiPdS3_
+    80 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 80 bytes cumulative stack size, 2560 bytes smem, 392 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z20computeProbabilitiesbPKdS0_Pd' for 'sm_86'
+ptxas info    : Function properties for _Z20computeProbabilitiesbPKdS0_Pd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 1 barriers, 40960 bytes smem, 384 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z31antColonyOptimizationAndDepositPdS_P9HashEntryS_S_PiS_S_S2_S_S_' for 'sm_86'
+ptxas info    : Function properties for _Z31antColonyOptimizationAndDepositPdS_P9HashEntryS_S_PiS_S_S2_S_S_
+    1856 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 30 registers, used 1 barriers, 1856 bytes cumulative stack size, 512 bytes smem, 440 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26antColonyOptimizationNotOFbPdS_PiS_' for 'sm_86'
+ptxas info    : Function properties for _Z26antColonyOptimizationNotOFbPdS_PiS_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 22 registers, used 0 barriers, 392 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z21antColonyOptimizationbPdS_PiS_P9HashEntryS_S_S0_S_' for 'sm_86'
+ptxas info    : Function properties for _Z21antColonyOptimizationbPdS_PiS_P9HashEntryS_S_S0_S_
+    48 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 32 registers, used 0 barriers, 48 bytes cumulative stack size, 432 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_86'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_global_while.cu
+tmpxft_000038fc_00000000-10_aco_cuda_global_while.cudafe1.cpp
+========== COMPILATION END ========== 
+Exit code: 0 

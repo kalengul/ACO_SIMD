@@ -12,7 +12,11 @@
 
 std::ofstream logFile("log.txt"); // Глобальная переменная для файла статистики
 
-
+struct HashEntryCPU {
+    std::atomic<unsigned long long> key;
+    double value;
+    std::atomic<int> timestamp;
+};
 struct alignas(16) HashEntry {
     unsigned long long key;
     double value;
@@ -25,6 +29,80 @@ struct PerformanceMetrics {
     int hash_hits, hash_misses;
 };
 
+struct ShardedHashTable {
+    std::vector<HashEntryCPU*> tables;
+    int shards;
+    int size_per_shard;
+};
+
+double compute_parameter(double* params, int start, int count) noexcept {
+    double sum = 0.0;
+    // Оптимизированный цикл с развертыванием
+    int i = 1;
+    for (; i <= count - 4; i += 4) {
+        sum += params[start + i] + params[start + i + 1] +
+            params[start + i + 2] + params[start + i + 3];
+    }
+    for (; i < count; ++i) {
+        sum += params[start + i];
+    }
+    return params[start] * sum;
+}
+#if (SHAFFERA) 
+double benchmark_function(double* params) noexcept {
+    double sum_sq = 0.0;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+
+    for (int i = 0; i < num_vars; ++i) {
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        sum_sq += x * x;
+    }
+    double r = std::sqrt(sum_sq);
+    double sin_r = std::sin(r);
+    return 0.5 - (sin_r * sin_r - 0.5) / (1.0 + 0.001 * sum_sq);
+}
+#endif
+#if (RASTRIGIN)
+double benchmark_function(double* params) noexcept {
+    double sum = 0.0;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+    constexpr double two_pi = 2.0 * M_PI;
+
+    for (int i = 0; i < num_vars; ++i) {
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        sum += x * x - 10.0 * std::cos(two_pi * x) + 10.0;
+    }
+    return sum;
+}
+#endif
+#if (ACKLEY)
+double benchmark_function(double* params) noexcept {
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+    double sum_sq = 0.0;
+    double sum_cos = 0.0;
+
+    for (int i = 0; i < num_vars; ++i) {
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        sum_sq += x * x;
+        sum_cos += std::cos(2.0 * M_PI * x);
+    }
+
+    double n = static_cast<double>(num_vars);
+    return -20.0 * std::exp(-0.2 * std::sqrt(sum_sq / n)) - std::exp(sum_cos / n) + 20.0 + M_E;
+}
+#endif
+#if (SPHERE)
+double benchmark_function(double* params) noexcept {
+    double sum_sq = 0.0;
+    const int num_vars = PARAMETR_SIZE / SET_PARAMETR_SIZE_ONE_X;
+
+    for (int i = 0; i < num_vars; ++i) {
+        double x = compute_parameter(params, i * SET_PARAMETR_SIZE_ONE_X, SET_PARAMETR_SIZE_ONE_X);
+        sum_sq += x * x;
+    }
+    return sum_sq;
+}
+#endif
 
 __device__ __forceinline__ double go_x(const double* __restrict__ parametr, int start_index) {
     double sum = 0.0;
@@ -279,6 +357,103 @@ __device__ __forceinline__ void atomicMin(double* address, double value) {
         if (value < __longlong_as_double(assumed))
             old = atomicCAS(addr_as_ull, assumed, __double_as_longlong(value));
     } while (assumed != old);
+}
+
+void init_hash_table(ShardedHashTable& table, int total_size, int num_shards) {
+    table.shards = num_shards;
+    table.size_per_shard = total_size / num_shards;
+    table.tables.resize(table.shards);
+
+    for (int i = 0; i < table.shards; ++i) {
+        table.tables[i] = new HashEntryCPU[table.size_per_shard];
+        for (int j = 0; j < table.size_per_shard; ++j) {
+            table.tables[i][j].key.store(ZERO_HASH, std::memory_order_relaxed);
+            table.tables[i][j].value = 0.0;
+            table.tables[i][j].timestamp.store(0, std::memory_order_relaxed);
+        }
+    }
+}
+void free_hash_table(ShardedHashTable& table) {
+    for (int i = 0; i < table.shards; ++i) {
+        delete[] table.tables[i];
+    }
+    table.tables.clear();
+}
+unsigned long long compute_hash_fnv1a(const int* path) noexcept {
+    const unsigned long long prime = 1099511628211ULL;
+    unsigned long long hash = 14695981039346656037ULL;
+
+    for (int i = 0; i < PARAMETR_SIZE; ++i) {
+        hash ^= static_cast<unsigned long long>(path[i]);
+        hash *= prime;
+    }
+    return hash;
+}
+int get_shard(const ShardedHashTable& table, const int* path) noexcept {
+    return compute_hash_fnv1a(path) % table.shards;
+}
+double hash_lookup(ShardedHashTable& table, const int* path, int iteration) noexcept {
+    int shard = get_shard(table, path);
+    unsigned long long key = compute_hash_fnv1a(path);
+    unsigned long long idx = key % table.size_per_shard;
+    HashEntryCPU* hash_table = table.tables[shard];
+
+    for (int i = 0; i < std::min(MAX_PROBES, 8); ++i) {
+        unsigned long long current_idx = (idx + i) % table.size_per_shard;
+        unsigned long long current_key = hash_table[current_idx].key.load(std::memory_order_acquire);
+        if (current_key == ZERO_HASH) {
+            return ZERO_HASH_RESULT;
+        }
+        if (current_key == key + 1) {
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_relaxed);
+            double value = hash_table[current_idx].value;
+            std::atomic_thread_fence(std::memory_order_acquire);
+            return value;
+        }
+    }
+    return ZERO_HASH_RESULT;
+}
+bool hash_store(ShardedHashTable& table, const int* path, double value, int iteration) noexcept {
+    int shard = get_shard(table, path);
+    unsigned long long key = compute_hash_fnv1a(path);
+    unsigned long long idx = key % table.size_per_shard;
+    HashEntryCPU* hash_table = table.tables[shard];
+
+    for (int i = 0; i < std::min(MAX_PROBES, 4); ++i) {
+        unsigned long long current_idx = (idx + i) % table.size_per_shard;
+        unsigned long long current_key = hash_table[current_idx].key.load(std::memory_order_acquire);
+
+        if (current_key == key + 1) {
+            hash_table[current_idx].value = value;
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_release);
+            return true;
+        }
+
+        unsigned long long expected = ZERO_HASH;
+        if (hash_table[current_idx].key.compare_exchange_strong(expected, key + 1,
+            std::memory_order_acq_rel, std::memory_order_acquire)) {
+            hash_table[current_idx].value = value;
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_release);
+            std::atomic_thread_fence(std::memory_order_release);
+            return true;
+        }
+
+        if (expected == key + 1) {
+            hash_table[current_idx].value = value;
+            hash_table[current_idx].timestamp.store(iteration, std::memory_order_release);
+            return true;
+        }
+    }
+    return false;
+}
+double lookup_or_compute(ShardedHashTable& table, const int* path, double* agent_params, int iteration) noexcept {
+    double cached = hash_lookup(table, path, iteration);
+    if (cached != ZERO_HASH_RESULT) {
+        return cached;
+    }
+    double result = benchmark_function(agent_params);
+    hash_store(table, path, result, iteration);
+    return result;
 }
 
 // ==================== ОПТИМИЗИРОВАННЫЕ ЯДРА ====================
@@ -634,7 +809,6 @@ __device__ void computeProbabilities_dev_transposed(const double* __restrict__ p
 
 // Вычисление путей муравьев-агентов
 __device__ void antColonyOptimization_dev(double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, int* __restrict__ agent_node, double* __restrict__ OF, HashEntry* __restrict__ hashTable, double* __restrict__ maxOf_dev, double* __restrict__ minOf_dev, int* __restrict__ kol_hash_fail, double* __restrict__ global_params_buffer) {
-     //СТАРАЯ НЕ ТРАНСПОНИРОВАННАЯ ВЕРСИЯ
     int bx = blockIdx.x;
     int tx = threadIdx.x;
     int ant_id = bx;
@@ -680,6 +854,36 @@ __device__ void antColonyOptimization_dev(double* __restrict__ dev_parametr_valu
             atomicMax(maxOf_dev, OF[ant_id]);
             atomicMin(minOf_dev, OF[ant_id]);
         }
+    }
+}
+__device__ void antColonyOptimizationNotOF_dev(double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, int* __restrict__ agent_node, double* __restrict__ global_params_buffer) {
+    int bx = blockIdx.x;
+    int tx = threadIdx.x;
+    int ant_id = bx;
+
+    if (ant_id >= ANT_SIZE) return;
+
+    curandState state;
+    curand_init(clock64() + ant_id * blockDim.x + tx, 0, 0, &state);
+
+    // Указатель на параметры этого агента в буфере
+    double* agent_params = &global_params_buffer[ant_id * PARAMETR_SIZE];
+
+    // Фаза 1: Выбор путей и непосредственное вычисление
+    for (int param_idx = tx; param_idx < PARAMETR_SIZE; param_idx += blockDim.x) {
+        double randomValue = curand_uniform(&state);
+        int selected_index = 0;
+
+        int k = 0;
+        while (k < MAX_VALUE_SIZE && randomValue > norm_matrix_probability[param_idx * MAX_VALUE_SIZE + k]) {
+            k++;
+        }
+        selected_index = k;
+
+        agent_node[ant_id * PARAMETR_SIZE + param_idx] = selected_index;
+
+        // Сохраняем выбранное значение параметра
+        agent_params[param_idx] = dev_parametr_value[param_idx * MAX_VALUE_SIZE + selected_index];
     }
 }
 __device__ void antColonyOptimization_dev_transposed(double* __restrict__ dev_parametr_value_transposed, double* __restrict__ norm_matrix_probability_transposed, int* __restrict__ agent_node, double* __restrict__ OF, HashEntry* __restrict__ hashTable, double* __restrict__ maxOf_dev, double* __restrict__ minOf_dev, int* __restrict__ kol_hash_fail, double* __restrict__ global_params_buffer) {
@@ -804,8 +1008,351 @@ __device__ void antColonyOptimization_dev_transposed(double* __restrict__ dev_pa
         atomicMin(minOf_dev, OF[tid]);
     }
 }
+__device__ void antColonyOptimization_and_deposit_warp_optimized_global_dev(double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, HashEntry* __restrict__ hashTable, double* __restrict__ maxOf_dev, double* __restrict__ minOf_dev, int* __restrict__ kol_hash_fail, double* __restrict__ pheromon, double* __restrict__ kol_enter, int* __restrict__ agent_node, double* __restrict__ OF, double* __restrict__ global_params_buffer) {
+    const int bx = blockIdx.x;
+    const int tx = threadIdx.x;
+    const int warp_id = tx / WARP_SIZE;
+    const int lane_id = tx % WARP_SIZE;
+    const int ant_id = bx;
+
+    if (ant_id >= ANT_SIZE) return;
+
+    // Указатели на данные конкретного агента в глобальной памяти
+    int* agent_node_ptr = &agent_node[ant_id * PARAMETR_SIZE];
+    double* agent_params = &global_params_buffer[ant_id * PARAMETR_SIZE];
+
+    // Генератор случайных чисел
+    curandState state;
+    curand_init(clock64() + ant_id * blockDim.x + tx * 7919, 0, 0, &state);
+
+    // Shared memory только для критических данных (не зависящих от PARAMETR_SIZE)
+    __shared__ double shared_OF;
+    __shared__ double shared_pheromone_delta;
+
+    // Инициализация shared memory
+    if (tx == 0) {
+        shared_OF = ZERO_HASH_RESULT;
+        shared_pheromone_delta = 0.0;
+    }
+    __syncthreads();
+
+    // 1. ГЕНЕРАЦИЯ ПУТИ АГЕНТА (все потоки участвуют)
+    const int params_per_thread = (PARAMETR_SIZE + blockDim.x - 1) / blockDim.x;
+
+    // Оптимизация: используем tile-based доступ для лучшей локализации
+    const int num_tiles = (PARAMETR_SIZE + TILE_SIZE - 1) / TILE_SIZE;
+
+    for (int tile = warp_id; tile < num_tiles; tile += blockDim.x / WARP_SIZE) {
+        const int tile_start = tile * TILE_SIZE;
+        const int tile_end = min(tile_start + TILE_SIZE, PARAMETR_SIZE);
+
+        // Обрабатываем параметры в текущем тайле
+        for (int i = lane_id; i < (tile_end - tile_start); i += WARP_SIZE) {
+            const int param_idx = tile_start + i;
+
+            double randomValue = curand_uniform(&state);
+            int selected_index = 0;
+
+            // Быстрый поиск с использованием указателей
+            const double* prob_ptr = &norm_matrix_probability[param_idx * MAX_VALUE_SIZE];
+
+            // Оптимизация: развернутый поиск для MAX_VALUE_SIZE=5
+#if MAX_VALUE_SIZE == 5
+            selected_index = (randomValue > prob_ptr[0]) ?
+                ((randomValue > prob_ptr[2]) ?
+                    ((randomValue > prob_ptr[3]) ? 4 : 3) :
+                    ((randomValue > prob_ptr[1]) ? 2 : 1)) : 0;
+#else
+// Общий случай с развертыванием
+#pragma unroll
+            for (int k = 0; k < MAX_VALUE_SIZE - 1; k++) {
+                if (randomValue > prob_ptr[k]) {
+                    selected_index = k + 1;
+                }
+                else {
+                    break;
+                }
+            }
+            if (selected_index >= MAX_VALUE_SIZE) selected_index = MAX_VALUE_SIZE - 1;
+#endif
+
+            // Сохраняем в глобальную память
+            agent_node_ptr[param_idx] = selected_index;
+            agent_params[param_idx] = dev_parametr_value[param_idx * MAX_VALUE_SIZE + selected_index];
+        }
+    }
+
+    __syncthreads();
+
+    // 2. ВЫЧИСЛЕНИЕ ЦЕЛЕВОЙ ФУНКЦИИ (один поток на блок)
+    if (tx == 0) {
+        double cached = getCachedResult(hashTable, agent_node_ptr, ant_id);
+
+        if (cached < 0.0) {
+            shared_OF = BenchShafferaFunction(agent_params);
+            saveToCache(hashTable, agent_node_ptr, ant_id, shared_OF);
+        }
+        else {
+            shared_OF = cached;
+            atomicAdd(kol_hash_fail, 1);
+        }
+
+        // Сохраняем OF в глобальную память
+        OF[ant_id] = shared_OF;
+
+        if (shared_OF != ZERO_HASH_RESULT) {
+            atomicMax(maxOf_dev, shared_OF);
+            atomicMin(minOf_dev, shared_OF);
+        }
+
+        // Вычисляем дельту феромона (если нужно)
+#if OPTIMIZE_MIN_1
+        const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - shared_OF;
+        if (delta > 0.0) shared_pheromone_delta = PARAMETR_Q * delta;
+#elif OPTIMIZE_MIN_2
+        const double of_val = fmax(shared_OF, 1e-7);
+        shared_pheromone_delta = PARAMETR_Q / of_val;
+#elif OPTIMIZE_MAX
+        shared_pheromone_delta = PARAMETR_Q * shared_OF;
+#endif
+    }
+
+    __syncthreads();
+
+    // 3. ДЕПОЗИТ ФЕРОМОНОВ (все потоки участвуют)
+    double current_OF = shared_OF;
+    double pheromone_delta = shared_pheromone_delta;
+
+    if (current_OF != ZERO_HASH_RESULT) {
+        // Распространяем данные по warp'у
+        unsigned warp_mask = __ballot_sync(0xFFFFFFFF, true);
+        current_OF = __shfl_sync(warp_mask, current_OF, 0);
+        pheromone_delta = __shfl_sync(warp_mask, pheromone_delta, 0);
+
+        // Обновление феромонов с tile-based доступом
+        for (int tile = warp_id; tile < num_tiles; tile += blockDim.x / WARP_SIZE) {
+            const int tile_start = tile * TILE_SIZE;
+            const int tile_end = min(tile_start + TILE_SIZE, PARAMETR_SIZE);
+
+            // Предзагружаем selected indices для тайла
+            int tile_selected[TILE_SIZE];
+            if (lane_id < TILE_SIZE && tile_start + lane_id < tile_end) {
+                tile_selected[lane_id] = agent_node_ptr[tile_start + lane_id];
+            }
+
+            // Обновляем феромоны в тайле
+            for (int i = lane_id; i < (tile_end - tile_start); i += WARP_SIZE) {
+                const int param_idx = tile_start + i;
+                const int selected_idx = tile_selected[i];
+                const int pheromon_idx = param_idx * MAX_VALUE_SIZE + selected_idx;
+
+                // Атомарное обновление
+                atomicAdd(&kol_enter[pheromon_idx], 1.0);
+
+                if (pheromone_delta > 0.0) {
+                    atomicAdd(&pheromon[pheromon_idx], pheromone_delta);
+                }
+            }
+        }
+    }
+}
+__device__ void antColonyOptimization_and_deposit_warp_optimized_dev(double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, HashEntry* __restrict__ hashTable, double* __restrict__ maxOf_dev, double* __restrict__ minOf_dev, int* __restrict__ kol_hash_fail, double* __restrict__ pheromon, double* __restrict__ kol_enter) {
+    __shared__ int shared_selected[PARAMETR_SIZE];
+    __shared__ double shared_agent_params[PARAMETR_SIZE];
+    __shared__ double shared_OF;
 
 
+    const int bx = blockIdx.x;
+    const int tx = threadIdx.x;
+    const int warp_id = tx / WARP_SIZE;
+    const int lane_id = tx % WARP_SIZE;
+    const int ant_id = bx;
+
+    if (ant_id >= ANT_SIZE) return;
+
+    // Инициализация shared memory (один поток на блок)
+    if (tx == 0) {
+        shared_OF = ZERO_HASH_RESULT;
+    }
+    __syncthreads();
+
+    // Оптимизация 2: Векторизованная генерация случайных чисел
+    curandState state;
+    curand_init(clock64() + ant_id * blockDim.x + tx * 7919, 0, 0, &state);
+
+    // 1. ГЕНЕРАЦИЯ ПУТИ АГЕНТА с оптимизациями
+    const int params_per_thread = (PARAMETR_SIZE + blockDim.x - 1) / blockDim.x;
+
+    // Оптимизация 3: Предзагрузка вероятностей в регистры для часто используемых параметров
+    if (PARAMETR_SIZE <= 128) {
+        // Для малых PARAMETR_SIZE можно предзагрузить все вероятности
+        double local_probs[PARAMETR_SIZE][MAX_VALUE_SIZE];
+        for (int p = 0; p < params_per_thread; p++) {
+            const int param_idx = tx + p * blockDim.x;
+            if (param_idx >= PARAMETR_SIZE) break;
+
+#pragma unroll
+            for (int k = 0; k < MAX_VALUE_SIZE; k++) {
+                local_probs[p][k] = norm_matrix_probability[param_idx * MAX_VALUE_SIZE + k];
+            }
+        }
+
+        for (int p = 0; p < params_per_thread; p++) {
+            const int param_idx = tx + p * blockDim.x;
+            if (param_idx >= PARAMETR_SIZE) break;
+
+            double randomValue = curand_uniform(&state);
+            int selected_index = 0;
+
+            // Оптимизация 4: Развернутый цикл для MAX_VALUE_SIZE=5
+#if MAX_VALUE_SIZE == 5
+            selected_index = (randomValue > local_probs[p][0]) ?
+                ((randomValue > local_probs[p][2]) ?
+                    ((randomValue > local_probs[p][3]) ? 4 : 3) :
+                    ((randomValue > local_probs[p][1]) ? 2 : 1)) : 0;
+#else
+// Общий случай с развертыванием
+#pragma unroll
+            for (int k = 0; k < MAX_VALUE_SIZE - 1; k++) {
+                selected_index += (randomValue > local_probs[p][k]);
+            }
+#endif
+
+            shared_selected[param_idx] = selected_index;
+            shared_agent_params[param_idx] = dev_parametr_value[param_idx * MAX_VALUE_SIZE + selected_index];
+        }
+    }
+    else {
+        // Для больших PARAMETR_SIZE используем стандартный подход
+        for (int p = 0; p < params_per_thread; p++) {
+            const int param_idx = tx + p * blockDim.x;
+            if (param_idx >= PARAMETR_SIZE) break;
+
+            double randomValue = curand_uniform(&state);
+            int selected_index = 0;
+
+            // Оптимизация 5: Используем указатели для лучшей локализации памяти
+            const double* prob_ptr = &norm_matrix_probability[param_idx * MAX_VALUE_SIZE];
+
+#if MAX_VALUE_SIZE == 5
+            // Ручное развертывание для 5 значений
+            selected_index = (randomValue > prob_ptr[0]) ?
+                ((randomValue > prob_ptr[2]) ?
+                    ((randomValue > prob_ptr[3]) ? 4 : 3) :
+                    ((randomValue > prob_ptr[1]) ? 2 : 1)) : 0;
+#else
+            // Автоматическое развертывание
+#pragma unroll
+            for (int k = 0; k < MAX_VALUE_SIZE - 1; k++) {
+                if (randomValue > prob_ptr[k]) {
+                    selected_index = k + 1;
+                }
+                else {
+                    break;
+                }
+            }
+#endif
+
+            shared_selected[param_idx] = selected_index;
+            shared_agent_params[param_idx] = dev_parametr_value[param_idx * MAX_VALUE_SIZE + selected_index];
+        }
+    }
+
+    __syncthreads();
+
+    // 2. ВЫЧИСЛЕНИЕ ЦЕЛЕВОЙ ФУНКЦИИ с warp-оптимизацией
+    if (warp_id == 0) {
+        // Только первый warp вычисляет OF
+        int temp_nodes[PARAMETR_SIZE];
+
+        // Оптимизация 6: Копирование с coalesced доступом
+        if (PARAMETR_SIZE <= 1024 && lane_id < PARAMETR_SIZE) {
+#pragma unroll 4
+            for (int i = lane_id; i < PARAMETR_SIZE; i += WARP_SIZE) {
+                temp_nodes[i] = shared_selected[i];
+            }
+        }
+
+        // Оптимизация 7: Используем ballot для синхронизации внутри warp
+        unsigned active_mask = __ballot_sync(0xFFFFFFFF, lane_id < WARP_SIZE);
+
+        if (lane_id == 0) {
+            double cached = getCachedResult(hashTable, temp_nodes, ant_id);
+
+            if (cached < 0.0) {
+                shared_OF = BenchShafferaFunction(shared_agent_params);
+                saveToCache(hashTable, temp_nodes, ant_id, shared_OF);
+            }
+            else {
+                shared_OF = cached;
+                atomicAdd(kol_hash_fail, 1);
+            }
+
+            if (shared_OF != ZERO_HASH_RESULT) {
+                atomicMax(maxOf_dev, shared_OF);
+                atomicMin(minOf_dev, shared_OF);
+            }
+        }
+
+        // Распространяем shared_OF по warp'у
+        shared_OF = __shfl_sync(active_mask, shared_OF, 0);
+    }
+
+    __syncthreads();
+
+    // 3. ДЕПОЗИТ ФЕРОМОНОВ с warp-сокращением
+    if (shared_OF != ZERO_HASH_RESULT) {
+        // Оптимизация 8: Вычисляем дельту феромона с warp-редукцией
+        double pheromone_delta = 0.0;
+
+        if (lane_id == 0) {
+#if OPTIMIZE_MIN_1
+            const double delta = MAX_PARAMETR_VALUE_TO_MIN_OPT - shared_OF;
+            if (delta > 0.0) pheromone_delta = PARAMETR_Q * delta;
+#elif OPTIMIZE_MIN_2
+            const double of_val = fmax(shared_OF, 1e-7);
+            pheromone_delta = PARAMETR_Q / of_val;
+#elif OPTIMIZE_MAX
+            pheromone_delta = PARAMETR_Q * shared_OF;
+#endif
+        }
+
+        // Распространяем дельту по warp'у
+        unsigned warp_mask = __ballot_sync(0xFFFFFFFF, true);
+        pheromone_delta = __shfl_sync(warp_mask, pheromone_delta, 0);
+
+        // Оптимизация 9: Используем tile-based доступ для лучшей локализации
+        const int num_tiles = (PARAMETR_SIZE + TILE_SIZE - 1) / TILE_SIZE;
+
+        for (int tile = warp_id; tile < num_tiles; tile += blockDim.x / WARP_SIZE) {
+            const int tile_start = tile * TILE_SIZE;
+            const int tile_end = min(tile_start + TILE_SIZE, PARAMETR_SIZE);
+
+            // Оптимизация 10: Предзагрузка selected indices для тайла
+            int tile_selected[TILE_SIZE];
+            if (lane_id < TILE_SIZE && tile_start + lane_id < tile_end) {
+                tile_selected[lane_id] = shared_selected[tile_start + lane_id];
+            }
+
+            // Обновляем феромоны в тайле
+            for (int i = lane_id; i < (tile_end - tile_start); i += WARP_SIZE) {
+                const int param_idx = tile_start + i;
+                const int selected_idx = tile_selected[i];
+                const int pheromon_idx = param_idx * MAX_VALUE_SIZE + selected_idx;
+
+                // Оптимизация 11: Объединяем атомарные операции
+                if (pheromone_delta > 0.0) {
+                    // Атомарное обновление kol_enter и pheromon
+                    atomicAdd(&kol_enter[pheromon_idx], 1.0);
+                    atomicAdd(&pheromon[pheromon_idx], pheromone_delta);
+                }
+                else {
+                    atomicAdd(&kol_enter[pheromon_idx], 1.0);
+                }
+            }
+        }
+    }
+}
 
 __global__ void antColonyOptimization(const bool go_transposed, double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, int* __restrict__ agent_node, double* __restrict__ OF,  HashEntry* __restrict__ hashTable,  double* __restrict__ maxOf_dev, double* __restrict__ minOf_dev, int* __restrict__ kol_hash_fail, double* __restrict__ global_params_buffer) {  // Pre-allocated buffer
     if (go_transposed) {
@@ -815,6 +1362,17 @@ __global__ void antColonyOptimization(const bool go_transposed, double* __restri
         antColonyOptimization_dev(dev_parametr_value, norm_matrix_probability, agent_node, OF, hashTable, maxOf_dev, minOf_dev, kol_hash_fail, global_params_buffer);
     }
 }
+__global__ void antColonyOptimizationNotOF(const bool go_transposed, double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, int* __restrict__ agent_node, double* __restrict__ global_params_buffer) {  // Pre-allocated buffer
+    antColonyOptimizationNotOF_dev(dev_parametr_value, norm_matrix_probability, agent_node, global_params_buffer);
+}
+__global__ void antColonyOptimizationAndDeposit(double* __restrict__ dev_parametr_value, double* __restrict__ norm_matrix_probability, HashEntry* __restrict__ hashTable, double* __restrict__ maxOf_dev, double* __restrict__ minOf_dev, int* __restrict__ kol_hash_fail, double* __restrict__ pheromon, double* __restrict__ kol_enter, int* __restrict__ agent_node, double* __restrict__ OF, double* __restrict__ global_params_buffer) {
+#if (PARAMETR_SIZE < 4095) 
+    antColonyOptimization_and_deposit_warp_optimized_dev(dev_parametr_value, norm_matrix_probability, hashTable, maxOf_dev, minOf_dev, kol_hash_fail, pheromon, kol_enter);
+#else
+    antColonyOptimization_and_deposit_warp_optimized_global_dev(dev_parametr_value, norm_matrix_probability, hashTable, maxOf_dev, minOf_dev, kol_hash_fail, pheromon, kol_enter, agent_node, OF, global_params_buffer);
+#endif
+}
+
 __global__ void computeProbabilities(const bool go_transposed, const double* __restrict__ pheromon, const double* __restrict__ kol_enter, double* __restrict__ norm_matrix_probability) {
     if (go_transposed) {
         computeProbabilities_dev_transposed(pheromon, kol_enter, norm_matrix_probability);
@@ -853,6 +1411,15 @@ __global__ void depositPheromones(const bool go_min_parametrs, const bool go_tra
         {
             depositPheromones_dev(OF, agent_node, pheromon, kol_enter);
         }
+    }
+}
+__global__ void computeProbabilitiesAndEvaporete(const bool go_transposed, double* __restrict__ pheromon, double* __restrict__ kol_enter, double* __restrict__ norm_matrix_probability) {
+    evaporatePheromones_dev(pheromon);
+    if (go_transposed) {
+        computeProbabilities_dev_transposed(pheromon, kol_enter, norm_matrix_probability);
+    }
+    else {
+        computeProbabilities_dev(pheromon, kol_enter, norm_matrix_probability);
     }
 }
 
@@ -954,7 +1521,7 @@ __global__ void updateAndComputePheromones(const bool go_transposed, const doubl
         }
     }
 
-    // Фаза 2: Вычисление вероятностей (computeProbabilities)
+    // Вычисление вероятностей (computeProbabilities)
 
     // Используем shared memory для оптимизации
     __shared__ double s_pheromon[BLOCK_SIZE * MAX_VALUE_SIZE];
@@ -1164,7 +1731,6 @@ __global__ void parallelACOIteration(const double* __restrict__ OF, const int* _
     }
 }
 
-
 // ==================== GLOBAL CUDA РЕСУРСЫ ====================
 static double* dev_pheromon = nullptr, * dev_kol_enter = nullptr, * dev_norm_matrix = nullptr;
 static double* dev_OF = nullptr, * dev_max = nullptr, * dev_min = nullptr;
@@ -1173,6 +1739,7 @@ static HashEntry* dev_hashTable = nullptr;
 static cudaStream_t compute_stream = nullptr;
 static double* dev_parametr_value = nullptr;
 static double* dev_agent_params = nullptr;
+// ==================== GLOBAL CPU РЕСУРСЫ ====================
 
 // ==================== ФУНКЦИИ УПРАВЛЕНИЯ ПАМЯТЬЮ ====================
 bool initialize_cuda_resources(const double* params, const double* pheromon, const double* kol_enter) {
@@ -1197,6 +1764,21 @@ bool initialize_cuda_resources(const double* params, const double* pheromon, con
     CUDA_CHECK(cudaMemcpyAsync(dev_parametr_value, params, matrix_size, cudaMemcpyHostToDevice, compute_stream));
     CUDA_CHECK(cudaMemcpyAsync(dev_pheromon, pheromon, matrix_size, cudaMemcpyHostToDevice, compute_stream));
     CUDA_CHECK(cudaMemcpyAsync(dev_kol_enter, kol_enter, matrix_size, cudaMemcpyHostToDevice, compute_stream));
+    /*
+    double* parametr_value = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    double* pheromon_value = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    double* kol_enter_value = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    CUDA_CHECK(cudaMemcpyAsync(parametr_value, dev_parametr_value, MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpyAsync(pheromon_value, dev_pheromon, MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpyAsync(kol_enter_value, dev_kol_enter, MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+    std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << std::endl;
+    for (int j = 0; j < PARAMETR_SIZE; ++j) {
+        for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
+            std::cout << "(" << pheromon_value[j * MAX_VALUE_SIZE + i] << ", " << kol_enter_value[j * MAX_VALUE_SIZE + i] << "-> " << parametr_value[j * MAX_VALUE_SIZE + i] << ") "; // Индексируем элементы
+        }
+        std::cout << std::endl; // Переход на новую строку
+    }
+    */
     // Инициализация хэш-таблицы
     int threads = BLOCK_SIZE;
     int blocks = (HASH_TABLE_SIZE + threads - 1) / threads;
@@ -1293,9 +1875,9 @@ PerformanceMetrics run_aco_iterations_4function(const bool go_min_parametrs, con
 
     double best_fitness;
     double low_fitness;
-    int hash_fails;
     CUDA_CHECK(cudaMemcpyAsync(&best_fitness, dev_min, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
     CUDA_CHECK(cudaMemcpyAsync(&low_fitness, dev_max, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+    int hash_fails = 0;
 #if (GO_HASH)
     CUDA_CHECK(cudaMemcpyAsync(&hash_fails, dev_hash_fail, sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
 #endif
@@ -1335,6 +1917,127 @@ PerformanceMetrics run_aco_iterations_4function(const bool go_min_parametrs, con
 
     return metrics;
 }
+PerformanceMetrics run_aco_iterations_4function_notOF(const bool go_min_parametrs, const bool go_transposed, int num_iterations) {
+    PerformanceMetrics metrics = { 0 };
+    auto total_start = std::chrono::high_resolution_clock::now();
+
+    cudaEvent_t start, start_ant, start_update, stop;
+    CUDA_CHECK(cudaEventCreate(&start));
+    CUDA_CHECK(cudaEventCreate(&start_ant));
+    CUDA_CHECK(cudaEventCreate(&start_update));
+    CUDA_CHECK(cudaEventCreate(&stop));
+    float kernel_time = 0.0, computeProbabilities_time = 0.0, antColonyOptimization_time = 0.0, updatePheromones_time = 0.0;
+
+
+    int threads_per_block = std::min(PARAMETR_SIZE, BLOCK_SIZE);
+    int ant_blocks = ANT_SIZE;
+    size_t sharedev_mem = PARAMETR_SIZE * sizeof(double);
+
+#if (GO_HASH_CPU)
+    ShardedHashTable hash_table;
+    init_hash_table(hash_table, HASH_TABLE_SIZE, 1);
+#endif
+    // Инициализация статистики
+    double best_fitness = 1e9;
+    double low_fitness = -1e9;
+
+    double* ant_parametr = new double[PARAMETR_SIZE * ANT_SIZE];
+    int* paths = new int[PARAMETR_SIZE * ANT_SIZE];
+    double* antOF = new double[ANT_SIZE];
+
+    // Основной цикл итераций
+    for (int iter = 0; iter < num_iterations; ++iter) {
+        float iter_time;
+        CUDA_CHECK(cudaEventRecord(start, compute_stream));
+
+        computeProbabilities << <(PARAMETR_SIZE + (BLOCK_SIZE - 1)) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); // 1. Вычисление вероятностей
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        computeProbabilities_time += iter_time;
+        CUDA_CHECK(cudaEventRecord(start_ant, compute_stream));
+        antColonyOptimizationNotOF << <ant_blocks, threads_per_block, 0, compute_stream >> > (go_transposed, dev_parametr_value, dev_norm_matrix, dev_agent_node, dev_agent_params);
+        //Копирование данных для выполнения вычислений на CPU
+        CUDA_CHECK(cudaMemcpyAsync(paths, dev_agent_node, PARAMETR_SIZE * ANT_SIZE * sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
+        CUDA_CHECK(cudaMemcpyAsync(ant_parametr, dev_agent_params, PARAMETR_SIZE * ANT_SIZE * sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start_ant, stop));
+        antColonyOptimization_time += iter_time;
+        //Вычисление целевой функции + работа с Хэш-таблицей
+        for (int agent = 0; agent < ANT_SIZE; ++agent) {
+#if (GO_HASH_CPU)
+            antOF[agent] = lookup_or_compute(hash_table, &paths[agent * PARAMETR_SIZE], &ant_parametr[agent * PARAMETR_SIZE], iter);
+#else
+            antOF[agent] = benchmark_function(&ant_parametr[agent * PARAMETR_SIZE]);
+#endif
+            if (antOF[agent] < best_fitness) {
+                best_fitness = antOF[agent];
+            }
+            if (antOF[agent] > low_fitness) {
+                low_fitness = antOF[agent];
+            }
+        }
+        //Копирование значений целевой функци в GPU
+        CUDA_CHECK(cudaEventRecord(start_update, compute_stream));
+        CUDA_CHECK(cudaMemcpyAsync(dev_OF, antOF, ANT_SIZE, cudaMemcpyHostToDevice, compute_stream));
+
+        evaporatePheromones << <(PARAMETR_SIZE + (BLOCK_SIZE - 1)) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (dev_pheromon);
+        depositPheromones << <(PARAMETR_SIZE + (BLOCK_SIZE - 1)) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter);
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        kernel_time += iter_time;
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start_update, stop));
+        updatePheromones_time += iter_time;
+    }
+
+    CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+
+    metrics.min_fitness = best_fitness;
+    metrics.max_fitness = low_fitness;
+    metrics.hash_misses = 0;
+    metrics.hash_hits = num_iterations * ANT_SIZE;
+
+    // Расчет дополнительных метрик
+    cudaDeviceProp prop;
+    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+
+    int max_threads_per_sm = prop.maxThreadsPerMultiProcessor;
+    int warp_size = prop.warpSize;
+    int warps_per_block = (threads_per_block + warp_size - 1) / warp_size;
+    int max_warps_per_sm = max_threads_per_sm / warp_size;
+    metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(start_ant);
+    cudaEventDestroy(start_update);
+    cudaEventDestroy(stop);
+
+    delete[] ant_parametr;
+    delete[] antOF;
+#if (GO_HASH_CPU)
+    free_hash_table(hash_table);
+#endif
+
+    auto total_end = std::chrono::high_resolution_clock::now();
+    metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+    metrics.kernel_time_ms = kernel_time;
+    metrics.computeProbabilities_time_ms = computeProbabilities_time;
+    metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+    metrics.updatePheromones_time_ms = updatePheromones_time;
+    metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+    // Расчет пропускной способности памяти
+    size_t total_data_transferred = (MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double)) * 3 * num_iterations + (PARAMETR_SIZE * ANT_SIZE * sizeof(int)) * num_iterations + (ANT_SIZE * sizeof(double)) * num_iterations;
+    metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+
+    return metrics;
+}
+
 // ==================== ОСНОВНАЯ ФУНКЦИЯ ВЫПОЛНЕНИЯ 3 ЭТАПА ====================
 PerformanceMetrics run_aco_iterations(const bool go_min_parametrs, const bool go_transposed, int num_iterations) {
     PerformanceMetrics metrics = { 0 };
@@ -1431,9 +2134,9 @@ PerformanceMetrics run_aco_iterations(const bool go_min_parametrs, const bool go
 
     double best_fitness;
     double low_fitness;
-    int hash_fails;
     CUDA_CHECK(cudaMemcpyAsync(&best_fitness, dev_min, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
     CUDA_CHECK(cudaMemcpyAsync(&low_fitness, dev_max, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+    int hash_fails = 0;
 #if (GO_HASH)
     CUDA_CHECK(cudaMemcpyAsync(&hash_fails, dev_hash_fail, sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
 #endif
@@ -1458,6 +2161,161 @@ PerformanceMetrics run_aco_iterations(const bool go_min_parametrs, const bool go
     cudaEventDestroy(start_ant);
     cudaEventDestroy(start_update);
     cudaEventDestroy(stop);
+
+    auto total_end = std::chrono::high_resolution_clock::now();
+    metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+    metrics.kernel_time_ms = kernel_time;
+    metrics.computeProbabilities_time_ms = computeProbabilities_time;
+    metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+    metrics.updatePheromones_time_ms = updatePheromones_time;
+    metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+    // Расчет пропускной способности памяти
+    size_t total_data_transferred = (MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double)) * 3 * num_iterations + (PARAMETR_SIZE * ANT_SIZE * sizeof(int)) * num_iterations + (ANT_SIZE * sizeof(double)) * num_iterations;
+    metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+
+    return metrics;
+}
+PerformanceMetrics run_aco_iterations_notOF(const bool go_min_parametrs, const bool go_transposed, int num_iterations) {
+    PerformanceMetrics metrics = { 0 };
+    auto total_start = std::chrono::high_resolution_clock::now();
+
+    cudaEvent_t start, start_ant, start_update, stop;
+    CUDA_CHECK(cudaEventCreate(&start));
+    CUDA_CHECK(cudaEventCreate(&start_ant));
+    CUDA_CHECK(cudaEventCreate(&start_update));
+    CUDA_CHECK(cudaEventCreate(&stop));
+
+    float kernel_time = 0.0, computeProbabilities_time = 0.0, antColonyOptimization_time = 0.0, updatePheromones_time = 0.0;
+    int threads_per_block = std::min(PARAMETR_SIZE, BLOCK_SIZE);
+    int ant_blocks = ANT_SIZE;
+    size_t sharedev_mem = PARAMETR_SIZE * sizeof(double);
+
+#if (GO_HASH_CPU)
+    ShardedHashTable hash_table;
+    init_hash_table(hash_table, HASH_TABLE_SIZE, 1);
+#endif
+    // Инициализация статистики
+    double best_fitness = 1e9;
+    double low_fitness = -1e9;
+
+    double* ant_parametr = new double[PARAMETR_SIZE * ANT_SIZE];
+    int* paths = new int[PARAMETR_SIZE * ANT_SIZE];
+    double* antOF = new double[ANT_SIZE];
+
+    /*
+    double* parametr_value = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    double* pheromon_value = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    double* kol_enter_value = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    double* norm_matrix_probability = new double[MAX_VALUE_SIZE * PARAMETR_SIZE];
+    int* ant_parametr = new int[PARAMETR_SIZE * ANT_SIZE];
+    double* antOF = new double[ANT_SIZE];
+    //std::cout << "ant_blocks=" << ant_blocks << " threads_per_block=" << threads_per_block << std::endl;
+    */
+    // Основной цикл итераций
+    for (int iter = 0; iter < num_iterations; ++iter) {
+        float iter_time;
+        CUDA_CHECK(cudaEventRecord(start, compute_stream));
+
+        computeProbabilities << <(PARAMETR_SIZE + (BLOCK_SIZE - 1)) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix); // 1. Вычисление вероятностей
+        /*
+        CUDA_CHECK(cudaMemcpy(norm_matrix_probability, dev_norm_matrix, MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(pheromon_value, dev_pheromon, MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(kol_enter_value, dev_kol_enter, MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+        std::cout << "Matrix (" << MAX_VALUE_SIZE << "x" << PARAMETR_SIZE << "):" << std::endl;
+        for (int j = 0; j < PARAMETR_SIZE; ++j) {
+            for (int i = 0; i < MAX_VALUE_SIZE; ++i) {
+                std::cout << "(" << pheromon_value[i * PARAMETR_SIZE + j] << ", " << kol_enter_value[i * PARAMETR_SIZE + j] << "-> " << norm_matrix_probability[i * PARAMETR_SIZE + j] << ") "; // Индексируем элементы
+            }
+            std::cout << std::endl; // Переход на новую строку
+        }
+        */
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        computeProbabilities_time += iter_time;
+        CUDA_CHECK(cudaEventRecord(start_ant, compute_stream));
+
+        antColonyOptimizationNotOF << <ant_blocks, threads_per_block, 0, compute_stream >> > (go_transposed, dev_parametr_value, dev_norm_matrix, dev_agent_node, dev_agent_params);
+
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        /*
+        CUDA_CHECK(cudaMemcpy(ant_parametr, dev_agent_node, PARAMETR_SIZE * ANT_SIZE * sizeof(int), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(antOF, dev_OF, ANT_SIZE * sizeof(double), cudaMemcpyDeviceToHost));
+        std::cout << "ANT (" << ANT_SIZE << "):" << std::endl;
+        for (int i = 0; i < ANT_SIZE; ++i) {
+            for (int j = 0; j < PARAMETR_SIZE; ++j) {
+                std::cout << ant_parametr[i * PARAMETR_SIZE + j] << "; ";
+            }
+            std::cout << "-> " << antOF[i] << std::endl;
+
+        }
+        */
+
+        //Копирование данных для выполнения вычислений на CPU
+        CUDA_CHECK(cudaMemcpyAsync(paths, dev_agent_node, PARAMETR_SIZE * ANT_SIZE * sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
+        CUDA_CHECK(cudaMemcpyAsync(ant_parametr, dev_agent_params, PARAMETR_SIZE * ANT_SIZE * sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start_ant, stop));
+        antColonyOptimization_time += iter_time;
+        //Вычисление целевой функции + работа с Хэш-таблицей
+
+        for (int agent = 0; agent < ANT_SIZE; ++agent) {
+#if (GO_HASH_CPU)
+            antOF[agent] = lookup_or_compute(hash_table, &paths[agent * PARAMETR_SIZE], &ant_parametr[agent * PARAMETR_SIZE], iter);
+#else
+            antOF[agent] = benchmark_function(&ant_parametr[agent * PARAMETR_SIZE]);
+#endif
+            if (antOF[agent] < best_fitness) {
+                best_fitness = antOF[agent];
+            }
+            if (antOF[agent] > low_fitness) {
+                low_fitness = antOF[agent];
+            }
+        }
+
+        //Копирование значений целевой функци в GPU
+        CUDA_CHECK(cudaEventRecord(start_update, compute_stream));
+        CUDA_CHECK(cudaMemcpyAsync(dev_OF, antOF, ANT_SIZE, cudaMemcpyHostToDevice, compute_stream));
+
+        updatePheromones << <(PARAMETR_SIZE + (BLOCK_SIZE - 1)) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (go_min_parametrs, go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter); // 3. Обновление феромонов
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        kernel_time += iter_time;
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start_update, stop));
+        updatePheromones_time += iter_time;
+    }
+
+    metrics.min_fitness = best_fitness;
+    metrics.max_fitness = low_fitness;
+    metrics.hash_misses = 0;
+    metrics.hash_hits = num_iterations * ANT_SIZE;
+
+    // Расчет дополнительных метрик
+    cudaDeviceProp prop;
+    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+    int max_threads_per_sm = prop.maxThreadsPerMultiProcessor;
+    int warp_size = prop.warpSize;
+    int warps_per_block = (threads_per_block + warp_size - 1) / warp_size;
+    int max_warps_per_sm = max_threads_per_sm / warp_size;
+    metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(start_ant);
+    cudaEventDestroy(start_update);
+    cudaEventDestroy(stop);
+
+    delete[] ant_parametr;
+    delete[] antOF;
+#if (GO_HASH_CPU)
+    free_hash_table(hash_table);
+#endif
 
     auto total_end = std::chrono::high_resolution_clock::now();
     metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
@@ -1538,9 +2396,9 @@ PerformanceMetrics run_combined_iterations(const bool go_min_parametrs, const bo
 
     // Сбор результатов
     double best_fitness, low_fitness;
-    int hash_fails;
     CUDA_CHECK(cudaMemcpyAsync(&best_fitness, dev_min, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
     CUDA_CHECK(cudaMemcpyAsync(&low_fitness, dev_max, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+    int hash_fails = 0;
 #if (GO_HASH)
     CUDA_CHECK(cudaMemcpyAsync(&hash_fails, dev_hash_fail, sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
 #endif
@@ -1580,6 +2438,225 @@ PerformanceMetrics run_combined_iterations(const bool go_min_parametrs, const bo
 
     return metrics;
 }
+PerformanceMetrics run_combined_iterations_notOF(const bool go_min_parametrs, const bool go_transposed, int num_iterations, bool use_dummy_first_iteration = true) {
+    PerformanceMetrics metrics = { 0 };
+    auto total_start = std::chrono::high_resolution_clock::now();
+
+    cudaEvent_t start, start_ant, stop;
+    CUDA_CHECK(cudaEventCreate(&start));
+    CUDA_CHECK(cudaEventCreate(&start_ant));
+    CUDA_CHECK(cudaEventCreate(&stop));
+
+    float kernel_time = 0.0, combined_time = 0.0, antColonyOptimization_time = 0.0;
+    int threads_per_block = std::min(PARAMETR_SIZE, BLOCK_SIZE);
+    int ant_blocks = ANT_SIZE;
+
+    const int agents_size = PARAMETR_SIZE * ANT_SIZE;
+#if (GO_HASH_CPU)
+    ShardedHashTable hash_table;
+    init_hash_table(hash_table, HASH_TABLE_SIZE, 1);
+#endif
+
+    // Инициализация статистики
+    double best_fitness = 1e9;
+    double low_fitness = -1e9;
+
+    double* ant_parametr = new double[PARAMETR_SIZE * ANT_SIZE];
+    int* paths = new int[PARAMETR_SIZE * ANT_SIZE];
+    double* antOF = new double[ANT_SIZE];
+    //Заполнение начальными значениями ant_parametr_dev, antOFdev
+    for (int i = 0; i < ANT_SIZE; ++i) {
+        for (int j = 0; j < PARAMETR_SIZE; ++j) {
+            paths[i * PARAMETR_SIZE + j] = 0;
+        }
+        antOF[i] = 0;
+    }
+    CUDA_CHECK(cudaMemcpy(dev_agent_node, paths, PARAMETR_SIZE * ANT_SIZE * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(dev_OF, antOF, ANT_SIZE * sizeof(double), cudaMemcpyHostToDevice));
+
+    // Основной цикл итераций
+    for (int iter = 0; iter < num_iterations; ++iter) {
+        float iter_time;
+        CUDA_CHECK(cudaEventRecord(start, compute_stream));
+
+        // Запуск объединенного ядра
+        updateAndComputePheromones << <(PARAMETR_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (go_transposed, dev_OF, dev_agent_node, dev_pheromon, dev_kol_enter, dev_norm_matrix);
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        combined_time += iter_time;
+
+        // Оптимизация муравьями (остается отдельно)
+        CUDA_CHECK(cudaEventRecord(start_ant, compute_stream));
+
+        antColonyOptimizationNotOF << <ant_blocks, threads_per_block, 0, compute_stream >> > (go_transposed, dev_parametr_value, dev_norm_matrix, dev_agent_node, dev_agent_params);
+
+        //Копирование данных для выполнения вычислений на CPU
+        CUDA_CHECK(cudaMemcpyAsync(paths, dev_agent_node, PARAMETR_SIZE * ANT_SIZE * sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
+        CUDA_CHECK(cudaMemcpyAsync(ant_parametr, dev_agent_params, PARAMETR_SIZE * ANT_SIZE * sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start_ant, stop));
+        antColonyOptimization_time += iter_time;
+        //Вычисление целевой функции + работа с Хэш-таблицей
+
+        for (int agent = 0; agent < ANT_SIZE; ++agent) {
+#if (GO_HASH_CPU)
+            antOF[agent] = lookup_or_compute(hash_table, &paths[agent * PARAMETR_SIZE], &ant_parametr[agent * PARAMETR_SIZE], iter);
+#else
+            antOF[agent] = benchmark_function(&ant_parametr[agent * PARAMETR_SIZE]);
+#endif
+            if (antOF[agent] < best_fitness) {
+                best_fitness = antOF[agent];
+            }
+            if (antOF[agent] > low_fitness) {
+                low_fitness = antOF[agent];
+            }
+        }
+
+        //Копирование значений целевой функци в GPU
+        CUDA_CHECK(cudaMemcpyAsync(dev_OF, antOF, ANT_SIZE, cudaMemcpyHostToDevice, compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        kernel_time += iter_time;
+    }
+
+    metrics.min_fitness = best_fitness;
+    metrics.max_fitness = low_fitness;
+    metrics.hash_misses = 0;
+    metrics.hash_hits = num_iterations * ANT_SIZE;
+
+    // Расчет дополнительных метрик
+    cudaDeviceProp prop;
+    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+    int max_threads_per_sm = prop.maxThreadsPerMultiProcessor;
+    int warp_size = prop.warpSize;
+    int warps_per_block = (threads_per_block + warp_size - 1) / warp_size;
+    int max_warps_per_sm = max_threads_per_sm / warp_size;
+    metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(start_ant);
+    cudaEventDestroy(stop);
+
+    delete[] ant_parametr;
+    delete[] antOF;
+#if (GO_HASH_CPU)
+    free_hash_table(hash_table);
+#endif
+
+    auto total_end = std::chrono::high_resolution_clock::now();
+    metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+    metrics.kernel_time_ms = kernel_time;
+    metrics.computeProbabilities_time_ms = combined_time; // Объединенное время
+    metrics.updatePheromones_time_ms = 0.0;     // Объединенное время
+    metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+    metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+
+    // Расчет пропускной способности памяти
+    size_t total_data_transferred = (MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double)) * 4 * num_iterations +
+        (PARAMETR_SIZE * ANT_SIZE * sizeof(int)) * num_iterations +
+        (ANT_SIZE * sizeof(double)) * num_iterations;
+    metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+
+    return metrics;
+}
+
+PerformanceMetrics run_combined_iterations_ant_and_deposit(const bool go_min_parametrs, const bool go_transposed, int num_iterations) {
+    PerformanceMetrics metrics = { 0 };
+
+    auto total_start = std::chrono::high_resolution_clock::now();
+
+    cudaEvent_t start, start_ant, stop;
+    CUDA_CHECK(cudaEventCreate(&start));
+    CUDA_CHECK(cudaEventCreate(&start_ant));
+    CUDA_CHECK(cudaEventCreate(&stop));
+
+    float kernel_time = 0.0, combined_time = 0.0, antColonyOptimization_time = 0.0;
+    int threads_per_block = std::min(PARAMETR_SIZE, BLOCK_SIZE);
+    int ant_blocks = ANT_SIZE;
+
+    // Инициализация статистики
+    double max_init = -1e9, min_init = 1e9;
+    int fail_init = 0;
+
+    CUDA_CHECK(cudaMemcpyAsync(dev_max, &max_init, sizeof(double), cudaMemcpyHostToDevice, compute_stream));
+    CUDA_CHECK(cudaMemcpyAsync(dev_min, &min_init, sizeof(double), cudaMemcpyHostToDevice, compute_stream));
+#if (GO_HASH)
+    CUDA_CHECK(cudaMemcpyAsync(dev_hash_fail, &fail_init, sizeof(int), cudaMemcpyHostToDevice, compute_stream));
+#endif
+
+    // Основной цикл итераций
+    for (int iter = 0; iter < num_iterations; ++iter) {
+        float iter_time;
+        CUDA_CHECK(cudaEventRecord(start, compute_stream));
+        
+        computeProbabilitiesAndEvaporete << <(PARAMETR_SIZE + (BLOCK_SIZE - 1)) / BLOCK_SIZE, BLOCK_SIZE, 0, compute_stream >> > (go_transposed, dev_pheromon, dev_kol_enter, dev_norm_matrix);
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        combined_time += iter_time;
+
+        // Оптимизация муравьями (остается отдельно)
+        CUDA_CHECK(cudaEventRecord(start_ant, compute_stream));
+
+        antColonyOptimizationAndDeposit << <ant_blocks, threads_per_block, 0, compute_stream >> > (dev_parametr_value, dev_norm_matrix, dev_hashTable, dev_max, dev_min, dev_hash_fail, dev_pheromon, dev_kol_enter, dev_agent_node, dev_OF, dev_agent_params);
+
+        CUDA_CHECK(cudaEventRecord(stop, compute_stream));
+        CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start_ant, stop));
+        antColonyOptimization_time += iter_time;
+        CUDA_CHECK(cudaEventElapsedTime(&iter_time, start, stop));
+        kernel_time += iter_time;
+    }
+
+    // Сбор результатов
+    double best_fitness, low_fitness;
+    CUDA_CHECK(cudaMemcpyAsync(&best_fitness, dev_min, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+    CUDA_CHECK(cudaMemcpyAsync(&low_fitness, dev_max, sizeof(double), cudaMemcpyDeviceToHost, compute_stream));
+    int hash_fails = 0;
+#if (GO_HASH)
+    CUDA_CHECK(cudaMemcpyAsync(&hash_fails, dev_hash_fail, sizeof(int), cudaMemcpyDeviceToHost, compute_stream));
+#endif
+    CUDA_CHECK(cudaStreamSynchronize(compute_stream));
+
+    metrics.min_fitness = best_fitness;
+    metrics.max_fitness = low_fitness;
+    metrics.hash_misses = hash_fails;
+    metrics.hash_hits = num_iterations * ANT_SIZE - hash_fails;
+
+    // Расчет дополнительных метрик
+    cudaDeviceProp prop;
+    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
+    int max_threads_per_sm = prop.maxThreadsPerMultiProcessor;
+    int warp_size = prop.warpSize;
+    int warps_per_block = (threads_per_block + warp_size - 1) / warp_size;
+    int max_warps_per_sm = max_threads_per_sm / warp_size;
+    metrics.occupancy = std::min(100.0f, (warps_per_block * 32.0f / max_warps_per_sm) * 100.0f);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(start_ant);
+    cudaEventDestroy(stop);
+
+    auto total_end = std::chrono::high_resolution_clock::now();
+    metrics.total_time_ms = std::chrono::duration<float, std::milli>(total_end - total_start).count();
+    metrics.kernel_time_ms = kernel_time;
+    metrics.computeProbabilities_time_ms = combined_time; // Объединенное время
+    metrics.updatePheromones_time_ms = 0.0;     // Объединенное время
+    metrics.antColonyOptimization_time_ms = antColonyOptimization_time;
+    metrics.memory_time_ms = metrics.total_time_ms - kernel_time;
+
+    // Расчет пропускной способности памяти
+    size_t total_data_transferred = (MAX_VALUE_SIZE * PARAMETR_SIZE * sizeof(double)) * 4 * num_iterations +
+        (PARAMETR_SIZE * ANT_SIZE * sizeof(int)) * num_iterations +
+        (ANT_SIZE * sizeof(double)) * num_iterations;
+    metrics.memory_throughput_gbs = (total_data_transferred / (1024.0 * 1024.0 * 1024.0)) / (metrics.total_time_ms / 1000.0);
+
+    return metrics;
+}
+
 // ==================== ФУНКЦИЯ ДЛЯ ЗАПУСКА В 1 ЭТАП ====================
 
 // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
@@ -1887,76 +2964,156 @@ int main() {
     std::cout << "Expected matrix memory: " << expected_matrix_size << " bytes" << std::endl;
     std::cout << "Expected agent memory: " << expected_agent_size << " bytes" << std::endl;
     // Автоматическая очистка при выходе
-    auto cleanup_guard = []() { cleanup_cuda_resources(); };
+
+    auto total_start = std::chrono::high_resolution_clock::now();
+    auto total_end = std::chrono::high_resolution_clock::now();
+    auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
     // Прогрев
+
     std::cout << "Performing warmup runs..." << std::endl;
     for (int i = 0; i < KOL_PROGREV; ++i) {
         std::cout << "Warmup " << i << std::endl;
         run_aco_iterations(go_min_parametrs, go_transposed, KOL_ITERATION);
     }
 
-    std::cout << "\n=== Starting 4 function ACO runs ===" << std::endl;
-    auto total_start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
-        auto metrics = run_aco_iterations_4function(go_min_parametrs, go_transposed, KOL_ITERATION);
-        print_metrics(metrics, "4 function ACO 4start", i);
-    }
-
-    auto total_end = std::chrono::high_resolution_clock::now();
-    auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
-    std::cout << "4function ACO total execution time: " << total_duration.count() << " ms" << std::endl;
-
-    std::cout << "\n=== Starting main ACO runs ===" << std::endl;
-    total_start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
-        auto metrics = run_aco_iterations(go_min_parametrs, go_transposed, KOL_ITERATION);
-        print_metrics(metrics, "Original ACO 3start", i);
-    }
-
-    total_end = std::chrono::high_resolution_clock::now();
-    total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
-    std::cout << "Original ACO total execution time: " << total_duration.count() << " ms" << std::endl;
-
-    // Дополнительные запуски - объединенная версия
-    std::cout << "\n=== Starting combined ACO runs ===" << std::endl;
-    total_start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
-        auto metrics = run_combined_iterations(go_min_parametrs, go_transposed, KOL_ITERATION, true);
-        print_metrics(metrics, "Combined Run 2start", i);
-    }
-
-    total_end = std::chrono::high_resolution_clock::now();
-    total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
-    std::cout << "Combined ACO total execution time: " << total_duration.count() << " ms" << std::endl;
- 
-    go_transposed = true;
-    if (go_transposed) {
-        std::vector<double> params_transposed, pheromones_transposed, visits_transposed;
-        transposeMatrix(params, params_transposed, PARAMETR_SIZE, MAX_VALUE_SIZE);
-        transposeMatrix(pheromones, pheromones_transposed, PARAMETR_SIZE, MAX_VALUE_SIZE);
-        transposeMatrix(visits, visits_transposed, PARAMETR_SIZE, MAX_VALUE_SIZE);
-        if (!initialize_cuda_resources(params_transposed.data(), pheromones_transposed.data(), visits_transposed.data())) {
-            std::cerr << "CUDA resources initialization failed" << std::endl;
-            return 1;
-        }
-
-        std::cout << "\n=== Starting 4 function ACO runs transposed ===" << std::endl;
+    if (GO_CUDA_4_STEP) {
+        std::cout << "\n=== Starting 4 function ACO runs ===" << std::endl;
         total_start = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
             auto metrics = run_aco_iterations_4function(go_min_parametrs, go_transposed, KOL_ITERATION);
-            print_metrics(metrics, "4 function ACO 4start transposed", i);
+            print_metrics(metrics, "4 function ACO 4start ", i);
+            cleanup_cuda_resources();
         }
 
         total_end = std::chrono::high_resolution_clock::now();
         total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
-        std::cout << "4function ACO total execution time transposed: " << total_duration.count() << " ms" << std::endl;
+        std::cout << "4function ACO total execution time: " << total_duration.count() << " ms" << std::endl;
+    }
+
+    if (GO_CUDA_3_STEP) {
+        std::cout << "\n=== Starting main ACO runs ===" << std::endl;
+        total_start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
+            auto metrics = run_aco_iterations(go_min_parametrs, go_transposed, KOL_ITERATION);
+            print_metrics(metrics, "Original ACO 3start ", i);
+            cleanup_cuda_resources();
+        }
+
+        total_end = std::chrono::high_resolution_clock::now();
+        total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+        std::cout << "Original ACO total execution time: " << total_duration.count() << " ms" << std::endl;
+    }
+
+    if (GO_CUDA_2_STEP) {
+        // Дополнительные запуски - объединенная версия
+        std::cout << "\n=== Starting combined ACO runs ===" << std::endl;
+        total_start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
+            auto metrics = run_combined_iterations(go_min_parametrs, go_transposed, KOL_ITERATION, true);
+            print_metrics(metrics, "Combined Run 2start ", i);
+            cleanup_cuda_resources();
+        }
+
+        total_end = std::chrono::high_resolution_clock::now();
+        total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+        std::cout << "Combined ACO total execution time: " << total_duration.count() << " ms" << std::endl;
+    }
+
+    if (GO_CUDA_2_STEP_AGENT) {
+        std::cout << "\n=== Starting ACO and DEPOSIT runs ===" << std::endl;
+        total_start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
+            auto metrics = run_combined_iterations_ant_and_deposit(go_min_parametrs, go_transposed, KOL_ITERATION);
+            print_metrics(metrics, "Combined Run 2start ant and deposit ", i);
+            cleanup_cuda_resources();
+        }
+
+        total_end = std::chrono::high_resolution_clock::now();
+        total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+        std::cout << "Combined ACO total execution time: " << total_duration.count() << " ms" << std::endl;
+    }
+
+    if (GO_CUDA_2_STEP_TRANSP) {
+        go_transposed = true;
+        if (go_transposed) {
+            std::vector<double> params_transposed, pheromones_transposed, visits_transposed;
+            transposeMatrix(params, params_transposed, PARAMETR_SIZE, MAX_VALUE_SIZE);
+            transposeMatrix(pheromones, pheromones_transposed, PARAMETR_SIZE, MAX_VALUE_SIZE);
+            transposeMatrix(visits, visits_transposed, PARAMETR_SIZE, MAX_VALUE_SIZE);
+
+            std::cout << "\n=== Starting 4 function ACO runs transposed ===" << std::endl;
+            total_start = std::chrono::high_resolution_clock::now();
+
+            for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+                initialize_cuda_resources(params_transposed.data(), pheromones_transposed.data(), visits_transposed.data());
+                auto metrics = run_aco_iterations_4function(go_min_parametrs, go_transposed, KOL_ITERATION);
+                print_metrics(metrics, "4 function ACO 4start transposed ", i);
+                cleanup_cuda_resources();
+            }
+
+            total_end = std::chrono::high_resolution_clock::now();
+            total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+            std::cout << "4function ACO total execution time transposed: " << total_duration.count() << " ms" << std::endl;
+        }
+    }
+
+    if (GO_CUDA_4_STEP_CPU) {
+        std::cout << "\n=== Starting 4 function ACO runs ===" << std::endl;
+        total_start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
+            auto metrics = run_aco_iterations_4function_notOF(go_min_parametrs, go_transposed, KOL_ITERATION);
+            print_metrics(metrics, "4 function ACO 4start CPU OF ", i);
+            cleanup_cuda_resources();
+        }
+
+        total_end = std::chrono::high_resolution_clock::now();
+        total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+        std::cout << "4function ACO CPU OF total execution time: " << total_duration.count() << " ms" << std::endl;
+    }
+
+    if (GO_CUDA_3_STEP_CPU) {
+        std::cout << "\n=== Starting main ACO runs ===" << std::endl;
+        total_start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
+            auto metrics = run_aco_iterations_notOF(go_min_parametrs, go_transposed, KOL_ITERATION);
+            print_metrics(metrics, "Original ACO 3start CPU OF ", i);
+            cleanup_cuda_resources();
+        }
+
+        total_end = std::chrono::high_resolution_clock::now();
+        total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+        std::cout << "Original ACO CPU OF total execution time: " << total_duration.count() << " ms" << std::endl;
+    }
+
+    if (GO_CUDA_2_STEP_CPU) {
+        // Дополнительные запуски - объединенная версия
+        std::cout << "\n=== Starting combined ACO runs ===" << std::endl;
+        total_start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < KOL_PROGON_STATISTICS; ++i) {
+            initialize_cuda_resources(params.data(), pheromones.data(), visits.data());
+            auto metrics = run_combined_iterations_notOF(go_min_parametrs, go_transposed, KOL_ITERATION, true);
+            print_metrics(metrics, "Combined Run 2start CPU OF ", i);
+            cleanup_cuda_resources();
+        }
+
+        total_end = std::chrono::high_resolution_clock::now();
+        total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(total_end - total_start);
+        std::cout << "Combined ACO CPU OF total execution time: " << total_duration.count() << " ms" << std::endl;
     }
     // Очистка ресурсов
-    cleanup_guard();
     logFile.close();
 
     return 0;

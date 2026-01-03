@@ -1,0 +1,38 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(1725): error: identifier "norm_matrix_probability" is undefined
+      do { cudaError_t err = cudaMemcpyAsync(norm_matrix_probability, dev_norm_matrix, 5 * 42 * sizeof(double), cudaMemcpyDeviceToHost); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1725 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                             ^
+
+aco_cuda_global_while.cu(1726): error: identifier "pheromon_value" is undefined
+      do { cudaError_t err = cudaMemcpyAsync(pheromon_value, dev_pheromon, 5 * 42 * sizeof(double), cudaMemcpyDeviceToHost); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1726 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                             ^
+
+aco_cuda_global_while.cu(1727): error: identifier "kol_enter_value" is undefined
+      do { cudaError_t err = cudaMemcpyAsync(kol_enter_value, dev_kol_enter, 5 * 42 * sizeof(double), cudaMemcpyDeviceToHost); if (err != cudaSuccess) { std::cerr << "CUDA error " << "aco_cuda_global_while.cu" << ":" << 1727 << " " << cudaGetErrorString(err) << std::endl; exit(1); } } while(0);
+                                             ^
+
+aco_cuda_global_while.cu(1731): error: identifier "pheromon_value" is undefined
+              std::cout << "(" << pheromon_value[j * 5 + i] << ", " << kol_enter_value[j * 5 + i] << "-> " << norm_matrix_probability[j * 5 + i] << ") "; 
+                                  ^
+
+aco_cuda_global_while.cu(1731): error: identifier "kol_enter_value" is undefined
+              std::cout << "(" << pheromon_value[j * 5 + i] << ", " << kol_enter_value[j * 5 + i] << "-> " << norm_matrix_probability[j * 5 + i] << ") "; 
+                                                                       ^
+
+aco_cuda_global_while.cu(1731): error: identifier "norm_matrix_probability" is undefined
+              std::cout << "(" << pheromon_value[j * 5 + i] << ", " << kol_enter_value[j * 5 + i] << "-> " << norm_matrix_probability[j * 5 + i] << ") "; 
+                                                                                                              ^
+
+6 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

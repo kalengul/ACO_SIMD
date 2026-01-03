@@ -1,0 +1,38 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(296): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(828): error: identifier "WARP_PER_BLOCK" is undefined
+      } warp_data[WARP_PER_BLOCK];
+                  ^
+
+aco_cuda_global_while.cu(981): error: argument of type "const double *" is incompatible with parameter of type "double *"
+      evaporatePheromones_dev(pheromon);
+                              ^
+
+aco_cuda_global_while.cu(1438): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1576): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1683): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+aco_cuda_global_while.cu(1790): warning #549-D: variable "hash_fails" is used before its value is set
+      metrics.hash_misses = hash_fails;
+                            ^
+
+2 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 

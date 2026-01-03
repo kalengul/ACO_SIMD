@@ -1,0 +1,87 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_4.exe aco_cuda_4.cu -I"C:\Program Files (x86)\Microsoft SDKs\MPI\Include" -L"C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64" -lmsmpi -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_4.cu(359): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_4.cu(359): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_4.cu(478): warning #177-D: variable "params_per_thread" was declared but never referenced
+      const int params_per_thread = (42 + blockDim.x - 1) / blockDim.x;
+                ^
+
+aco_cuda_4.cu(846): warning #177-D: variable "warp_id" was declared but never referenced
+      const int warp_id = threadIdx.x / 32; 
+                ^
+
+aco_cuda_4.cu(848): warning #177-D: variable "warps_per_block" was declared but never referenced
+      const int warps_per_block = blockDim.x / 32;
+                ^
+
+aco_cuda_4.cu(1291): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_4.cu(1495): warning #177-D: variable "local_hash_fails" was declared but never referenced
+          int local_hash_fails = 0;
+              ^
+
+aco_cuda_4.cu(1388): warning #177-D: variable "fail_init" was declared but never referenced
+      int fail_init = 0;
+          ^
+
+aco_cuda_4.cu(1604): warning #177-D: variable "max_parametr" was declared but never referenced
+          double max_parametr = 0.0;
+                 ^
+
+aco_cuda_4.cu(1772): warning #177-D: variable "shared_mem_per_multiprocessor" was declared but never referenced
+      size_t shared_mem_per_multiprocessor = prop.sharedMemPerMultiprocessor;
+             ^
+
+aco_cuda_4.cu(1773): warning #177-D: variable "max_threads_per_block" was declared but never referenced
+      int max_threads_per_block = prop.maxThreadsPerBlock;
+          ^
+
+ptxas warning : For profile sm_86 adjusting per thread register count of 16 to lower bound of 24
+ptxas info    : Overriding maximum register limit 256 for '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z26updateAndComputePheromonesbPKdPKiPdS3_S3_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z32computeProbabilitiesAndEvaporetebPdS_S_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z31antColonyOptimizationAndDepositPdS_P9HashEntryS_S_PiS_S_S2_S_S_' with  24 of maxrregcount option
+ptxas info    : Overriding maximum register limit 256 for '_Z19initializeHashTableP9HashEntry' with  24 of maxrregcount option
+ptxas info    : 218320 bytes gmem, 72 bytes cmem[3], 80 bytes cmem[4]
+ptxas info    : Compiling entry function '_Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_' for 'sm_86'
+ptxas info    : Function properties for _Z20parallelACOIterationPKdPKiPdS3_S3_S3_S3_PiS3_P9HashEntryS3_S3_S4_S3_
+    96 bytes stack frame, 84 bytes spill stores, 56 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 96 bytes cumulative stack size, 20480 bytes smem, 464 bytes cmem[0], 48 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z26updateAndComputePheromonesbPKdPKiPdS3_S3_' for 'sm_86'
+ptxas info    : Function properties for _Z26updateAndComputePheromonesbPKdPKiPdS3_S3_
+    136 bytes stack frame, 88 bytes spill stores, 88 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 136 bytes cumulative stack size, 20480 bytes smem, 400 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z32computeProbabilitiesAndEvaporetebPdS_S_' for 'sm_86'
+ptxas info    : Function properties for _Z32computeProbabilitiesAndEvaporetebPdS_S_
+    48 bytes stack frame, 52 bytes spill stores, 52 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 48 bytes cumulative stack size, 20480 bytes smem, 384 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function '_Z31antColonyOptimizationAndDepositPdS_P9HashEntryS_S_PiS_S_S2_S_S_' for 'sm_86'
+ptxas info    : Function properties for _Z31antColonyOptimizationAndDepositPdS_P9HashEntryS_S_PiS_S_S2_S_S_
+    1856 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 24 registers, used 1 barriers, 1856 bytes cumulative stack size, 512 bytes smem, 440 bytes cmem[0], 40 bytes cmem[2]
+ptxas info    : Function properties for __internal_trig_reduction_slowpathd
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Compiling entry function '_Z19initializeHashTableP9HashEntry' for 'sm_86'
+ptxas info    : Function properties for _Z19initializeHashTableP9HashEntry
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 14 registers, used 0 barriers, 360 bytes cmem[0]
+aco_cuda_4.cu
+tmpxft_000022d8_00000000-10_aco_cuda_4.cudafe1.cpp
+========== COMPILATION END ========== 
+Exit code: 0 

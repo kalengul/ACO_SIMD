@@ -1,0 +1,46 @@
+===================================================
+    OMP ACO Benchmark Launcher
+===================================================
+Checking GCC compiler...
+/opt/gcc/v9.1/bin/g++
+g++ (GCC) 9.1.0
+Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+OpenMP environment:
+OMP_NUM_THREADS=16
+OMP_PLACES=cores
+OMP_PROC_BIND=close
+
+Cleaning previous builds...
+
+===================================================
+Testing with PARAMETR_SIZE=42
+===================================================
+Updating parameter file with PARAMETR_SIZE=42...
+Updating parametrs.h with PARAMETR_SIZE=42 and NAME_FILE_GRAPH=Parametr_Graph/test42.txt
+Successfully updated parametrs.h with PARAMETR_SIZE=42
+Updating BLOCK_SIZE based on PARAM_SIZE...
+===================================================
+Testing with PARAMETR_SIZE=42, ANT_SIZE=500
+===================================================
+Updating parameter file with ANT_SIZE=500...
+Updating parametrs.h with ANT_SIZE=500
+Successfully updated parametrs.h with ANT_SIZE=500
+Compiling OpenMP program with GCC...
+
+ERROR: Compilation failed!
+Compilation errors saved to: results/compilation_logs/compile_size_42_ants_500_20251216_001705.txt
+Showing last 10 lines of compilation log:
+   89 |     const int num_vars = PARAMETR_SIZE / PARAMETR_SIZE_ONE_X;
+      |                                          ^~~~~~~~~~~~~~~~~~~
+      |                                          PARAMETR_SIZE
+OMP_C++.cpp: In function ‘void log_parameters()’:
+OMP_C++.cpp:761:39: error: ‘PARAMETR_SIZE_ONE_X’ was not declared in this scope; did you mean ‘PARAMETR_SIZE’?
+  761 |         << "PARAMETR_SIZE_ONE_X: " << PARAMETR_SIZE_ONE_X << "; "
+      |                                       ^~~~~~~~~~~~~~~~~~~
+      |                                       PARAMETR_SIZE
+========== COMPILATION END ==========
+Exit code: 1

@@ -1,0 +1,26 @@
+========== COMPILATION START ========== 
+Parameters: PARAMETR_SIZE=42, MAXREGCOUNT=16 
+Compile command: nvcc -O3 -arch=sm_70 -std=c++17 -o aco_cuda_const_while.exe aco_cuda_global_while.cu -Xcompiler "/O2 /fp:fast /openmp /MT" -use_fast_math -lcudart -maxrregcount=16 -Xptxas "-O3,-v" --resource-usage 
+ 
+aco_cuda_global_while.cu(290): warning #68-D: integer conversion resulted in a change of sign
+          hashTable[i].key = -1;
+                             ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+aco_cuda_global_while.cu(832): error: identifier "agent_node" is undefined
+          agent_node[ant_id * 42 + param_idx] = selected_index;
+          ^
+
+aco_cuda_global_while.cu(840): error: identifier "agent_node" is undefined
+          double cached = getCachedResult(hashTable, agent_node, ant_id);
+                                                     ^
+
+aco_cuda_global_while.cu(843): error: argument of type "int *" is incompatible with parameter of type "const double *"
+              shared_OF = BenchShafferaFunction(shared_selected);
+                                                ^
+
+3 errors detected in the compilation of "aco_cuda_global_while.cu".
+aco_cuda_global_while.cu
+========== COMPILATION END ========== 
+Exit code: 2 
